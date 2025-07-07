@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: escala-ebd
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: gunicorn index:app
+    envVars:
+      - key: GOOGLE_CREDENTIALS
