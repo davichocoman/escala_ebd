@@ -1,7 +1,7 @@
 // Configuração da API
 // Para desenvolvimento local, use a URL completa, ex: 'http://localhost:5000' (se o Flask rodar na porta 5000)
 // Para produção na Vercel, use string vazia para que as requisições sejam feitas para o mesmo domínio
-const API_BASE_URL = ''; 
+const API_BASE_URL = 'https://api-escala.fly.dev'; 
 
 // Estado da aplicação
 let currentTab = 'scale';
