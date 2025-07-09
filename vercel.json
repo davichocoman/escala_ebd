@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://api-escala.fly.dev/api/$1"
-    },
-    {
       "source": "/static/(.*)",
       "destination": "/static/$1"
     },
