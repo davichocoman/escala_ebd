@@ -387,7 +387,7 @@ function renderLessonsGrid(groupedByTrimester) {
                             <div class="lesson-image">
                                 <img src="${lesson.coverImage}" alt="${lesson.title}">
                                 <div class="lesson-badges">
-                                    <span class="badge badge-type-${lesson.type}">
+                                    <span class="badge badge-type-${lesson.type.replace(/\s+/g, '-')}">
                                         ${lesson.type === 'professor'
                                             ? '👨‍🏫 Professor'
                                             : lesson.type === 'aluno'
