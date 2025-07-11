@@ -333,11 +333,13 @@ body {
 
 .lesson-badges {
     position: absolute;
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
+    top: 0.5rem;
+    left: 0.5rem;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    z-index: 2;
 }
 
 .badge-type-professor {
