@@ -374,7 +374,7 @@ function groupLessonsByTrimester(lessons) {
 // Renderizar grid de lições
 function renderLessonsGrid(groupedByTrimester) {
     return Object.entries(groupedByTrimester)
-        .sort(([a], [b]) => parseInt(a) - parseInt(b)) // Garante ordem numérica dos trimestres
+        .sort(([a], [b]) => parseInt(a) - parseInt(b))
         .map(([trimester, lessons]) => `
             <div class="lessons-section">
                 <div class="lessons-section-header">
@@ -386,21 +386,6 @@ function renderLessonsGrid(groupedByTrimester) {
                         <div class="lesson-card" onclick="openLesson('${lesson.driveLink}')">
                             <div class="lesson-image">
                                 <img src="${lesson.coverImage}" alt="${lesson.title}">
-                                <div class="lesson-badges">
-                                    <span class="badge badge-type-${lesson.type.replace(/\s+/g, '-')}">
-                                        ${lesson.type === 'professor'
-                                            ? '👨‍🏫 Professor'
-                                            : lesson.type === 'aluno'
-                                            ? '👥 Aluno'
-                                            : lesson.type === 'livro de apoio'
-                                            ? '📕 Livro de Apoio'
-                                            : lesson.type === 'material'
-                                            ? '💼 Material'
-                                            : '❓ Outros'
-                                        }
-                                    </span>
-                                    <span class="badge badge-class">${lesson.class}</span>
-                                </div>
                                 <div class="lesson-overlay">
                                     <svg class="lesson-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
@@ -408,8 +393,23 @@ function renderLessonsGrid(groupedByTrimester) {
                                 </div>
                             </div>
                             <div class="lesson-content">
+                                <div class="lesson-badges-bottom">
+                                    <span class="badge badge-type-${lesson.type.replace(/\s+/g, '-')}" style="background-color: var(--badge-bg-${lesson.type.replace(/\s+/g, '-')}); color: var(--badge-color-${lesson.type.replace(/\s+/g, '-')}">
+                                        ${lesson.class} - ${lesson.type === 'professor'
+                                            ? 'Professor'
+                                            : lesson.type === 'aluno'
+                                            ? 'Aluno'
+                                            : lesson.type === 'livro de apoio'
+                                            ? 'Livro de Apoio'
+                                            : lesson.type === 'material'
+                                            ? 'Material'
+                                            : 'Outros'
+                                        }
+                                    </span>
+                                </div>
                                 <h4 class="lesson-title">${lesson.title}</h4>
                                 <p class="lesson-theme">${lesson.theme}</p>
+                                <p class="lesson-description">${lesson.description || ''}</p>
                             </div>
                         </div>
                     `).join('')}
