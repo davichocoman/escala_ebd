@@ -260,7 +260,7 @@ function renderScheduleCards(groupedData) {
                         ${group.lessons.map(lesson => `
                             <tr>
                                 <td class="lesson-number">Lição ${lesson.lessonNumber}</td>
-                                <td>${formatDate(lesson.date)}</td>
+                                <td>${lesson.date}</td>
                                 <td class="teacher-name">${lesson.teacher}</td>
                                 <td>${lesson.theme}</td>
                             </tr>
@@ -270,32 +270,6 @@ function renderScheduleCards(groupedData) {
             </div>
         </div>
     `).join('');
-}
-
-// Formatar data (melhorada para ser mais robusta)
-function formatDate(dateString) {
-    try {
-        // Tenta parsing de YYYY-MM-DD ou DD/MM/YYYY
-        const parts = dateString.split('/');
-        let date;
-        if (parts.length === 3) {
-            // Assume DD/MM/YYYY
-            date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-        } else {
-            // Tenta como está (espera YYYY-MM-DD ou formato reconhecido)
-            date = new Date(dateString);
-        }
-
-        if (isNaN(date.getTime())) {
-            return dateString; // Retorna original se inválido
-        }
-        return date.toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit'
-        });
-    } catch {
-        return dateString;
-    }
 }
 
 // Carregar dados da API de Lições
