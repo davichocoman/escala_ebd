@@ -533,3 +533,92 @@ body {
         padding: 0.5rem;
     }
 }
+
+/* --- Estilos da Visão Geral (Dashboard) --- */
+
+.overview-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.overview-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.overview-header h3 {
+    color: #7c2d12;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.shadow-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: white;
+}
+
+.overview-table th {
+    background-color: #fff7ed; /* Um laranja bem clarinho */
+    color: #9a3412;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.overview-table .class-col {
+    font-weight: 700;
+    color: #7c2d12;
+}
+
+.overview-table .teacher-col {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.lesson-cell {
+    display: flex;
+    flex-direction: column;
+}
+
+.lesson-tag {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: normal;
+}
+
+.theme-text {
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Estilos do Card de Destaque Individual */
+.highlight-card {
+    border-left: 5px solid #ea580c;
+    background-color: #fff7ed;
+    margin-bottom: 2rem;
+}
+
+.highlight-header {
+    background-color: #ffedd5;
+    border-bottom: 1px solid #fed7aa;
+}
+
+.highlight-badge {
+    background: #ea580c; 
+    color: white; 
+    margin-bottom: 0.5rem; 
+    display: inline-block;
+}
+
+.label-sm {
+    font-size: 0.875rem; 
+    color: #666; 
+    margin-bottom: 0.25rem;
+}
+
+.value-lg {
+    font-size: 1.125rem; 
+    font-weight: bold; 
+    color: #333;
+}
