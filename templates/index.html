@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EBD - Escola Bíblica Dominical</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
-    <script src="/static/script.js"></script>
-    <!-- Header -->
+    
     <header class="header">
         <div class="container">
             <div class="header-content">
                 <h1>Escola Bíblica Dominical</h1>
-            </div>
+                <p>Assembleia de Deus - Rodovia A</p> </div>
             
             <nav class="nav">
                 <div class="nav-container">
@@ -24,10 +23,8 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main">
         <div class="container">
-            <!-- Filters -->
             <div class="filters-card">
                 <div class="filters-grid">
                     <div class="filter-group">
@@ -40,7 +37,7 @@
                             <option value="4">4º Trimestre</option>
                         </select>
                     </div>
-                    <div class="filter-group">
+                    <div class="filter-group" id="classFilterContainer">
                         <label for="classSelect">Classe</label>
                         <select id="classSelect">
                             <option value="">Todas as Classes</option>
@@ -56,12 +53,14 @@
                 </div>
             </div>
 
-            <!-- Scale Content -->
             <div id="scaleContent" class="content-section">
                 <h2 class="section-title">
                     <span>📋</span>
                     Escala de Professores
                 </h2>
+
+                <div id="highlightContainer"></div>
+
                 <div id="scheduleContainer">
                     <div class="loading" id="loadingSpinner">
                         <div class="spinner"></div>
@@ -70,7 +69,6 @@
                 </div>
             </div>
 
-            <!-- Lessons Content -->
             <div id="lessonsContent" class="content-section hidden">
                 <h2 class="section-title">
                     <span>📚</span>
@@ -81,11 +79,12 @@
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <p>© <span id="currentYear"></span> Escola Bíblica Dominical<br>AD Rodovia A</p>
         </div>
     </footer>
+
+    <script src="../static/script.js"></script>
 </body>
 </html>
