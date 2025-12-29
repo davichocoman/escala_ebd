@@ -121,74 +121,83 @@ async function loadGeneralOverview() {
     const scheduleContainer = document.getElementById('scheduleContainer');
     const highlightContainer = document.getElementById('highlightContainer');
     
-    // Limpa destaque individual se houver
     highlightContainer.innerHTML = '';
 
-    scheduleContainer.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Carregando escala geral da semana...</p>
-        </div>
-    `;
+    // 1. Tenta pegar do Cache Local primeiro
+    const cachedOverview = localStorage.getItem('ebd_overview_cache');
+    
+    if (cachedOverview) {
+        // Se tem cache, mostra NA HORA!
+        const parsed = JSON.parse(cachedOverview);
+        // Verifica se é do mesmo dia (para não mostrar coisa velha demais de outra semana)
+        const currentTarget = getNextSunday();
+        if (parsed.date === currentTarget) {
+            renderOverviewTable(parsed.items, parsed.date);
+            // Adiciona um aviso discreto que está atualizando
+            const updateLabel = document.createElement('div');
+            updateLabel.id = 'updating-indicator';
+            updateLabel.innerHTML = '<small style="color:orange; display:block; text-align:center; margin-top:5px;">Verificando atualizações...</small>';
+            scheduleContainer.prepend(updateLabel);
+        } else {
+            // Cache velho? Mostra loading normal
+            scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da semana...</p></div>`;
+        }
+    } else {
+        scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da semana...</p></div>`;
+    }
 
     try {
-        // 1. Pega todas as classes disponíveis no <select> do HTML
         const select = document.getElementById('classSelect');
         const options = Array.from(select.options)
             .map(opt => opt.value)
-            .filter(val => val !== '' && val !== 'Todas as Classes'); // Remove a opção padrão
+            .filter(val => val !== '' && val !== 'Todas as Classes');
 
         const targetDate = getNextSunday();
-        const overviewData = [];
-
-        // 2. Dispara requisições para todas as classes ao mesmo tempo (Promise.all)
-        // Isso é mais rápido do que buscar uma por uma
+        
         const promises = options.map(async (className) => {
             const formData = new FormData();
             formData.append('classe', className);
             
             try {
-                const response = await fetch(`${API_BASE_URL}/api/schedule`, {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch(`${API_BASE_URL}/api/schedule`, { method: 'POST', body: formData });
                 if (!response.ok) return null;
-                
                 const data = await response.json();
                 const items = convertApiDataToScheduleItems(data);
-                
-                // Filtra apenas a lição da data alvo
                 const match = items.find(item => item.date === targetDate);
-                if (match) {
-                    return { ...match, className: className }; // Adiciona o nome da classe
-                }
+                if (match) return { ...match, className: className };
                 return null;
-            } catch (err) {
-                console.warn(`Erro ao carregar ${className}:`, err);
-                return null;
-            }
+            } catch (err) { return null; }
         });
 
         const results = await Promise.all(promises);
-        
-        // Limpa nulls e organiza
         const validResults = results.filter(item => item !== null);
 
-        // 3. Renderiza o Dashboard
+        // Remove o aviso de "Verificando atualizações" se existir
+        const indicator = document.getElementById('updating-indicator');
+        if (indicator) indicator.remove();
+
         if (validResults.length === 0) {
             scheduleContainer.innerHTML = `
                 <div class="empty-state">
                     <p>Nenhuma aula encontrada para o próximo domingo (${targetDate}).</p>
-                    <small>Selecione uma classe específica acima para ver todo o trimestre.</small>
                 </div>
             `;
         } else {
             renderOverviewTable(validResults, targetDate);
+            
+            // 2. Salva no Cache Local para a próxima vez
+            localStorage.setItem('ebd_overview_cache', JSON.stringify({
+                date: targetDate,
+                items: validResults
+            }));
         }
 
     } catch (error) {
         console.error("Erro no overview:", error);
-        scheduleContainer.innerHTML = `<p class="error">Erro ao carregar visão geral.</p>`;
+        // Se der erro e não tiver cache mostrado, avisa
+        if (!cachedOverview) {
+            scheduleContainer.innerHTML = `<p class="error">Erro ao carregar visão geral.</p>`;
+        }
     }
 }
 
@@ -245,14 +254,26 @@ async function loadScheduleData() {
     const scheduleContainer = document.getElementById('scheduleContainer');
     const highlightContainer = document.getElementById('highlightContainer');
     
-    // Loading state
-    scheduleContainer.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Carregando escala da classe ${selectedClass}...</p>
-        </div>
-    `;
+    // Chave única para cada classe
+    const cacheKey = `ebd_schedule_${selectedClass}`;
+    const cachedData = localStorage.getItem(cacheKey);
+
     highlightContainer.innerHTML = ''; 
+    
+    // Lógica do Cache Visual
+    if (cachedData) {
+        const data = JSON.parse(cachedData);
+        // Renderiza instantaneamente com o que tem na memória
+        renderDataWithCache(data); 
+        
+        // Aviso de atualização
+        const updateBadge = document.createElement('div');
+        updateBadge.id = 'updating-badge';
+        updateBadge.innerHTML = '<div style="position:fixed; bottom:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:20px; font-size:12px; z-index:999;">Atualizando dados...</div>';
+        document.body.appendChild(updateBadge);
+    } else {
+        scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da classe ${selectedClass}...</p></div>`;
+    }
     
     try {
         const formData = new FormData();
@@ -267,20 +288,35 @@ async function loadScheduleData() {
         
         scheduleData = await response.json(); 
         
-        // Popula mapa de temas
-        globalThemesMap = {}; 
-        if (scheduleData.temas) {
-            scheduleData.temas.forEach(t => {
-                const trimesterNum = String(t.TRIMESTRE).split(' ')[0];
-                globalThemesMap[`${trimesterNum}-${t.CLASSE}`] = t.TEMA;
-            });
-        }
-        renderSchedule();
+        // Remove aviso de atualização
+        const badge = document.getElementById('updating-badge');
+        if (badge) badge.remove();
+
+        // SALVA NO CACHE DO NAVEGADOR
+        localStorage.setItem(cacheKey, JSON.stringify(scheduleData));
+
+        // Processa dados normais (igual você já tinha)
+        renderDataWithCache(scheduleData);
         
     } catch (error) {
         console.error('Erro:', error);
-        scheduleContainer.innerHTML = `<div class="empty-state"><p>Erro ao carregar escala.</p></div>`;
+        if (!cachedData) {
+            scheduleContainer.innerHTML = `<div class="empty-state"><p>Erro ao carregar escala.</p></div>`;
+        }
     }
+}
+
+// Função auxiliar para evitar código duplicado
+function renderDataWithCache(data) {
+    scheduleData = data; // Atualiza variável global
+    globalThemesMap = {}; 
+    if (data.temas) {
+        data.temas.forEach(t => {
+            const trimesterNum = String(t.TRIMESTRE).split(' ')[0];
+            globalThemesMap[`${trimesterNum}-${t.CLASSE}`] = t.TEMA;
+        });
+    }
+    renderSchedule(); // Sua função de renderização normal
 }
 
 function renderSchedule() {
@@ -479,3 +515,4 @@ function renderLessons() {
             </div>
         `).join('');
 }
+
