@@ -6,31 +6,116 @@ const API_BASE_URL = 'https://api-escala.onrender.com'; // <-- Cole sua URL do R
 let currentTab = 'scale';
 let selectedTrimester = 'all';
 let selectedClass = 'Todas as Classes';
+// Caches em memória
 let scheduleData = null; 
 let lessonsData = [];
-let globalThemesMap = {}; 
+let videosData = [];
+let libraryData = [];
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
-    
     const yearSpan = document.getElementById('currentYear');
-    if (yearSpan) {
-        yearSpan.textContent = new Date().getFullYear();
-    }
+    if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
-    // Carrega o conteúdo inicial
-    if (currentTab === 'scale') {
-        // Se não tem classe selecionada, carrega o Visão Geral
-        if (selectedClass === 'Todas as Classes' || selectedClass === '') {
-            loadGeneralOverview();
-        } else {
-            loadScheduleData();
+    // Inicia na escala
+    loadGeneralOverview();
+    const modal = document.getElementById('videoModal');
+        if(modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeVideoModal();
+                }
+            });
         }
-    } else {
-        loadLessonsData();
-    }
+        
+        // Fecha com a tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeVideoModal();
+            }
+        });
+    document.getElementById('globalSearch').addEventListener('keyup', handleSearch);
 });
+
+// --- Lógica de Navegação ---
+function setupEventListeners() {
+    // Cliques nas abas
+    document.getElementById('scaleTab').addEventListener('click', () => switchTab('scale'));
+    document.getElementById('lessonsTab').addEventListener('click', () => switchTab('lessons'));
+    document.getElementById('videosTab').addEventListener('click', () => switchTab('videos'));
+    document.getElementById('libraryTab').addEventListener('click', () => switchTab('library'));
+    
+    // Filtros
+    document.getElementById('trimesterSelect').addEventListener('change', (e) => {
+        selectedTrimester = e.target.value;
+        refreshCurrentTab();
+    });
+    
+    document.getElementById('classSelect').addEventListener('change', (e) => {
+        selectedClass = e.target.value;
+        if (currentTab === 'scale') {
+            if (selectedClass === '' || selectedClass === 'Todas as Classes') loadGeneralOverview();
+            else loadScheduleData();
+        }
+    });
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    // Reseta botões
+    document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+
+    // Esconde TUDO (todas as 4 seções)
+    ['scale', 'lessons', 'videos', 'library'].forEach(t => {
+        const el = document.getElementById(t + 'Content');
+        if(el) el.classList.add('hidden');
+    });
+
+    // Mostra o atual
+    const content = document.getElementById(tab + 'Content');
+    if(content) content.classList.remove('hidden');
+
+    // Gerencia visibilidade do filtro de Classe (só aparece na Escala)
+    const classFilter = document.getElementById('classFilterContainer');
+    if (classFilter) classFilter.style.display = (tab === 'scale') ? 'block' : 'none';
+
+    refreshCurrentTab();
+}
+
+function refreshCurrentTab() {
+    if (currentTab === 'scale') {
+        if (selectedClass === '' || selectedClass === 'Todas as Classes') loadGeneralOverview();
+        else if (scheduleData) renderSchedule();
+        else loadScheduleData();
+    } else if (currentTab === 'lessons') {
+        loadLessonsData();
+    } else if (currentTab === 'videos') {
+        loadVideosData();
+    } else if (currentTab === 'library') {
+        loadLibraryData();
+    }
+}
+
+// --- Funções Auxiliares Genéricas ---
+async function fetchData(endpoint, cacheKeyGlobal) {
+    // Tenta LocalStorage
+    const localCache = localStorage.getItem(cacheKeyGlobal);
+    if (localCache) return JSON.parse(localCache);
+
+    // Busca API
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/${endpoint}`);
+        if (!response.ok) throw new Error('Erro na API');
+        const data = await response.json();
+        // Salva LocalStorage
+        localStorage.setItem(cacheKeyGlobal, JSON.stringify(data));
+        return data;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
 
 // --- Lógica de Datas ---
 function getNextSunday() {
@@ -49,74 +134,9 @@ function getNextSunday() {
     return `${day}/${month}`;
 }
 
-// --- Event Listeners ---
-function setupEventListeners() {
-    document.getElementById('scaleTab').addEventListener('click', () => switchTab('scale'));
-    document.getElementById('lessonsTab').addEventListener('click', () => switchTab('lessons'));
-    
-    document.getElementById('trimesterSelect').addEventListener('change', (e) => {
-        selectedTrimester = e.target.value;
-        if (currentTab === 'scale') {
-            if (selectedClass === 'Todas as Classes' || selectedClass === '') {
-                // Se mudar trimestre na visão geral, não afeta a escala da semana (que é data fixa), 
-                // mas podemos recarregar por garantia.
-                return; 
-            }
-            renderSchedule(); 
-        } else {
-            renderLessons(); 
-        }
-    });
-    
-    document.getElementById('classSelect').addEventListener('change', (e) => {
-        selectedClass = e.target.value;
-        if (currentTab === 'scale') {
-            if (selectedClass === '' || selectedClass === 'Todas as Classes') {
-                loadGeneralOverview(); // Volta para o painel geral
-            } else {
-                loadScheduleData(); // Carrega classe específica
-            }
-        }
-    });
-}
+// --- REMOVIDA AQUI A VERSÃO ANTIGA E DUPLICADA DE switchTab ---
 
-function switchTab(tab) {
-    currentTab = tab;
-    
-    // Atualiza botões
-    document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-    
-    // Referência ao container do filtro de classe
-    const classFilter = document.getElementById('classFilterContainer');
-
-    if (tab === 'scale') {
-        document.getElementById('scaleTab').classList.add('active');
-        document.getElementById('scaleContent').classList.remove('hidden');
-        document.getElementById('lessonsContent').classList.add('hidden');
-        
-        // MOSTRA o filtro de classe na aba Escala
-        if (classFilter) classFilter.style.display = 'block';
-
-        if (selectedClass === 'Todas as Classes' || selectedClass === '') {
-            loadGeneralOverview();
-        } else if (!scheduleData) {
-            loadScheduleData();
-        }
-    } else {
-        document.getElementById('lessonsTab').classList.add('active');
-        document.getElementById('scaleContent').classList.add('hidden');
-        document.getElementById('lessonsContent').classList.remove('hidden');
-        
-        // ESCONDE o filtro de classe na aba Lições
-        if (classFilter) classFilter.style.display = 'none';
-
-        if (lessonsData.length === 0) {
-            loadLessonsData();
-        }
-    }
-}
-
-// --- NOVA FUNÇÃO: Visão Geral da Semana (Dashboard) ---
+// --- Visão Geral da Semana (Dashboard) ---
 async function loadGeneralOverview() {
     const scheduleContainer = document.getElementById('scheduleContainer');
     const highlightContainer = document.getElementById('highlightContainer');
@@ -127,19 +147,15 @@ async function loadGeneralOverview() {
     const cachedOverview = localStorage.getItem('ebd_overview_cache');
     
     if (cachedOverview) {
-        // Se tem cache, mostra NA HORA!
         const parsed = JSON.parse(cachedOverview);
-        // Verifica se é do mesmo dia (para não mostrar coisa velha demais de outra semana)
         const currentTarget = getNextSunday();
         if (parsed.date === currentTarget) {
             renderOverviewTable(parsed.items, parsed.date);
-            // Adiciona um aviso discreto que está atualizando
             const updateLabel = document.createElement('div');
             updateLabel.id = 'updating-indicator';
             updateLabel.innerHTML = '<small style="color:orange; display:block; text-align:center; margin-top:5px;">Verificando atualizações...</small>';
             scheduleContainer.prepend(updateLabel);
         } else {
-            // Cache velho? Mostra loading normal
             scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da semana...</p></div>`;
         }
     } else {
@@ -172,7 +188,6 @@ async function loadGeneralOverview() {
         const results = await Promise.all(promises);
         const validResults = results.filter(item => item !== null);
 
-        // Remove o aviso de "Verificando atualizações" se existir
         const indicator = document.getElementById('updating-indicator');
         if (indicator) indicator.remove();
 
@@ -184,8 +199,6 @@ async function loadGeneralOverview() {
             `;
         } else {
             renderOverviewTable(validResults, targetDate);
-            
-            // 2. Salva no Cache Local para a próxima vez
             localStorage.setItem('ebd_overview_cache', JSON.stringify({
                 date: targetDate,
                 items: validResults
@@ -194,18 +207,14 @@ async function loadGeneralOverview() {
 
     } catch (error) {
         console.error("Erro no overview:", error);
-        // Se der erro e não tiver cache mostrado, avisa
         if (!cachedOverview) {
             scheduleContainer.innerHTML = `<p class="error">Erro ao carregar visão geral.</p>`;
         }
     }
 }
 
-// Função para desenhar a tabela do Dashboard
 function renderOverviewTable(items, date) {
     const container = document.getElementById('scheduleContainer');
-    
-    // Ordena por nome da classe (A-Z)
     items.sort((a, b) => a.className.localeCompare(b.className));
 
     const html = `
@@ -215,9 +224,8 @@ function renderOverviewTable(items, date) {
                 <span class="badge" style="background: #ea580c; color: white;">Domingo: ${date}</span>
             </div>
             <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">
-                Confira abaixo os professores escalados para este domingo em todas as classes.
+                Professores escalados para este domingo:
             </p>
-            
             <div class="table-container shadow-card">
                 <table class="schedule-table overview-table">
                     <thead>
@@ -245,57 +253,44 @@ function renderOverviewTable(items, date) {
             </div>
         </div>
     `;
-    
     container.innerHTML = html;
 }
 
-// --- API: Escala Individual (Lógica Antiga Mantida) ---
+// --- API: Escala Individual ---
 async function loadScheduleData() {
     const scheduleContainer = document.getElementById('scheduleContainer');
     const highlightContainer = document.getElementById('highlightContainer');
     
-    // Chave única para cada classe
     const cacheKey = `ebd_schedule_${selectedClass}`;
     const cachedData = localStorage.getItem(cacheKey);
 
     highlightContainer.innerHTML = ''; 
     
-    // Lógica do Cache Visual
     if (cachedData) {
         const data = JSON.parse(cachedData);
-        // Renderiza instantaneamente com o que tem na memória
         renderDataWithCache(data); 
-        
-        // Aviso de atualização
         const updateBadge = document.createElement('div');
         updateBadge.id = 'updating-badge';
-        updateBadge.innerHTML = '<div style="position:fixed; bottom:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:20px; font-size:12px; z-index:999;">Atualizando dados...</div>';
+        updateBadge.innerHTML = '<div style="position:fixed; bottom:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:20px; font-size:12px; z-index:999;">Atualizando...</div>';
         document.body.appendChild(updateBadge);
     } else {
-        scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da classe ${selectedClass}...</p></div>`;
+        scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala...</p></div>`;
     }
     
     try {
         const formData = new FormData();
         formData.append('classe', selectedClass);
-        
         const response = await fetch(`${API_BASE_URL}/api/schedule`, {
             method: 'POST',
             body: formData,
         });
-        
         if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
         
         scheduleData = await response.json(); 
-        
-        // Remove aviso de atualização
         const badge = document.getElementById('updating-badge');
         if (badge) badge.remove();
 
-        // SALVA NO CACHE DO NAVEGADOR
         localStorage.setItem(cacheKey, JSON.stringify(scheduleData));
-
-        // Processa dados normais (igual você já tinha)
         renderDataWithCache(scheduleData);
         
     } catch (error) {
@@ -306,9 +301,8 @@ async function loadScheduleData() {
     }
 }
 
-// Função auxiliar para evitar código duplicado
 function renderDataWithCache(data) {
-    scheduleData = data; // Atualiza variável global
+    scheduleData = data; 
     globalThemesMap = {}; 
     if (data.temas) {
         data.temas.forEach(t => {
@@ -316,7 +310,7 @@ function renderDataWithCache(data) {
             globalThemesMap[`${trimesterNum}-${t.CLASSE}`] = t.TEMA;
         });
     }
-    renderSchedule(); // Sua função de renderização normal
+    renderSchedule(); 
 }
 
 function renderSchedule() {
@@ -325,15 +319,12 @@ function renderSchedule() {
     
     const scheduleItems = convertApiDataToScheduleItems(scheduleData);
     const filteredData = filterScheduleData(scheduleItems); 
-
-    // Renderiza destaque individual
     renderNextSundayCard(scheduleItems);
 
     if (filteredData.length === 0) {
         container.innerHTML = `<div class="empty-state"><p>Nenhuma escala para este filtro.</p></div>`;
         return;
     }
-    
     const groupedData = groupScheduleData(filteredData);
     container.innerHTML = renderScheduleCards(groupedData);
 }
@@ -516,3 +507,197 @@ function renderLessons() {
         `).join('');
 }
 
+// ==========================================
+// 2. VÍDEOS (NOVO) 🎬
+// ==========================================
+async function loadVideosData() {
+    const container = document.getElementById('videosContainer');
+    if (videosData.length === 0) {
+        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando vídeos...</p></div>`;
+        const data = await fetchData('videos', 'ebd_videos_cache');
+        if (data) videosData = data;
+        else {
+            container.innerHTML = `<p class="error">Erro ao carregar vídeos.</p>`;
+            return;
+        }
+    }
+    renderVideos();
+}
+
+function renderVideos() {
+    const container = document.getElementById('videosContainer');
+    
+    const filtered = videosData.filter(v => {
+        if (selectedTrimester === 'all') return true;
+        const cat = v.category.toLowerCase();
+        if (selectedTrimester === 'diversos') return cat.includes('diverso') || cat.includes('extra');
+        return cat.includes(selectedTrimester);
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><p>Nenhum vídeo encontrado para este filtro.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="lessons-grid">
+            ${filtered.map(video => {
+                // Extrai ID do Youtube
+                let videoId = '';
+                // Regex para pegar ID tanto de youtube.com quanto youtu.be
+                const match = video.link.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/))([^&?]*)/);
+                if (match && match[1]) videoId = match[1];
+                
+                const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
+
+                // MUDANÇA AQUI: Ao clicar, chamamos openVideoModal com o ID do vídeo
+                return `
+                <div class="lesson-card" onclick="openVideoModal('${videoId}')">
+                    <div class="lesson-image">
+                        ${thumbUrl ? `<img src="${thumbUrl}" alt="${video.title}" style="object-fit:cover;">` : '<div style="color:#ccc;">Sem Capa</div>'}
+                        <div class="lesson-overlay">
+                            <span style="font-size:3rem; color:white; opacity:0.8;">▶</span>
+                        </div>
+                    </div>
+                    <div class="lesson-content">
+                        <div class="lesson-badges-bottom">
+                            <span class="badge" style="background:#fce7f3; color:#be185d;">${video.category}</span>
+                        </div>
+                        <h4 class="lesson-title">${video.title}</h4>
+                        <p class="lesson-description">${video.description || ''}</p>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>
+    `;
+}
+
+// --- FUNÇÕES DA MODAL DE VÍDEO (NOVAS) ---
+
+function openVideoModal(videoId) {
+    if (!videoId) {
+        alert("Erro: ID do vídeo não encontrado.");
+        return;
+    }
+    
+    const modal = document.getElementById('videoModal');
+    const player = document.getElementById('youtubePlayer');
+    
+    // Monta a URL de embed com autoplay
+    player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoModal');
+    const player = document.getElementById('youtubePlayer');
+    
+    modal.classList.add('hidden');
+    
+    // IMPORTANTE: Limpar o src para o vídeo parar de tocar
+    player.src = "";
+}
+
+// ==========================================
+// 3. ACERVO / BIBLIOTECA (NOVO) 📚
+// ==========================================
+async function loadLibraryData() {
+    const container = document.getElementById('libraryContainer');
+    if (libraryData.length === 0) {
+        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando acervo...</p></div>`;
+        const data = await fetchData('library', 'ebd_library_cache');
+        if (data) libraryData = data;
+        else {
+            container.innerHTML = `<p class="error">Erro ao carregar acervo.</p>`;
+            return;
+        }
+    }
+    renderLibrary();
+}
+
+function renderLibrary() {
+    const container = document.getElementById('libraryContainer');
+    const filtered = libraryData; 
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><p>Acervo vazio.</p></div>`;
+        return;
+    }
+    container.innerHTML = `
+        <div class="lessons-grid">
+            ${filtered.map(item => `
+                <div class="lesson-card" onclick="window.open('${item.link}', '_blank')">
+                    <div class="lesson-image" style="background-color: #f3f4f6;">
+                        ${item.cover ? `<img src="${item.cover}" alt="${item.title}">` : '<span style="font-size:2rem;">📄</span>'}
+                        <div class="lesson-overlay">
+                            <span style="color:white; font-weight:bold;">Acessar</span>
+                        </div>
+                    </div>
+                    <div class="lesson-content">
+                        <div class="lesson-badges-bottom">
+                            <span class="badge" style="background:#e0e7ff; color:#4338ca;">${item.type}</span>
+                        </div>
+                        <h4 class="lesson-title">${item.title}</h4>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// --- Função de Pesquisa em Tempo Real ---
+function handleSearch(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    
+    // Define qual container estamos olhando baseada na aba ativa
+    let activeContainerId = '';
+    let itemSelector = '';
+
+    if (currentTab === 'scale') {
+        activeContainerId = 'scheduleContainer';
+        itemSelector = '.schedule-card'; // Procura nos cards de escala
+    } else if (currentTab === 'lessons') {
+        activeContainerId = 'lessonsContainer';
+        itemSelector = '.lesson-card';
+    } else if (currentTab === 'videos') {
+        activeContainerId = 'videosContainer';
+        itemSelector = '.lesson-card';
+    } else if (currentTab === 'library') {
+        activeContainerId = 'libraryContainer';
+        itemSelector = '.lesson-card';
+    }
+
+    const container = document.getElementById(activeContainerId);
+    if (!container) return;
+
+    const items = container.querySelectorAll(itemSelector);
+    let hasResults = false;
+
+    items.forEach(item => {
+        // Pega todo o texto dentro do card
+        const text = item.textContent.toLowerCase();
+        
+        // Verifica se o termo digitado existe no texto
+        if (text.includes(searchTerm)) {
+            item.style.display = ''; // Mostra
+            hasResults = true;
+        } else {
+            item.style.display = 'none'; // Esconde
+        }
+    });
+
+    // Feedback visual se não achar nada
+    const noResultsMsg = document.getElementById('no-search-results');
+    
+    if (!hasResults && searchTerm !== '') {
+        if (!noResultsMsg) {
+            const msg = document.createElement('div');
+            msg.id = 'no-search-results';
+            msg.className = 'empty-state';
+            msg.innerHTML = '<p>Nenhum resultado encontrado para essa busca.</p>';
+            container.appendChild(msg);
+        }
+    } else {
+        if (noResultsMsg) noResultsMsg.remove();
+    }
+}
