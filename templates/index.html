@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#7c2d12">
-    <title>EBD - Escola Bíblica Dominical</title>
+    <meta name="theme-color" content="#7c2d12"> <title>EBD - Escola Bíblica Dominical</title>
     <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
@@ -13,12 +12,15 @@
         <div class="container">
             <div class="header-content">
                 <h1>Escola Bíblica Dominical</h1>
-                <p>Assembleia de Deus - Rodovia A</p> </div>
+                <p>Assembleia de Deus - Rodovia A</p>
+            </div>
             
             <nav class="nav">
                 <div class="nav-container">
-                    <button id="scaleTab" class="nav-button active">Escala de Professores</button>
+                    <button id="scaleTab" class="nav-button active">Escala</button>
                     <button id="lessonsTab" class="nav-button">Lições</button>
+                    <button id="videosTab" class="nav-button">Vídeos</button>
+                    <button id="libraryTab" class="nav-button">Acervo</button>
                 </div>
             </nav>
         </div>
@@ -26,16 +28,23 @@
 
     <main class="main">
         <div class="container">
+            <div class="search-container" style="margin-bottom: 1.5rem;">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="globalSearch" placeholder="Pesquisar por título, tema ou professor..." autocomplete="off">
+                </div>
+            </div>
             <div class="filters-card">
                 <div class="filters-grid">
                     <div class="filter-group">
-                        <label for="trimesterSelect">Trimestre</label>
+                        <label for="trimesterSelect">Trimestre / Categoria</label>
                         <select id="trimesterSelect">
-                            <option value="all">Todos os Trimestres</option>
+                            <option value="all">Ver Tudo</option>
                             <option value="1">1º Trimestre</option>
                             <option value="2">2º Trimestre</option>
                             <option value="3">3º Trimestre</option>
                             <option value="4">4º Trimestre</option>
+                            <option value="diversos" class="video-only-option">Diversos / Extras</option>
                         </select>
                     </div>
                     <div class="filter-group" id="classFilterContainer">
@@ -55,38 +64,44 @@
             </div>
 
             <div id="scaleContent" class="content-section">
-                <h2 class="section-title">
-                    <span>📋</span>
-                    Escala de Professores
-                </h2>
-
+                <h2 class="section-title"><span>📋</span> Escala de Professores</h2>
                 <div id="highlightContainer"></div>
-
-                <div id="scheduleContainer">
-                    <div class="loading" id="loadingSpinner">
-                        <div class="spinner"></div>
-                        <p>Carregando escala de professores...</p>
-                    </div>
-                </div>
+                <div id="scheduleContainer"></div>
             </div>
 
             <div id="lessonsContent" class="content-section hidden">
-                <h2 class="section-title">
-                    <span>📚</span>
-                    Lições por Trimestre
-                </h2>
+                <h2 class="section-title"><span>📚</span> Lições por Trimestre</h2>
                 <div id="lessonsContainer"></div>
             </div>
+
+            <div id="videosContent" class="content-section hidden">
+                <h2 class="section-title"><span>🎬</span> Vídeos de Apoio</h2>
+                <div id="videosContainer"></div>
+            </div>
+
+            <div id="libraryContent" class="content-section hidden">
+                <h2 class="section-title"><span>🗄️</span> Acervo e Materiais</h2>
+                <div id="libraryContainer"></div>
+            </div>
+
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>© <span id="currentYear"></span> Escola Bíblica Dominical<br>AD Rodovia A</p>
+            <p>© <span id="currentYear"></span> EBD - AD Rodovia A</p>
         </div>
     </footer>
+
+    <div id="videoModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+            <div class="video-container">
+                <iframe id="youtubePlayer" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
 
     <script src="../static/script.js"></script>
 </body>
 </html>
-
