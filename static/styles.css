@@ -811,3 +811,70 @@ body {
 .loc-paralela { background: #dbeafe; color: #1e40af; } /* Azul */
 .loc-comemorativa { background: #ffedd5; color: #9a3412; } /* Laranja */
 .loc-indefinido { background: #fee2e2; color: #991b1b; } /* Vermelho */
+
+/* --- Versículo do Dia --- */
+.daily-verse {
+    background: rgba(0,0,0,0.2);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-style: italic;
+}
+.verse-text { font-size: 0.95rem; margin-bottom: 0.25rem; color: #fff; }
+.verse-ref { font-size: 0.8rem; color: #fed7aa; font-weight: bold; text-align: right; }
+
+/* --- Ferramentas (Botões) --- */
+.tools-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 5px solid #7c2d12;
+}
+.tools-grid { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+.tool-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.2s;
+}
+.tool-button:hover { transform: translateY(-2px); }
+.whatsapp-btn { background-color: #25D366; color: white; }
+.print-btn { background-color: #374151; color: white; }
+
+/* --- Configuração de Impressão (Ctrl+P) --- */
+@media print {
+    /* Esconde o que não precisa no papel */
+    .header, .nav, .filters-card, .tools-card, .footer, #videoModal {
+        display: none !important;
+    }
+    
+    body { background: white; color: black; }
+    .container { max-width: 100%; margin: 0; padding: 0; }
+    
+    /* Ajusta a tabela para impressão */
+    .schedule-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        break-inside: avoid; /* Não quebra card no meio da página */
+    }
+    .schedule-header { background: #eee; color: black; }
+    .schedule-class-name { color: black; }
+    .badge { border: 1px solid #ccc; color: black !important; background: white !important; }
+    
+    /* Título para Impressão */
+    .main::before {
+        content: "Escala EBD - AD Rodovia A";
+        display: block;
+        font-size: 20pt;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+}
