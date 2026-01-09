@@ -6,11 +6,13 @@ const API_BASE_URL = 'https://api-escala.onrender.com'; // <-- Cole sua URL do R
 let currentTab = 'scale';
 let selectedTrimester = 'all';
 let selectedClass = 'Todas as Classes';
+let selectedTeacher = 'all';
 // Caches em memória
 let scheduleData = null; 
 let lessonsData = [];
 let videosData = [];
 let libraryData = [];
+let agendaData = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
@@ -44,6 +46,7 @@ function setupEventListeners() {
     document.getElementById('lessonsTab').addEventListener('click', () => switchTab('lessons'));
     document.getElementById('videosTab').addEventListener('click', () => switchTab('videos'));
     document.getElementById('libraryTab').addEventListener('click', () => switchTab('library'));
+    document.getElementById('agendaTab').addEventListener('click', () => switchTab('agenda'));
     
     // Filtros
     document.getElementById('trimesterSelect').addEventListener('change', (e) => {
@@ -53,32 +56,62 @@ function setupEventListeners() {
     
     document.getElementById('classSelect').addEventListener('change', (e) => {
         selectedClass = e.target.value;
+        // Reseta o professor quando muda a classe
+        selectedTeacher = 'all'; 
+        const teacherSelect = document.getElementById('teacherSelect');
+        if(teacherSelect) teacherSelect.value = 'all';
+
         if (currentTab === 'scale') {
             if (selectedClass === '' || selectedClass === 'Todas as Classes') loadGeneralOverview();
             else loadScheduleData();
         }
     });
+
+    // NOVO LISTENER DO PROFESSOR
+    document.getElementById('teacherSelect').addEventListener('change', (e) => {
+        selectedTeacher = e.target.value;
+        renderSchedule(); // Apenas re-renderiza (filtra) sem buscar na API de novo
+    });
 }
 
 function switchTab(tab) {
     currentTab = tab;
-    // Reseta botões
+    
+    // Atualiza botões
     document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tab + 'Tab').classList.add('active');
 
-    // Esconde TUDO (todas as 4 seções)
-    ['scale', 'lessons', 'videos', 'library'].forEach(t => {
+    // Esconde todas as seções
+    ['scale', 'lessons', 'videos', 'library', 'agenda'].forEach(t => {
         const el = document.getElementById(t + 'Content');
         if(el) el.classList.add('hidden');
     });
 
-    // Mostra o atual
+    // Mostra a seção atual
     const content = document.getElementById(tab + 'Content');
     if(content) content.classList.remove('hidden');
 
-    // Gerencia visibilidade do filtro de Classe (só aparece na Escala)
+    // --- GERENCIAMENTO DE FILTROS ---
     const classFilter = document.getElementById('classFilterContainer');
-    if (classFilter) classFilter.style.display = (tab === 'scale') ? 'block' : 'none';
+    const teacherFilter = document.getElementById('teacherFilterContainer');
+    const trimesterFilter = document.getElementById('trimesterFilterContainer');
+
+    // 1. Filtro de Trimestre: Esconde na Agenda, mostra nos outros
+    if (trimesterFilter) {
+        trimesterFilter.style.display = (tab === 'agenda') ? 'none' : 'block';
+    }
+
+    // 2. Filtro de Classe: Só na Escala
+    if (classFilter) {
+        classFilter.style.display = (tab === 'scale') ? 'block' : 'none';
+    }
+
+    // 3. Filtro de Professor: Só na Escala E quando uma classe específica for escolhida
+    if (teacherFilter) {
+        // Só mostra se estiver na aba escala E tiver uma classe selecionada
+        const showTeacher = (tab === 'scale' && selectedClass !== '' && selectedClass !== 'Todas as Classes');
+        teacherFilter.style.display = showTeacher ? 'block' : 'none';
+    }
 
     refreshCurrentTab();
 }
@@ -94,7 +127,50 @@ function refreshCurrentTab() {
         loadVideosData();
     } else if (currentTab === 'library') {
         loadLibraryData();
+    } else if (currentTab === 'agenda') {
+        loadAgendaData();
     }
+}
+
+// Função para preencher o dropdown de professores dinamicamente
+function populateTeacherSelect(scheduleItems) {
+    const teacherSelect = document.getElementById('teacherSelect');
+    if (!teacherSelect) return;
+
+    // Guarda a seleção atual caso a gente esteja apenas mudando trimestre
+    const currentSelection = teacherSelect.value;
+
+    // Limpa opções (mantendo "Todos")
+    teacherSelect.innerHTML = '<option value="all">Todos os Professores</option>';
+
+    // Extrai nomes únicos dos professores
+    const teachers = new Set();
+    scheduleItems.forEach(item => {
+        // Limpa espaços extras e ignora células vazias
+        const name = item.teacher ? item.teacher.trim() : '';
+        if (name && name !== '-' && name.toLowerCase() !== 'a definir') {
+            teachers.add(name);
+        }
+    });
+
+    // Ordena alfabeticamente e cria as opções
+    Array.from(teachers).sort().forEach(teacherName => {
+        const option = document.createElement('option');
+        option.value = teacherName;
+        option.textContent = teacherName;
+        teacherSelect.appendChild(option);
+    });
+
+    // Tenta restaurar a seleção se o professor ainda existir na lista nova
+    if (Array.from(teachers).includes(currentSelection)) {
+        teacherSelect.value = currentSelection;
+    } else {
+        teacherSelect.value = 'all';
+        selectedTeacher = 'all';
+    }
+    
+    // Mostra o filtro
+    document.getElementById('teacherFilterContainer').style.display = 'block';
 }
 
 // --- Funções Auxiliares Genéricas ---
@@ -291,6 +367,8 @@ async function loadScheduleData() {
         if (badge) badge.remove();
 
         localStorage.setItem(cacheKey, JSON.stringify(scheduleData));
+        const allItems = convertApiDataToScheduleItems(scheduleData);
+        populateTeacherSelect(allItems);
         renderDataWithCache(scheduleData);
         
     } catch (error) {
@@ -395,7 +473,13 @@ function convertApiDataToScheduleItems(apiData) {
 
 function filterScheduleData(scheduleItems) {
     return scheduleItems.filter(item => {
-        return selectedTrimester === 'all' || item.trimester.toString() === selectedTrimester;
+        // Filtro de Trimestre
+        const trimesterMatch = selectedTrimester === 'all' || item.trimester.toString() === selectedTrimester;
+        
+        // NOVO: Filtro de Professor
+        const teacherMatch = selectedTeacher === 'all' || item.teacher === selectedTeacher;
+
+        return trimesterMatch && teacherMatch;
     });
 }
 
@@ -665,6 +749,9 @@ function handleSearch(e) {
     } else if (currentTab === 'library') {
         activeContainerId = 'libraryContainer';
         itemSelector = '.lesson-card';
+    } else if (currentTab === 'agenda') {  // <--- ADICIONE ISSO
+    activeContainerId = 'agendaContainer';
+    itemSelector = '.timeline-item';
     }
 
     const container = document.getElementById(activeContainerId);
@@ -700,4 +787,84 @@ function handleSearch(e) {
     } else {
         if (noResultsMsg) noResultsMsg.remove();
     }
+}
+
+// ==========================================
+// 4. AGENDA (NOVO) 📅
+// ==========================================
+async function loadAgendaData() {
+    const container = document.getElementById('agendaContainer');
+    
+    if (agendaData.length === 0) {
+        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando calendário...</p></div>`;
+        const data = await fetchData('agenda', 'ebd_agenda_cache');
+        if (data) agendaData = data;
+        else {
+            container.innerHTML = `<p class="error">Erro ao carregar agenda.</p>`;
+            return;
+        }
+    }
+    renderAgenda();
+}
+
+function renderAgenda() {
+    const container = document.getElementById('agendaContainer');
+    
+    // Ordena as datas
+    const sortedData = [...agendaData].sort((a, b) => {
+        const dateA = parseDate(a.date);
+        const dateB = parseDate(b.date);
+        return dateA - dateB;
+    });
+
+    // --- A MÁGICA ACONTECE AQUI ---
+    // Pega a data de hoje e zera as horas (para comparar apenas dia/mês/ano)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Filtra: Só mantém itens cuja data seja MAIOR ou IGUAL a hoje
+    const futureEvents = sortedData.filter(item => parseDate(item.date) >= today);
+    
+    // Agora usamos a lista filtrada para exibir
+    const displayList = futureEvents; 
+    // -----------------------------
+
+    if (displayList.length === 0) {
+        container.innerHTML = `<div class="empty-state"><p>Nenhum evento futuro encontrado. Tudo tranquilo por enquanto!</p></div>`;
+        return;
+    }
+
+    container.innerHTML = displayList.map(item => {
+        // Define classe de cor baseada no Local (baseado na sua imagem)
+        let badgeClass = 'loc-comemorativa'; // Padrão
+        const loc = item.location.toLowerCase();
+        
+        if (loc.includes('rodovia')) badgeClass = 'loc-rodovia';
+        else if (loc.includes('paralela')) badgeClass = 'loc-paralela';
+        else if (loc.includes('não definido') || loc.includes('indefinido')) badgeClass = 'loc-indefinido';
+
+        return `
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">
+                    <svg style="width:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    ${item.date}
+                </div>
+                <h3 class="timeline-event">${item.event}</h3>
+                <div class="timeline-location">
+                    <svg style="width:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    ${item.location}
+                </div>
+                <span class="badge-location ${badgeClass}">${item.location}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Helper para converter "04/01/2026" em Date Object
+function parseDate(dateStr) {
+    if(!dateStr) return new Date(0); // Data muito antiga se vier vazio
+    const parts = dateStr.split('/');
+    // Note: mês no JS começa em 0
+    return new Date(parts[2], parts[1] - 1, parts[0]);
 }
