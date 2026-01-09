@@ -16,6 +16,7 @@ let agendaData = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
+    renderDailyVerse();
     const yearSpan = document.getElementById('currentYear');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
@@ -77,11 +78,11 @@ function setupEventListeners() {
 function switchTab(tab) {
     currentTab = tab;
     
-    // Atualiza botões
+    // Atualiza botões do menu
     document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tab + 'Tab').classList.add('active');
 
-    // Esconde todas as seções
+    // Esconde todas as seções de conteúdo
     ['scale', 'lessons', 'videos', 'library', 'agenda'].forEach(t => {
         const el = document.getElementById(t + 'Content');
         if(el) el.classList.add('hidden');
@@ -91,24 +92,37 @@ function switchTab(tab) {
     const content = document.getElementById(tab + 'Content');
     if(content) content.classList.remove('hidden');
 
-    // --- GERENCIAMENTO DE FILTROS ---
+    const tools = document.getElementById('coordinatorTools');
+    if (tools) tools.style.display = (tab === 'scale') ? 'block' : 'none';
+
+    // --- GERENCIAMENTO DE VISIBILIDADE (O Pulo do Gato) ---
+    
+    // 1. Barra de Pesquisa: Esconde na Escala e Agenda; Mostra em Vídeos, Lições e Acervo
+    const searchContainer = document.getElementById('searchBarContainer');
+    if (searchContainer) {
+        if (tab === 'scale' || tab === 'agenda') {
+            searchContainer.style.display = 'none';
+        } else {
+            searchContainer.style.display = 'block';
+            // Limpa o campo de busca ao trocar de aba para não filtrar errado
+            const searchInput = document.getElementById('globalSearch');
+            if (searchInput) searchInput.value = ''; 
+        }
+    }
+
+    // 2. Filtros Específicos
     const classFilter = document.getElementById('classFilterContainer');
     const teacherFilter = document.getElementById('teacherFilterContainer');
     const trimesterFilter = document.getElementById('trimesterFilterContainer');
 
-    // 1. Filtro de Trimestre: Esconde na Agenda, mostra nos outros
-    if (trimesterFilter) {
-        trimesterFilter.style.display = (tab === 'agenda') ? 'none' : 'block';
-    }
+    // Filtro de Trimestre: Esconde na Agenda
+    if (trimesterFilter) trimesterFilter.style.display = (tab === 'agenda') ? 'none' : 'block';
 
-    // 2. Filtro de Classe: Só na Escala
-    if (classFilter) {
-        classFilter.style.display = (tab === 'scale') ? 'block' : 'none';
-    }
+    // Filtro de Classe: Só na Escala
+    if (classFilter) classFilter.style.display = (tab === 'scale') ? 'block' : 'none';
 
-    // 3. Filtro de Professor: Só na Escala E quando uma classe específica for escolhida
+    // Filtro de Professor: Só na Escala e se tiver classe selecionada
     if (teacherFilter) {
-        // Só mostra se estiver na aba escala E tiver uma classe selecionada
         const showTeacher = (tab === 'scale' && selectedClass !== '' && selectedClass !== 'Todas as Classes');
         teacherFilter.style.display = showTeacher ? 'block' : 'none';
     }
@@ -459,6 +473,7 @@ function convertApiDataToScheduleItems(apiData) {
                     id: `${trimesterNum}-${index}`,
                     date: String(item.DATA),
                     teacher: item.PROFESSOR,
+                    phone: item.TELEFONE,
                     lesson: item.LIÇÃO,
                     lessonNumber: index + 1,
                     trimester: trimesterNum,
@@ -528,7 +543,16 @@ function renderScheduleCards(groupedData) {
                             <tr>
                                 <td class="lesson-number">${lesson.lesson}</td>
                                 <td>${lesson.date}</td>
-                                <td class="teacher-name">${lesson.teacher}</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:5px;">
+                                        <span class="teacher-name">${lesson.teacher}</span>
+                                        ${lesson.phone ? `
+                                            <a href="https://wa.me/${lesson.phone}?text=Olá ${lesson.teacher}, paz do Senhor! Passando para lembrar da sua aula dia ${lesson.date}." target="_blank" title="Enviar mensagem" style="text-decoration:none;">
+                                                📱
+                                            </a>
+                                        ` : ''}
+                                    </div>
+                                </td>
                                 <td>${lesson.theme}</td>
                             </tr>
                         `).join('')}
@@ -867,4 +891,91 @@ function parseDate(dateStr) {
     const parts = dateStr.split('/');
     // Note: mês no JS começa em 0
     return new Date(parts[2], parts[1] - 1, parts[0]);
+}
+
+// ==========================================
+// 5. FERRAMENTAS EXTRAS (Versículo, Whats, Print) 🛠️
+// ==========================================
+
+// --- Versículo do Dia ---
+const verses = [
+    { text: "Lâmpada para os meus pés é tua palavra, e luz para o meu caminho.", ref: "Salmos 119:105" },
+    { text: "Toda a Escritura é inspirada por Deus e útil para o ensino.", ref: "2 Timóteo 3:16" },
+    { text: "Procure apresentar-se a Deus aprovado, como obreiro que não tem do que se envergonhar.", ref: "2 Timóteo 2:15" },
+    { text: "O meu povo foi destruído, porque lhe faltou o conhecimento.", ref: "Oseias 4:6" },
+    { text: "Antes, crescei na graça e no conhecimento de nosso Senhor e Salvador, Jesus Cristo.", ref: "2 Pedro 3:18" }
+];
+
+function renderDailyVerse() {
+    const today = new Date().getDate();
+    // Usa o dia do mês para escolher o versículo (assim muda todo dia, mas é igual pra todo mundo)
+    const index = today % verses.length; 
+    const verse = verses[index];
+    
+    const container = document.getElementById('dailyVerse');
+    if(container) {
+        container.querySelector('.verse-text').textContent = `"${verse.text}"`;
+        container.querySelector('.verse-ref').textContent = verse.ref;
+    }
+}
+
+// --- Gerador de Mensagem do WhatsApp (O Pedido do Coordenador) ---
+async function generateWeeklyMessage() {
+    const btn = document.querySelector('.whatsapp-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Generating... ⏳';
+
+    try {
+        const targetDate = getNextSunday();
+        // Ordem específica que você pediu na mensagem
+        const classOrder = ["Coordenação", "Senhores", "Senhoras", "Jovens", "Adolescentes", "Pré-adolescentes", "Jardim"];
+        
+        // Busca dados de TODAS as classes
+        const promises = classOrder.map(async (className) => {
+            const formData = new FormData();
+            formData.append('classe', className);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/schedule`, { method: 'POST', body: formData });
+                const data = await response.json();
+                const items = convertApiDataToScheduleItems(data);
+                const match = items.find(item => item.date === targetDate);
+                return { className, ...match }; // Retorna undefined no match se não achar
+            } catch (e) { return { className }; }
+        });
+
+        const results = await Promise.all(promises);
+        
+        // Pega a lição da Coordenação (ou da primeira que achar) para o cabeçalho
+        const headerInfo = results.find(r => r.lesson) || {};
+        const lessonNum = headerInfo.lesson ? headerInfo.lesson.replace(/\D/g, '') : '?'; // Extrai só o número
+
+        // Monta o Texto
+        let message = `Bom dia, paz do Senhor🙏🏾\n`;
+        message += `Neste domingo, *${targetDate}, será a nossa ${lessonNum}ª lição* e teremos os seguintes professores:\n\n`;
+
+        results.forEach((item, index) => {
+            if (item.className === "Coordenação") {
+                message += `Coordenador: ${item.teacher || 'A definir'}\n\n`;
+            } else {
+                // Aqui colocamos o @Nome. O Coordenador precisa ter o contato salvo pra virar azul.
+                message += `${index}. ${item.className}: @${item.teacher || 'A definir'}\n`;
+            }
+        });
+
+        message += `\n❌ *Lembrem-se: Não fuja do tema central da lição.*\n`;
+        message += `❌ Não permita que a sua classe perca o controle com comentários paralelos à lição.\n`;
+        message += `⛪ Incentivem os seus alunos a frequentarem a maior Escola do mundo 📖`;
+
+        // Copia para a área de transferência
+        navigator.clipboard.writeText(message).then(() => {
+            alert("Texto copiado! Agora abra o grupo do WhatsApp e cole.");
+            btn.innerHTML = 'Copiado! ✅';
+            setTimeout(() => btn.innerHTML = originalText, 2000);
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao gerar mensagem. Tente novamente.");
+        btn.innerHTML = originalText;
+    }
 }
