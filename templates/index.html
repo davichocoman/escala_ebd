@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#7c2d12"> <title>EBD - Escola Bíblica Dominical</title>
+    <meta name="theme-color" content="#7c2d12">
+    <title>EBD - Escola Bíblica Dominical</title>
     <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
@@ -13,6 +14,11 @@
             <div class="header-content">
                 <h1>Escola Bíblica Dominical</h1>
                 <p>Assembleia de Deus - Rodovia A</p>
+                
+                <div id="dailyVerse" class="daily-verse">
+                    <p class="verse-text">"Carregando versículo..."</p>
+                    <p class="verse-ref"></p>
+                </div>
             </div>
             
             <nav class="nav">
@@ -29,14 +35,28 @@
 
     <main class="main">
         <div class="container">
-            <div class="search-container" style="margin-bottom: 1.5rem;">
-                <div class="search-wrapper">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="globalSearch" placeholder="Pesquisar por título, tema ou professor..." autocomplete="off">
+            
+            <div id="coordinatorTools" class="tools-card hidden">
+                <h3>🛠️ Ferramentas</h3>
+                <div class="tools-grid">
+                    <button onclick="generateWeeklyMessage()" class="tool-button whatsapp-btn">
+                        <span>📱</span> Copiar Aviso Semanal
+                    </button>
+                    <button onclick="window.print()" class="tool-button print-btn">
+                        <span>🖨️</span> Imprimir Escala
+                    </button>
                 </div>
             </div>
 
             <div class="filters-card">
+                
+                <div id="searchBarContainer" class="search-container" style="margin-bottom: 1.5rem;">
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="globalSearch" placeholder="Pesquisar por título, tema ou professor..." autocomplete="off">
+                    </div>
+                </div>
+
                 <div class="filters-grid">
                     <div class="filter-group" id="trimesterFilterContainer">
                         <label for="trimesterSelect">Trimestre / Categoria</label>
@@ -75,8 +95,12 @@
 
             <div id="scaleContent" class="content-section">
                 <h2 class="section-title"><span>📋</span> Escala de Professores</h2>
-                <div id="highlightContainer"></div>
-                <div id="scheduleContainer"></div>
+                <div id="highlightContainer"></div> <div id="scheduleContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Carregando escala...</p>
+                    </div>
+                </div>
             </div>
 
             <div id="lessonsContent" class="content-section hidden">
