@@ -722,3 +722,92 @@ body {
     color: #9ca3af;
     pointer-events: none; /* Para clicar através do ícone */
 }
+
+/* --- Estilos da Agenda (Timeline) --- */
+.timeline-container {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+/* Linha vertical central */
+.timeline-container::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    background-color: #fed7aa; /* Laranja clarinho */
+    top: 0;
+    bottom: 0;
+    left: 20px; /* Alinhado à esquerda para mobile */
+    border-radius: 2px;
+}
+
+.timeline-item {
+    position: relative;
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    margin-left: 50px; /* Espaço para a linha */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    border-left: 4px solid #ea580c; /* Borda laranja destaque */
+}
+
+.timeline-item:hover {
+    transform: translateX(5px);
+}
+
+/* A bolinha na linha do tempo */
+.timeline-dot {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: -42px; /* Posiciona em cima da linha */
+    background-color: #ea580c;
+    border: 4px solid #fff7ed;
+    border-radius: 50%;
+    top: 1.5rem;
+    z-index: 10;
+}
+
+.timeline-date {
+    font-weight: bold;
+    color: #ea580c;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline-event {
+    font-size: 1.125rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-location {
+    font-size: 0.875rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Tags de Local coloridas (Opcional - baseado na sua imagem) */
+.badge-location {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.loc-rodovia { background: #dcfce7; color: #166534; } /* Verde */
+.loc-paralela { background: #dbeafe; color: #1e40af; } /* Azul */
+.loc-comemorativa { background: #ffedd5; color: #9a3412; } /* Laranja */
+.loc-indefinido { background: #fee2e2; color: #991b1b; } /* Vermelho */
