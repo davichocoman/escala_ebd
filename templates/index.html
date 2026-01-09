@@ -21,6 +21,7 @@
                     <button id="lessonsTab" class="nav-button">Lições</button>
                     <button id="videosTab" class="nav-button">Vídeos</button>
                     <button id="libraryTab" class="nav-button">Acervo</button>
+                    <button id="agendaTab" class="nav-button">Agenda</button>
                 </div>
             </nav>
         </div>
@@ -34,9 +35,10 @@
                     <input type="text" id="globalSearch" placeholder="Pesquisar por título, tema ou professor..." autocomplete="off">
                 </div>
             </div>
+
             <div class="filters-card">
                 <div class="filters-grid">
-                    <div class="filter-group">
+                    <div class="filter-group" id="trimesterFilterContainer">
                         <label for="trimesterSelect">Trimestre / Categoria</label>
                         <select id="trimesterSelect">
                             <option value="all">Ver Tudo</option>
@@ -47,6 +49,7 @@
                             <option value="diversos" class="video-only-option">Diversos / Extras</option>
                         </select>
                     </div>
+
                     <div class="filter-group" id="classFilterContainer">
                         <label for="classSelect">Classe</label>
                         <select id="classSelect">
@@ -59,6 +62,13 @@
                             <option value="Senhoras">Senhoras</option>
                             <option value="Pré-adolescentes">Pré-adolescentes</option>
                         </select>
+                    </div>
+
+                    <div class="filter-group" id="teacherFilterContainer" style="display: none;">
+                        <label for="teacherSelect">Filtrar Professor</label>
+                        <select id="teacherSelect">
+                            <option value="all">Todos os Professores</option>
+                            </select>
                     </div>
                 </div>
             </div>
@@ -82,6 +92,11 @@
             <div id="libraryContent" class="content-section hidden">
                 <h2 class="section-title"><span>🗄️</span> Acervo e Materiais</h2>
                 <div id="libraryContainer"></div>
+            </div>
+
+            <div id="agendaContent" class="content-section hidden">
+                <h2 class="section-title"><span>📅</span> Calendário Anual</h2>
+                <div id="agendaContainer" class="timeline-container"></div>
             </div>
 
         </div>
