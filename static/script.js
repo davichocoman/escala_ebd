@@ -303,8 +303,11 @@ async function loadGeneralOverview() {
     }
 }
 
+// Função para desenhar a tabela do Dashboard (Visão Geral)
 function renderOverviewTable(items, date) {
     const container = document.getElementById('scheduleContainer');
+    
+    // Ordena por nome da classe (A-Z)
     items.sort((a, b) => a.className.localeCompare(b.className));
 
     const html = `
@@ -316,6 +319,7 @@ function renderOverviewTable(items, date) {
             <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">
                 Professores escalados para este domingo:
             </p>
+            
             <div class="table-container shadow-card">
                 <table class="schedule-table overview-table">
                     <thead>
@@ -335,7 +339,16 @@ function renderOverviewTable(items, date) {
                                         <span class="theme-text">${item.theme}</span>
                                     </div>
                                 </td>
-                                <td class="teacher-name teacher-col">${item.teacher}</td>
+                                <td class="teacher-name teacher-col">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>${item.teacher}</span>
+                                        ${item.phone ? `
+                                            <a href="https://wa.me/${item.phone}?text=Olá ${item.teacher}, paz do Senhor! Lembrete da sua aula neste domingo (${item.date})." target="_blank" title="Enviar mensagem" style="text-decoration:none; font-size: 1.1rem;">
+                                                📱
+                                            </a>
+                                        ` : ''}
+                                    </div>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -343,6 +356,7 @@ function renderOverviewTable(items, date) {
             </div>
         </div>
     `;
+    
     container.innerHTML = html;
 }
 
@@ -979,3 +993,4 @@ async function generateWeeklyMessage() {
         btn.innerHTML = originalText;
     }
 }
+
