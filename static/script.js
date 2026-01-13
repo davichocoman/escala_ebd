@@ -188,24 +188,17 @@ function populateTeacherSelect(scheduleItems) {
 }
 
 // --- Funções Auxiliares Genéricas ---
-async function fetchData(endpoint, cacheKeyGlobal) {
-    // Tenta LocalStorage
-    const localCache = localStorage.getItem(cacheKeyGlobal);
-    if (localCache) return JSON.parse(localCache);
-
-    // Busca API
+async function fetchData(endpoint) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/${endpoint}`);
         if (!response.ok) throw new Error('Erro na API');
-        const data = await response.json();
-        // Salva LocalStorage
-        localStorage.setItem(cacheKeyGlobal, JSON.stringify(data));
-        return data;
+        return await response.json();
     } catch (error) {
         console.error(error);
         return null;
     }
 }
+
 
 // --- Lógica de Datas ---
 function getNextSunday() {
@@ -234,7 +227,6 @@ async function loadGeneralOverview() {
     highlightContainer.innerHTML = '';
 
     // 1. Tenta pegar do Cache Local primeiro
-    const cachedOverview = localStorage.getItem('ebd_overview_cache');
     
     if (cachedOverview) {
         const parsed = JSON.parse(cachedOverview);
@@ -580,16 +572,18 @@ function renderScheduleCards(groupedData) {
 // --- API: Lições ---
 async function loadLessonsData() {
     const container = document.getElementById('lessonsContainer');
-    if (lessonsData.length > 0) { renderLessons(); return; }
+
     container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando materiais...</p></div>`;
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/lessons`);
-        if (!response.ok) throw new Error('Falha ao buscar lições');
+        if (!response.ok) throw new Error();
+
         lessonsData = await response.json();
         renderLessons();
+
     } catch (error) {
-        console.error('Erro:', error);
-        container.innerHTML = `<div class="empty-state"><p style="color: red;">Erro ao carregar lições.</p></div>`;
+        container.innerHTML = `<div class="empty-state"><p style="color:red;">Erro ao carregar lições.</p></div>`;
     }
 }
 
@@ -634,15 +628,16 @@ function renderLessons() {
 // ==========================================
 async function loadVideosData() {
     const container = document.getElementById('videosContainer');
-    if (videosData.length === 0) {
-        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando vídeos...</p></div>`;
-        const data = await fetchData('videos', 'ebd_videos_cache');
-        if (data) videosData = data;
-        else {
-            container.innerHTML = `<p class="error">Erro ao carregar vídeos.</p>`;
-            return;
-        }
+
+    container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando vídeos...</p></div>`;
+
+    const data = await fetchData('videos');
+    if (!data) {
+        container.innerHTML = `<p class="error">Erro ao carregar vídeos.</p>`;
+        return;
     }
+
+    videosData = data;
     renderVideos();
 }
 
@@ -726,15 +721,16 @@ function closeVideoModal() {
 // ==========================================
 async function loadLibraryData() {
     const container = document.getElementById('libraryContainer');
-    if (libraryData.length === 0) {
-        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando acervo...</p></div>`;
-        const data = await fetchData('library', 'ebd_library_cache');
-        if (data) libraryData = data;
-        else {
-            container.innerHTML = `<p class="error">Erro ao carregar acervo.</p>`;
-            return;
-        }
+
+    container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando acervo...</p></div>`;
+
+    const data = await fetchData('library');
+    if (!data) {
+        container.innerHTML = `<p class="error">Erro ao carregar acervo.</p>`;
+        return;
     }
+
+    libraryData = data;
     renderLibrary();
 }
 
@@ -832,16 +828,16 @@ function handleSearch(e) {
 // ==========================================
 async function loadAgendaData() {
     const container = document.getElementById('agendaContainer');
-    
-    if (agendaData.length === 0) {
-        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando calendário...</p></div>`;
-        const data = await fetchData('agenda', 'ebd_agenda_cache');
-        if (data) agendaData = data;
-        else {
-            container.innerHTML = `<p class="error">Erro ao carregar agenda.</p>`;
-            return;
-        }
+
+    container.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando agenda...</p></div>`;
+
+    const data = await fetchData('agenda');
+    if (!data) {
+        container.innerHTML = `<p class="error">Erro ao carregar agenda.</p>`;
+        return;
     }
+
+    agendaData = data;
     renderAgenda();
 }
 
@@ -991,6 +987,34 @@ async function generateWeeklyMessage() {
         console.error(error);
         alert("Erro ao gerar mensagem. Tente novamente.");
         btn.innerHTML = originalText;
+    }
+}
+
+let adminClicks = 0;
+document.getElementById('currentYear').addEventListener('click', () => {
+    adminClicks++;
+    if (adminClicks === 7) {
+        adminClearCache();
+        adminClicks = 0;
+    }
+});
+
+async function adminClearCache() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/clear-cache`, {
+            method: 'POST',
+            headers: {
+                'X-Admin-Token': window.__ADMIN_TOKEN__
+            }
+        });
+
+        if (!response.ok) throw new Error();
+
+        alert('Cache do servidor atualizado!');
+        location.reload();
+
+    } catch (e) {
+        alert('Não autorizado ou erro ao limpar cache');
     }
 }
 
