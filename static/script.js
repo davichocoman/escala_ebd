@@ -13,6 +13,16 @@ let lessonsData = [];
 let videosData = [];
 let libraryData = [];
 let agendaData = [];
+let globalThemesMap = {};
+
+function resetAppState() {
+    scheduleData = null;
+    lessonsData = [];
+    videosData = [];
+    libraryData = [];
+    agendaData = [];
+    globalThemesMap = {};
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
@@ -132,19 +142,26 @@ function switchTab(tab) {
 
 function refreshCurrentTab() {
     if (currentTab === 'scale') {
-        if (selectedClass === '' || selectedClass === 'Todas as Classes') loadGeneralOverview();
-        else if (scheduleData) renderSchedule();
-        else loadScheduleData();
-    } else if (currentTab === 'lessons') {
+        if (selectedClass === '' || selectedClass === 'Todas as Classes') {
+            loadGeneralOverview();
+        } else {
+            loadScheduleData();
+        }
+    } 
+    else if (currentTab === 'lessons') {
         loadLessonsData();
-    } else if (currentTab === 'videos') {
+    } 
+    else if (currentTab === 'videos') {
         loadVideosData();
-    } else if (currentTab === 'library') {
+    } 
+    else if (currentTab === 'library') {
         loadLibraryData();
-    } else if (currentTab === 'agenda') {
+    } 
+    else if (currentTab === 'agenda') {
         loadAgendaData();
     }
 }
+
 
 // Função para preencher o dropdown de professores dinamicamente
 function populateTeacherSelect(scheduleItems) {
@@ -223,77 +240,89 @@ function getNextSunday() {
 async function loadGeneralOverview() {
     const scheduleContainer = document.getElementById('scheduleContainer');
     const highlightContainer = document.getElementById('highlightContainer');
-    
-    highlightContainer.innerHTML = '';
 
-    // 1. Tenta pegar do Cache Local primeiro
-    
-    if (cachedOverview) {
-        const parsed = JSON.parse(cachedOverview);
-        const currentTarget = getNextSunday();
-        if (parsed.date === currentTarget) {
-            renderOverviewTable(parsed.items, parsed.date);
-            const updateLabel = document.createElement('div');
-            updateLabel.id = 'updating-indicator';
-            updateLabel.innerHTML = '<small style="color:orange; display:block; text-align:center; margin-top:5px;">Verificando atualizações...</small>';
-            scheduleContainer.prepend(updateLabel);
-        } else {
-            scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da semana...</p></div>`;
-        }
-    } else {
-        scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala da semana...</p></div>`;
-    }
+    if (!scheduleContainer) return;
+
+    // Limpa destaques
+    if (highlightContainer) highlightContainer.innerHTML = '';
+
+    // Loading padrão
+    scheduleContainer.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Carregando escala da semana...</p>
+        </div>
+    `;
 
     try {
         const select = document.getElementById('classSelect');
-        const options = Array.from(select.options)
+        if (!select) {
+            scheduleContainer.innerHTML = `<p class="error">Classes não encontradas.</p>`;
+            return;
+        }
+
+        // Lista de classes válidas
+        const classes = Array.from(select.options)
             .map(opt => opt.value)
-            .filter(val => val !== '' && val !== 'Todas as Classes');
+            .filter(val => val && val !== 'Todas as Classes');
 
         const targetDate = getNextSunday();
-        
-        const promises = options.map(async (className) => {
-            const formData = new FormData();
-            formData.append('classe', className);
-            
+
+        // Busca escala de todas as classes (backend cacheado)
+        const promises = classes.map(async (className) => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/schedule`, { method: 'POST', body: formData });
+                const formData = new FormData();
+                formData.append('classe', className);
+
+                const response = await fetch(`${API_BASE_URL}/api/schedule`, {
+                    method: 'POST',
+                    body: formData
+                });
+
                 if (!response.ok) return null;
+
                 const data = await response.json();
                 const items = convertApiDataToScheduleItems(data);
+
                 const match = items.find(item => item.date === targetDate);
-                if (match) return { ...match, className: className };
+                if (!match) return null;
+
+                return {
+                    ...match,
+                    className
+                };
+
+            } catch (err) {
+                console.error(`Erro ao buscar classe ${className}:`, err);
                 return null;
-            } catch (err) { return null; }
+            }
         });
 
         const results = await Promise.all(promises);
         const validResults = results.filter(item => item !== null);
 
-        const indicator = document.getElementById('updating-indicator');
-        if (indicator) indicator.remove();
-
+        // Renderização final
         if (validResults.length === 0) {
             scheduleContainer.innerHTML = `
                 <div class="empty-state">
                     <p>Nenhuma aula encontrada para o próximo domingo (${targetDate}).</p>
                 </div>
             `;
-        } else {
-            renderOverviewTable(validResults, targetDate);
-            localStorage.setItem('ebd_overview_cache', JSON.stringify({
-                date: targetDate,
-                items: validResults
-            }));
+            return;
         }
 
+        renderOverviewTable(validResults, targetDate);
+
     } catch (error) {
-        console.error("Erro no overview:", error);
-        if (!cachedOverview) {
-            scheduleContainer.innerHTML = `<p class="error">Erro ao carregar visão geral.</p>`;
-        }
+        console.error('Erro no loadGeneralOverview:', error);
+        scheduleContainer.innerHTML = `
+            <div class="empty-state">
+                <p style="color:red;">Erro ao carregar visão geral da semana.</p>
+            </div>
+        `;
     }
 }
+
 
 // Função para desenhar a tabela do Dashboard (Visão Geral)
 function renderOverviewTable(items, date) {
@@ -356,60 +385,55 @@ function renderOverviewTable(items, date) {
 async function loadScheduleData() {
     const scheduleContainer = document.getElementById('scheduleContainer');
     const highlightContainer = document.getElementById('highlightContainer');
-    
-    const cacheKey = `ebd_schedule_${selectedClass}`;
-    const cachedData = localStorage.getItem(cacheKey);
 
-    highlightContainer.innerHTML = ''; 
-    
-    if (cachedData) {
-        const data = JSON.parse(cachedData);
-        renderDataWithCache(data); 
-        const updateBadge = document.createElement('div');
-        updateBadge.id = 'updating-badge';
-        updateBadge.innerHTML = '<div style="position:fixed; bottom:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:20px; font-size:12px; z-index:999;">Atualizando...</div>';
-        document.body.appendChild(updateBadge);
-    } else {
-        scheduleContainer.innerHTML = `<div class="loading"><div class="spinner"></div><p>Carregando escala...</p></div>`;
-    }
-    
+    if (!scheduleContainer) return;
+
+    // Limpa destaque
+    if (highlightContainer) highlightContainer.innerHTML = '';
+
+    // Loading padrão
+    scheduleContainer.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Carregando escala...</p>
+        </div>
+    `;
+
     try {
         const formData = new FormData();
         formData.append('classe', selectedClass);
+
         const response = await fetch(`${API_BASE_URL}/api/schedule`, {
             method: 'POST',
-            body: formData,
+            body: formData
         });
-        if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
-        
-        scheduleData = await response.json(); 
-        const badge = document.getElementById('updating-badge');
-        if (badge) badge.remove();
 
-        localStorage.setItem(cacheKey, JSON.stringify(scheduleData));
-        const allItems = convertApiDataToScheduleItems(scheduleData);
-        populateTeacherSelect(allItems);
-        renderDataWithCache(scheduleData);
-        
-    } catch (error) {
-        console.error('Erro:', error);
-        if (!cachedData) {
-            scheduleContainer.innerHTML = `<div class="empty-state"><p>Erro ao carregar escala.</p></div>`;
+        if (!response.ok) {
+            throw new Error(`Erro na API: ${response.status}`);
         }
+
+        // Dados brutos da API
+        scheduleData = await response.json();
+
+        // Converte para itens utilizáveis
+        const allItems = convertApiDataToScheduleItems(scheduleData);
+
+        // Atualiza filtro de professores
+        populateTeacherSelect(allItems);
+
+        // Renderiza
+        renderSchedule();
+
+    } catch (error) {
+        console.error('Erro ao carregar escala:', error);
+        scheduleContainer.innerHTML = `
+            <div class="empty-state">
+                <p style="color:red;">Erro ao carregar escala.</p>
+            </div>
+        `;
     }
 }
 
-function renderDataWithCache(data) {
-    scheduleData = data; 
-    globalThemesMap = {}; 
-    if (data.temas) {
-        data.temas.forEach(t => {
-            const trimesterNum = String(t.TRIMESTRE).split(' ')[0];
-            globalThemesMap[`${trimesterNum}-${t.CLASSE}`] = t.TEMA;
-        });
-    }
-    renderSchedule(); 
-}
 
 function renderSchedule() {
     const container = document.getElementById('scheduleContainer');
@@ -1000,21 +1024,31 @@ document.getElementById('currentYear').addEventListener('click', () => {
 });
 
 async function adminClearCache() {
+    const token = prompt('Token admin:');
+    if (!token) return;
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/clear-cache`, {
             method: 'POST',
             headers: {
-                'X-Admin-Token': window.__ADMIN_TOKEN__
+                'X-Admin-Token': token
             }
         });
 
         if (!response.ok) throw new Error();
 
-        alert('Cache do servidor atualizado!');
-        location.reload();
+        const result = await response.json();
+
+        alert(`Cache do servidor atualizado!\n(${result.refreshed_at})`);
+
+        // 🔁 RESET + REFRESH AUTOMÁTICO
+        resetAppState();
+        refreshCurrentTab();
 
     } catch (e) {
         alert('Não autorizado ou erro ao limpar cache');
+        console.error(e);
     }
 }
+
 
