@@ -1031,7 +1031,7 @@ async function adminClearCache() {
         const response = await fetch(`${API_BASE_URL}/api/admin/clear-cache`, {
             method: 'POST',
             headers: {
-                'X-Admin-Token': token
+                'x_admin_token': token
             }
         });
 
@@ -1050,5 +1050,6 @@ async function adminClearCache() {
         console.error(e);
     }
 }
+
 
 
