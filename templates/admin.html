@@ -121,16 +121,29 @@
 
         <div id="dashboardScreen" class="admin-card hidden">
             <h2 style="color: #7c2d12; margin-bottom: 2rem;">Gerenciamento</h2>
+
+            <a href="https://docs.google.com/spreadsheets/d/1akejEQ4NYX3R19XVX1pCUWmGqJhNzQUmaaY5J-_CoHk/edit?usp=sharing" target="_blank" style="display:block; margin-top:10px; color:#7c2d12; font-weight:bold; text-decoration:none;">
+                📄 Abrir Planilha no Google Sheets
+            </a>
             
-            <div style="margin-bottom: 2rem;">
-                <p style="color: #4b5563; margin-bottom: 1rem;">O servidor armazena os dados da planilha por 1 hora para ficar rápido. Clique abaixo para forçar uma atualização agora.</p>
-                
+            <div style="margin-bottom: 2rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 2rem;">
+                <p style="color: #4b5563; margin-bottom: 1rem;">O servidor armazena dados por 1 hora. Force a atualização abaixo:</p>
                 <button onclick="clearServerCache()" class="btn-danger">
                     <span>🗑️</span> Limpar Cache & Atualizar
                 </button>
             </div>
 
+            <div style="margin-bottom: 2rem;">
+                <h3 style="color: #374151; font-size: 1.1rem; margin-bottom: 1rem;">Diagnóstico do Sistema</h3>
+                <button onclick="checkSystemHealth()" class="btn-primary" style="background-color: #0d9488;">
+                    <span>🩺</span> Testar Conexão Google
+                </button>
+                <div id="healthMsg" class="status-msg"></div>
+            </div>
+            
             <div id="dashMsg" class="status-msg"></div>
+
+            
 
             <span onclick="performLogout()" class="logout-link">Sair do sistema</span>
         </div>
@@ -229,6 +242,37 @@
                 document.getElementById('dashboardScreen').classList.remove('hidden');
             }
         });
+        // --- Lógica de Diagnóstico ---
+        async function checkSystemHealth() {
+            const token = sessionStorage.getItem('ebd_admin_token');
+            const msg = document.getElementById('healthMsg');
+            
+            if (!token) { performLogout(); return; }
+
+            msg.textContent = 'Testando conexão com Google Sheets...';
+            msg.className = 'status-msg';
+            msg.style.display = 'block';
+            msg.style.backgroundColor = '#e0f2fe';
+            msg.style.color = '#0369a1';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/health-check`, {
+                    method: 'GET',
+                    headers: { 'x-admin-token': token }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMsg(msg, `✅ Sistema Operacional! (Google respondeu em ${data.ping_ms}ms)`, 'success');
+                } else {
+                    showMsg(msg, `❌ Falha na Conexão: ${data.detalhe}`, 'error');
+                }
+
+            } catch (error) {
+                showMsg(msg, '❌ Erro ao contatar servidor da API.', 'error');
+            }
+        }
     </script>
 </body>
 </html>
