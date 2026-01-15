@@ -5,6 +5,10 @@
       "destination": "/static/$1"
     },
     {
+      "source": "/admin.html",
+      "destination": "/templates/admin.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/templates/index.html"
     }
