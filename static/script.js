@@ -1015,41 +1015,33 @@ async function generateWeeklyMessage() {
 }
 
 let adminClicks = 0;
-document.getElementById('currentYear').addEventListener('click', () => {
-    adminClicks++;
-    if (adminClicks === 7) {
-        adminClearCache();
-        adminClicks = 0;
-    }
-});
+const yearElement = document.getElementById('currentYear');
 
-async function adminClearCache() {
-    const token = prompt('Token admin:');
-    if (!token) return;
+if (yearElement) {
+    // Muda o cursor para pointer para dar uma dica visual sutil (opcional)
+    yearElement.style.cursor = 'pointer'; 
+    yearElement.title = "Admin?"; // Tooltip sutil
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/clear-cache`, {
-            method: 'POST',
-            headers: {
-                'x_admin_token': token
-            }
-        });
+    yearElement.addEventListener('click', (e) => {
+        // Previne seleção de texto ao clicar rápido
+        e.preventDefault(); 
+        
+        adminClicks++;
+        
+        console.log(`Toque: ${adminClicks}`); // Só pra você testar no console
 
-        if (!response.ok) throw new Error();
-
-        const result = await response.json();
-
-        alert(`Cache do servidor atualizado!\n(${result.refreshed_at})`);
-
-        // 🔁 RESET + REFRESH AUTOMÁTICO
-        resetAppState();
-        refreshCurrentTab();
-
-    } catch (e) {
-        alert('Não autorizado ou erro ao limpar cache');
-        console.error(e);
-    }
+        if (adminClicks === 7) {
+            // Redireciona para a página de admin
+            window.location.href = 'admin.html';
+            adminClicks = 0; // Reseta o contador
+        }
+        
+        // Opcional: Resetar contador se parar de clicar por 2 segundos
+        clearTimeout(window.clickResetTimer);
+        window.clickResetTimer = setTimeout(() => {
+            adminClicks = 0;
+        }, 2000);
+    });
 }
-
 
 
