@@ -632,7 +632,7 @@ function renderLessons() {
                     ${lessons.map(lesson => `
                         <div class="lesson-card" onclick="window.open('${lesson.driveLink}', '_blank')">
                             <div class="lesson-image">
-                                ${lesson.coverImage ? `<img src="${lesson.coverImage}" alt="${lesson.title}">` : '<div style="color:#ccc;">Sem Imagem</div>'}
+                                ${lesson.coverImage ? `<img src="${lesson.coverImage}" alt="${lesson.title}" loading="lazy">` : '<div style="color:#ccc;">Sem Imagem</div>'}
                                 <div class="lesson-overlay"><span style="color:white; font-weight:bold;">Abrir Material</span></div>
                             </div>
                             <div class="lesson-content">
@@ -695,7 +695,7 @@ function renderVideos() {
                 return `
                 <div class="lesson-card" onclick="openVideoModal('${videoId}')">
                     <div class="lesson-image">
-                        ${thumbUrl ? `<img src="${thumbUrl}" alt="${video.title}" style="object-fit:cover;">` : '<div style="color:#ccc;">Sem Capa</div>'}
+                        ${thumbUrl ? `<img src="${thumbUrl}" alt="${video.title}" style="object-fit:cover;" loading="lazy">` : '<div style="color:#ccc;">Sem Capa</div>'}
                         <div class="lesson-overlay">
                             <span style="font-size:3rem; color:white; opacity:0.8;">▶</span>
                         </div>
@@ -770,7 +770,7 @@ function renderLibrary() {
             ${filtered.map(item => `
                 <div class="lesson-card" onclick="window.open('${item.link}', '_blank')">
                     <div class="lesson-image" style="background-color: #f3f4f6;">
-                        ${item.cover ? `<img src="${item.cover}" alt="${item.title}">` : '<span style="font-size:2rem;">📄</span>'}
+                        ${item.cover ? `<img src="${item.cover}" alt="${item.title}" loading="lazy">` : '<span style="font-size:2rem;">📄</span>'}
                         <div class="lesson-overlay">
                             <span style="color:white; font-weight:bold;">Acessar</span>
                         </div>
@@ -1002,7 +1002,8 @@ async function generateWeeklyMessage() {
 
         // Copia para a área de transferência
         navigator.clipboard.writeText(message).then(() => {
-            alert("Texto copiado! Agora abra o grupo do WhatsApp e cole.");
+            showToast("Texto copiado! Cole no WhatsApp."); // <-- USE ISSO
+            
             btn.innerHTML = 'Copiado! ✅';
             setTimeout(() => btn.innerHTML = originalText, 2000);
         });
@@ -1042,6 +1043,29 @@ if (yearElement) {
             adminClicks = 0;
         }, 2000);
     });
+}
+
+// --- Função de Toast (Notificação) ---
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    
+    // Se não existir (caso esqueça de por no HTML), cria na hora
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    // Define ícone base
+    const icon = type === 'success' ? '✅' : '⚠️';
+    
+    container.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    container.classList.add('show');
+
+    // Remove depois de 3 segundos
+    setTimeout(() => {
+        container.classList.remove('show');
+    }, 3000);
 }
 
 
