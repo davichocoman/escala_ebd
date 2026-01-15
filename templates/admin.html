@@ -3,134 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - EBD</title>
-    <link rel="stylesheet" href="static/styles.css">
+    <title>Painel Admin - EBD</title>
+    <link rel="stylesheet" href="../static/styles.css">
     <style>
-        .admin-container {
-            max-width: 400px;
-            margin: 4rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
+        body {
+            background-color: #f3f4f6; /* Fundo cinza suave */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
+        
+        .admin-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .admin-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .hidden { display: none !important; }
+
         .admin-input {
             width: 100%;
-            padding: 0.75rem;
-            margin-bottom: 1rem;
+            padding: 0.875rem;
+            margin-bottom: 1.5rem;
             border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .admin-input:focus { border-color: #7c2d12; box-shadow: 0 0 0 3px rgba(124, 45, 18, 0.1); }
+
+        .btn-primary {
+            background-color: #7c2d12;
+            color: white;
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
             font-size: 1rem;
         }
-        .status-box {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            display: none;
-            font-weight: 500;
-        }
-        .status-success { background: #dcfce7; color: #166534; }
-        .status-error { background: #fee2e2; color: #991b1b; }
-        
+        .btn-primary:hover { background-color: #5c1a1a; }
+
         .btn-danger {
             background-color: #dc2626;
             color: white;
             width: 100%;
-            padding: 0.75rem;
+            padding: 1rem;
             border: none;
-            border-radius: 0.375rem;
-            cursor: pointer;
+            border-radius: 0.5rem;
             font-weight: bold;
-            font-size: 1rem;
-            transition: background 0.2s;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
         }
-        .btn-danger:hover { background-color: #b91c1c; }
+        .btn-danger:hover { background-color: #b91c1c; transform: translateY(-2px); }
+
+        .status-msg {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .logout-link {
+            display: block;
+            margin-top: 1.5rem;
+            color: #6b7280;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
-body {
-    background-color: #f3f4f6; /* Fundo cinza suave */
-}
 <body>
 
-    <header class="header">
+    <header class="header" style="padding: 1rem 0;">
         <div class="container">
-            <div class="header-content">
-                <h1>Painel Admin</h1>
-                <p>Gerenciamento do Sistema EBD</p>
+            <div class="header-content" style="margin:0;">
+                <h1 style="font-size: 1.5rem;">Painel Administrativo</h1>
             </div>
         </div>
     </header>
 
-    <div class="container">
-        <div class="admin-container">
-            <h2 style="color: #7c2d12; margin-bottom: 1.5rem;">Autenticação</h2>
+    <div class="admin-wrapper">
+        
+        <div id="loginScreen" class="admin-card">
+            <h2 style="color: #374151; margin-bottom: 0.5rem;">Acesso Restrito</h2>
+            <p style="color: #6b7280; margin-bottom: 2rem;">Digite o token de administrador</p>
             
-            <input type="password" id="adminToken" class="admin-input" placeholder="Digite o Token de Admin">
+            <input type="password" id="tokenInput" class="admin-input" placeholder="Token..." onkeypress="handleEnter(event)">
             
-            <button onclick="clearCache()" class="btn-danger">
-                🗑️ Limpar Cache do Servidor
-            </button>
-
-            <div id="statusBox" class="status-box"></div>
-            
-            <p style="margin-top: 1.5rem; font-size: 0.875rem;">
-                <a href="index.html" style="color: #6b7280; text-decoration: none;">← Voltar para o Site</a>
-            </p>
+            <button onclick="performLogin()" class="btn-primary">Entrar</button>
+            <div id="loginMsg" class="status-msg"></div>
         </div>
+
+        <div id="dashboardScreen" class="admin-card hidden">
+            <h2 style="color: #7c2d12; margin-bottom: 2rem;">Gerenciamento</h2>
+            
+            <div style="margin-bottom: 2rem;">
+                <p style="color: #4b5563; margin-bottom: 1rem;">O servidor armazena os dados da planilha por 1 hora para ficar rápido. Clique abaixo para forçar uma atualização agora.</p>
+                
+                <button onclick="clearServerCache()" class="btn-danger">
+                    <span>🗑️</span> Limpar Cache & Atualizar
+                </button>
+            </div>
+
+            <div id="dashMsg" class="status-msg"></div>
+
+            <span onclick="performLogout()" class="logout-link">Sair do sistema</span>
+        </div>
+
     </div>
 
     <script>
-        // URL da API (Ajuste conforme necessário: Local ou Render)
-        // const API_BASE_URL = 'http://127.0.0.1:8000'; 
-        const API_BASE_URL = 'https://api-escala.onrender.com';
+        // CONFIGURAÇÃO
+        // const API_BASE_URL = 'http://127.0.0.1:8000'; // Local
+        const API_BASE_URL = 'https://api-escala.onrender.com'; // Produção
 
-        async function clearCache() {
-            const tokenInput = document.getElementById('adminToken');
-            const statusBox = document.getElementById('statusBox');
-            const token = tokenInput.value.trim();
+        // --- Lógica de Login ---
+        function performLogin() {
+            const token = document.getElementById('tokenInput').value.trim();
+            const msg = document.getElementById('loginMsg');
 
             if (!token) {
-                showStatus('Por favor, digite o token.', 'error');
+                showMsg(msg, 'Digite o token.', 'error');
                 return;
             }
 
-            // Feedback visual de carregamento
-            statusBox.style.display = 'block';
-            statusBox.className = 'status-box';
-            statusBox.style.backgroundColor = '#e5e7eb';
-            statusBox.style.color = '#374151';
-            statusBox.textContent = 'Processando...';
+            // Salva na "memória" temporária do navegador
+            sessionStorage.setItem('ebd_admin_token', token);
+            
+            // Troca de tela
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+        }
+
+        function performLogout() {
+            sessionStorage.removeItem('ebd_admin_token');
+            location.reload();
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') performLogin();
+        }
+
+        // --- Lógica de Limpar Cache ---
+        async function clearServerCache() {
+            const token = sessionStorage.getItem('ebd_admin_token');
+            const msg = document.getElementById('dashMsg');
+            const btn = document.querySelector('.btn-danger');
+
+            if (!token) {
+                performLogout();
+                return;
+            }
+
+            // Feedback visual
+            btn.innerHTML = 'Processando... ⏳';
+            btn.disabled = true;
+            msg.style.display = 'none';
 
             try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/clear-cache`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-admin-token': token // USANDO HÍFEN AGORA!
+                        'x-admin-token': token // HÍFEN É IMPORTANTE!
                     }
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    showStatus('✅ Sucesso! ' + data.message, 'success');
+                    showMsg(msg, '✅ Sucesso! Cache limpo.', 'success');
+                    // Limpa caches locais também para garantir sincronia
+                    localStorage.clear(); 
                 } else {
-                    showStatus('❌ Erro: ' + (data.detail || 'Falha ao limpar cache'), 'error');
+                    showMsg(msg, '❌ Erro: ' + (data.detail || 'Token inválido'), 'error');
+                    if (response.status === 403) {
+                        setTimeout(performLogout, 2000); // Desloga se a senha estiver errada
+                    }
                 }
 
             } catch (error) {
+                showMsg(msg, '❌ Erro de conexão com o servidor.', 'error');
                 console.error(error);
-                showStatus('❌ Erro de conexão com o servidor.', 'error');
+            } finally {
+                btn.innerHTML = '<span>🗑️</span> Limpar Cache & Atualizar';
+                btn.disabled = false;
             }
         }
 
-        function showStatus(message, type) {
-            const box = document.getElementById('statusBox');
-            box.textContent = message;
-            box.style.display = 'block';
-            box.className = 'status-box ' + (type === 'success' ? 'status-success' : 'status-error');
+        function showMsg(element, text, type) {
+            element.textContent = text;
+            element.className = 'status-msg ' + type;
+            element.style.display = 'block';
         }
+
+        // Verifica se já estava logado ao abrir a página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('ebd_admin_token')) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardScreen').classList.remove('hidden');
+            }
+        });
     </script>
 </body>
 </html>
