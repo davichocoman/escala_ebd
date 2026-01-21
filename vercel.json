@@ -9,14 +9,12 @@
       "destination": "/templates/admin.html"
     },
     {
-      "source": "/(.*)",
-      "destination": "/templates/index.html"
-    },
-    {
       "source": "/patrimonio",
       "destination": "/templates/painel.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/templates/index.html"
     }
   ]
 }
-
-
