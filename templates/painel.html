@@ -69,17 +69,25 @@
             flex: 1;
             min-width: 150px;
         }
+
+        /* Correção do Rodapé para ser Azul e ignorar o CSS da EBD */
+        .footer-azul {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
+            margin-top: auto;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
     </style>
 </head>
-<body>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
 
     <header class="header" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">
         <div class="container">
             <div class="header-content">
                 <h1>Painel da Igreja</h1>
                 <p>Gestão de Eventos e Reservas</p>
-                <a href="index.html" style="color:#cbd5e1; font-size:0.9rem;">← Ir para EBD</a>
-            </div>
+                </div>
             
             <nav class="nav">
                 <div class="nav-container">
@@ -91,7 +99,7 @@
         </div>
     </header>
 
-    <main class="main">
+    <main class="main" style="flex: 1;">
         <div class="container">
 
             <div id="loading" class="loading">
@@ -156,7 +164,8 @@
 
         </div>
     </main>
-    <footer class="footer" ...>
+
+    <footer class="footer-azul">
         <div class="container">
             <p>© 2026 Patrimônio - AD Rodovia A</p>
             <a href="admin.html" style="color: rgba(255,255,255,0.3); font-size: 0.8rem; text-decoration: none;">Admin</a>
@@ -180,7 +189,7 @@
                 mudarAba('Visao'); // Inicia na Visão Geral
             } catch (e) {
                 console.error(e);
-                alert("Erro ao carregar dados.");
+                // Não alertar erro se for só questão de dados vazios no inicio
             }
         });
 
@@ -226,11 +235,11 @@
             // Renderiza
             document.getElementById('visaoAgendaContainer').innerHTML = agendaSemana.length ? 
                 agendaSemana.map(item => cardTemplate(item, 'oficial')).join('') : 
-                '<p class="empty-state">Nenhum evento oficial esta semana.</p>';
+                '<p class="empty-state" style="padding: 1rem; color: #666; font-style: italic;">Nenhum evento oficial esta semana.</p>';
 
             document.getElementById('visaoReservasContainer').innerHTML = reservasSemana.length ? 
                 reservasSemana.map(item => cardTemplate(item, 'reserva')).join('') : 
-                '<p class="empty-state">Nenhuma reserva agendada esta semana.</p>';
+                '<p class="empty-state" style="padding: 1rem; color: #666; font-style: italic;">Nenhuma reserva agendada esta semana.</p>';
         }
 
         // --- LÓGICA DE FILTRAGEM E RENDERIZAÇÃO GENÉRICA ---
@@ -262,7 +271,7 @@
             
             container.innerHTML = filtrados.length ? 
                 filtrados.map(item => cardTemplate(item, 'oficial')).join('') : 
-                '<div class="empty-state">Nada encontrado.</div>';
+                '<div class="empty-state" style="text-align:center; padding:2rem; color:#666;">Nenhum evento encontrado com estes filtros.</div>';
         }
 
         function renderizarReservas() {
@@ -271,7 +280,7 @@
             
             container.innerHTML = filtrados.length ? 
                 filtrados.map(item => cardTemplate(item, 'reserva')).join('') : 
-                '<div class="empty-state">Nada encontrado.</div>';
+                '<div class="empty-state" style="text-align:center; padding:2rem; color:#666;">Nenhuma reserva encontrada com estes filtros.</div>';
         }
 
         // --- TEMPLATES E UTILITÁRIOS ---
@@ -297,6 +306,9 @@
 
         function popularFiltroResponsavel(lista, idSelect) {
             const select = document.getElementById(idSelect);
+            // Limpa opções antigas exceto a primeira
+            select.innerHTML = '<option value="todos">Todos os Responsáveis</option>';
+            
             const unicos = [...new Set(lista.map(i => i.responsavel).filter(Boolean))].sort();
             unicos.forEach(nome => {
                 const opt = document.createElement('option');
