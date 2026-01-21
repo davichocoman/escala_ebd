@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da Igreja - AD Rodovia A</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <style>
+        /* Estilos Específicos do Painel */
+        .dashboard-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        .section-header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: #111827;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Cards */
+        .event-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #ccc;
+            margin-bottom: 0.8rem;
+        }
+        .card-oficial { border-left-color: #dc2626; background: #fef2f2; } /* Vermelho */
+        .card-reserva { border-left-color: #2563eb; background: #eff6ff; } /* Azul */
+
+        .card-meta {
+            font-size: 0.85rem;
+            color: #6b7280;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .bg-conf { background: #dcfce7; color: #166534; }
+        
+        /* Filtros */
+        .filter-bar {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .filter-select {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            flex: 1;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">
+        <div class="container">
+            <div class="header-content">
+                <h1>Painel da Igreja</h1>
+                <p>Gestão de Eventos e Reservas</p>
+                <a href="index.html" style="color:#cbd5e1; font-size:0.9rem;">← Ir para EBD</a>
+            </div>
+            
+            <nav class="nav">
+                <div class="nav-container">
+                    <button id="tabVisao" class="nav-button active" onclick="mudarAba('Visao')">Visão Geral</button>
+                    <button id="tabAgenda" class="nav-button" onclick="mudarAba('Agenda')">Agenda Oficial</button>
+                    <button id="tabReservas" class="nav-button" onclick="mudarAba('Reservas')">Reservas</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div><p>Carregando dados...</p>
+            </div>
+
+            <div id="contentVisao" class="hidden">
+                <div class="filters-card">
+                    <h3 style="text-align: center; color: #374151;">📅 Esta Semana</h3>
+                    <p style="text-align: center; font-size: 0.9rem; color: #6b7280;" id="periodoSemana"></p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div>
+                        <div class="section-header">
+                            <span>🔴</span> Eventos Oficiais
+                        </div>
+                        <div id="visaoAgendaContainer"></div>
+                    </div>
+                    
+                    <div>
+                        <div class="section-header">
+                            <span>🔵</span> Agendamentos / Reservas
+                        </div>
+                        <div id="visaoReservasContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contentAgenda" class="hidden">
+                <div class="filter-bar">
+                    <input type="text" id="searchAgenda" placeholder="Pesquisar evento..." class="filter-select" onkeyup="renderizarAgenda()">
+                    <select id="filtroMesAgenda" class="filter-select" onchange="renderizarAgenda()">
+                        <option value="todos">Todos os Meses</option>
+                        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                        <option value="3">Março</option><option value="4">Abril</option>
+                        <option value="5">Maio</option><option value="6">Junho</option>
+                        <option value="7">Julho</option><option value="8">Agosto</option>
+                        <option value="9">Setembro</option><option value="10">Outubro</option>
+                        <option value="11">Novembro</option><option value="12">Dezembro</option>
+                    </select>
+                    <select id="filtroRespAgenda" class="filter-select" onchange="renderizarAgenda()">
+                        <option value="todos">Todos os Responsáveis</option>
+                    </select>
+                </div>
+                <div id="listaAgendaAnual"></div>
+            </div>
+
+            <div id="contentReservas" class="hidden">
+                <div class="filter-bar">
+                    <input type="text" id="searchReservas" placeholder="Pesquisar reserva..." class="filter-select" onkeyup="renderizarReservas()">
+                    <select id="filtroMesReservas" class="filter-select" onchange="renderizarReservas()">
+                        <option value="todos">Todos os Meses</option>
+                        <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                    </select>
+                    <select id="filtroRespReservas" class="filter-select" onchange="renderizarReservas()">
+                        <option value="todos">Todos os Responsáveis</option>
+                    </select>
+                </div>
+                <div id="listaReservasAnual"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'https://api-escala.onrender.com/api/patrimonio/dados';
+        let dadosGlobais = { agenda: [], reservas: [] };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch(API_URL);
+                dadosGlobais = await res.json();
+                
+                // Popula filtros de responsáveis
+                popularFiltroResponsavel(dadosGlobais.agenda, 'filtroRespAgenda');
+                popularFiltroResponsavel(dadosGlobais.reservas, 'filtroRespReservas');
+
+                document.getElementById('loading').classList.add('hidden');
+                mudarAba('Visao'); // Inicia na Visão Geral
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao carregar dados.");
+            }
+        });
+
+        function mudarAba(aba) {
+            // Esconde tudo
+            ['Visao', 'Agenda', 'Reservas'].forEach(n => {
+                document.getElementById('content'+n).classList.add('hidden');
+                document.getElementById('tab'+n).classList.remove('active');
+            });
+
+            // Mostra atual
+            document.getElementById('content'+aba).classList.remove('hidden');
+            document.getElementById('tab'+aba).classList.add('active');
+
+            if(aba === 'Visao') renderizarVisaoGeral();
+            if(aba === 'Agenda') renderizarAgenda();
+            if(aba === 'Reservas') renderizarReservas();
+        }
+
+        // --- LÓGICA DA VISÃO GERAL (SEMANA) ---
+        function renderizarVisaoGeral() {
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            
+            // Calcula próximo Domingo (limite da semana)
+            const proximoDomingo = new Date(hoje);
+            proximoDomingo.setDate(hoje.getDate() + (7 - hoje.getDay()));
+
+            document.getElementById('periodoSemana').innerText = 
+                `De ${formatDateBr(hoje)} até ${formatDateBr(proximoDomingo)}`;
+
+            // Filtra dados da semana
+            const agendaSemana = dadosGlobais.agenda.filter(item => {
+                const d = parseDate(item.data);
+                return d >= hoje && d <= proximoDomingo;
+            }).sort((a,b) => parseDate(a.data) - parseDate(b.data));
+
+            const reservasSemana = dadosGlobais.reservas.filter(item => {
+                const d = parseDate(item.data);
+                return d >= hoje && d <= proximoDomingo;
+            }).sort((a,b) => parseDate(a.data) - parseDate(b.data));
+
+            // Renderiza
+            document.getElementById('visaoAgendaContainer').innerHTML = agendaSemana.length ? 
+                agendaSemana.map(item => cardTemplate(item, 'oficial')).join('') : 
+                '<p class="empty-state">Nenhum evento oficial esta semana.</p>';
+
+            document.getElementById('visaoReservasContainer').innerHTML = reservasSemana.length ? 
+                reservasSemana.map(item => cardTemplate(item, 'reserva')).join('') : 
+                '<p class="empty-state">Nenhuma reserva agendada esta semana.</p>';
+        }
+
+        // --- LÓGICA DE FILTRAGEM E RENDERIZAÇÃO GENÉRICA ---
+        function filtrarDados(lista, idSearch, idMes, idResp) {
+            const termo = document.getElementById(idSearch).value.toLowerCase();
+            const mes = document.getElementById(idMes).value;
+            const resp = document.getElementById(idResp).value;
+
+            return lista.filter(item => {
+                const d = parseDate(item.data);
+                
+                // Filtro Texto
+                const matchTexto = item.evento.toLowerCase().includes(termo) || 
+                                   item.local.toLowerCase().includes(termo);
+                
+                // Filtro Mês
+                const matchMes = mes === 'todos' || (d.getMonth() + 1) == mes;
+
+                // Filtro Responsável
+                const matchResp = resp === 'todos' || item.responsavel === resp;
+
+                return matchTexto && matchMes && matchResp;
+            }).sort((a,b) => parseDate(a.data) - parseDate(b.data));
+        }
+
+        function renderizarAgenda() {
+            const filtrados = filtrarDados(dadosGlobais.agenda, 'searchAgenda', 'filtroMesAgenda', 'filtroRespAgenda');
+            const container = document.getElementById('listaAgendaAnual');
+            
+            container.innerHTML = filtrados.length ? 
+                filtrados.map(item => cardTemplate(item, 'oficial')).join('') : 
+                '<div class="empty-state">Nada encontrado.</div>';
+        }
+
+        function renderizarReservas() {
+            const filtrados = filtrarDados(dadosGlobais.reservas, 'searchReservas', 'filtroMesReservas', 'filtroRespReservas');
+            const container = document.getElementById('listaReservasAnual');
+            
+            container.innerHTML = filtrados.length ? 
+                filtrados.map(item => cardTemplate(item, 'reserva')).join('') : 
+                '<div class="empty-state">Nada encontrado.</div>';
+        }
+
+        // --- TEMPLATES E UTILITÁRIOS ---
+        function cardTemplate(item, tipo) {
+            const cssClass = tipo === 'oficial' ? 'card-oficial' : 'card-reserva';
+            const extraInfo = tipo === 'reserva' ? 
+                `🕒 ${item.inicio} às ${item.fim} <span class="badge-status bg-conf">${item.status}</span>` : 
+                `📌 ${item.obs || 'Evento Oficial'}`;
+
+            return `
+            <div class="event-card ${cssClass}">
+                <div style="font-weight:bold; font-size:1.05rem; color:#1f2937;">${item.evento}</div>
+                <div class="card-meta">
+                    <span>📅 ${item.data}</span>
+                    <span>📍 ${item.local}</span>
+                </div>
+                <div class="card-meta" style="margin-top:8px; border-top:1px solid rgba(0,0,0,0.05); padding-top:5px;">
+                    <span>👤 ${item.responsavel}</span>
+                    <span>${extraInfo}</span>
+                </div>
+            </div>`;
+        }
+
+        function popularFiltroResponsavel(lista, idSelect) {
+            const select = document.getElementById(idSelect);
+            const unicos = [...new Set(lista.map(i => i.responsavel).filter(Boolean))].sort();
+            unicos.forEach(nome => {
+                const opt = document.createElement('option');
+                opt.value = nome;
+                opt.innerText = nome;
+                select.appendChild(opt);
+            });
+        }
+
+        function parseDate(dateStr) {
+            if(!dateStr) return new Date(0);
+            const parts = dateStr.split('/');
+            return new Date(parts[2], parts[1]-1, parts[0]);
+        }
+
+        function formatDateBr(date) {
+            return date.toLocaleDateString('pt-BR');
+        }
+    </script>
+</body>
+</html>
