@@ -11,6 +11,11 @@
     {
       "source": "/(.*)",
       "destination": "/templates/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/templates/painel.html"
     }
   ]
 }
+
