@@ -13,9 +13,10 @@
       "destination": "/templates/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/patrimonio",
       "destination": "/templates/painel.html"
     }
   ]
 }
+
 
