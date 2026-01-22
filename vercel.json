@@ -1,36 +1,16 @@
 {
   "rewrites": [
-    {
-      "source": "/static/(.*)",
-      "destination": "/static/$1"
-    },
-    {
-      "source": "/admin.html",
-      "destination": "/templates/admin.html"
-    },
-    {
-      "source": "/login",
-      "destination": "/templates/login.html"
-    },
-    {
-      "source": "/login.html",
-      "destination": "/templates/login.html"
-    },
-    {
-      "source": "/portal",
-      "destination": "/templates/portal.html"
-    },
-    {
-      "source": "/portal.html",
-      "destination": "/templates/portal.html"
-    },
-    {
-      "source": "/patrimonio",
-      "destination": "/templates/painel.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/templates/index.html"
-    }
+    { "source": "/static/(.*)", "destination": "/static/$1" },
+    { "source": "/admin.html", "destination": "/templates/admin.html" },
+    { "source": "/login", "destination": "/templates/login.html" },
+    
+    { "source": "/membro", "destination": "/templates/painel-membro.html" },
+    { "source": "/pastor", "destination": "/templates/painel-pastor.html" },
+    { "source": "/secretaria", "destination": "/templates/painel-secretaria.html" },
+    
+    { "source": "/agenda", "destination": "/templates/agenda.html" },
+    { "source": "/reservas", "destination": "/templates/reservas.html" },
+    
+    { "source": "/(.*)", "destination": "/templates/index.html" }
   ]
 }
