@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - AD Rodovia A</title>
+    <link rel="stylesheet" href="../static/portal.css">
+    <style>
+        .reserva-card { border-left: 5px solid #22c55e; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">🔑 Reservas de Salas</div>
+        <a href="/secretaria" class="btn btn-back" style="text-decoration:none;">⬅ Voltar</a>
+    </div>
+
+    <div class="container">
+        <div id="listaReservas">
+            <p style="text-align:center; padding:2rem;">Carregando reservas...</p>
+        </div>
+    </div>
+
+    <script>
+        async function carregar() {
+            try {
+                const res = await fetch('https://api-escala.onrender.com/api/patrimonio/dados');
+                const dados = await res.json();
+                const reservas = dados.reservas || [];
+                
+                const container = document.getElementById('listaReservas');
+                
+                if(reservas.length === 0) {
+                    container.innerHTML = '<div class="card"><p>Nenhuma reserva agendada.</p></div>';
+                    return;
+                }
+
+                reservas.sort((a,b) => parseData(a.data) - parseData(b.data));
+
+                container.innerHTML = reservas.map(r => `
+                    <div class="card reserva-card">
+                        <div style="font-weight:bold; font-size:1.1rem;">${r.evento}</div>
+                        <div style="margin:5px 0;">
+                            📅 ${r.data} &nbsp; 🕒 ${r.inicio || ''} - ${r.fim || ''}
+                        </div>
+                        <div style="color:#666;">📍 ${r.local}</div>
+                        <div style="font-size:0.85rem; color:#888; margin-top:5px;">Solicitado por: ${r.responsavel}</div>
+                    </div>
+                `).join('');
+
+            } catch(e) {
+                document.getElementById('listaReservas').innerHTML = '<p>Erro ao carregar.</p>';
+            }
+        }
+        
+        function parseData(str) {
+            if(!str) return new Date(0);
+            const p = str.split('/');
+            return new Date(p[2], p[1]-1, p[0]);
+        }
+
+        carregar();
+    </script>
+</body>
+</html>
