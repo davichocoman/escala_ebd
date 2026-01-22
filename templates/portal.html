@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Integrado - AD Rodovia A</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <style>
+        /* Layout do Dashboard */
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f1f5f9;
+        }
+
+        /* Sidebar (Menu Lateral) */
+        .sidebar {
+            width: 260px;
+            background-color: #0f172a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: transform 0.3s;
+            z-index: 100;
+        }
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #1e293b;
+        }
+        .user-info {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        .menu-items {
+            flex: 1;
+            padding: 1rem 0;
+            overflow-y: auto;
+        }
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            color: #cbd5e1;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .menu-btn:hover, .menu-btn.active {
+            background-color: #1e293b;
+            color: white;
+            border-left: 4px solid #3b82f6;
+        }
+        .menu-icon { margin-right: 10px; width: 20px; text-align: center; }
+
+        /* Conteúdo Principal */
+        .main-content {
+            flex: 1;
+            margin-left: 260px; /* Largura da Sidebar */
+            padding: 2rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .mobile-header { display: flex; }
+        }
+
+        /* Cards e Painéis */
+        .panel-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Estilo Específico para Agenda do Pastor vs Igreja */
+        .agenda-pastor-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Um embaixo do outro ou lado a lado? Vamos separar bem */
+            gap: 2rem;
+        }
+        .agenda-header-pessoal { background: #eff6ff; color: #1e3a8a; padding: 10px; border-radius: 6px; font-weight: bold; }
+        .agenda-header-igreja { background: #fef2f2; color: #991b1b; padding: 10px; border-radius: 6px; font-weight: bold; }
+
+        .timeline-row {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .timeline-date {
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
+            color: #64748b;
+        }
+        .timeline-day { font-size: 1.5rem; color: #0f172a; line-height: 1; }
+        .timeline-month { font-size: 0.8rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <button onclick="toggleSidebar()" style="position:fixed; top:10px; right:10px; z-index:101; background:#0f172a; color:white; border:none; padding:10px; border-radius:5px; display:none;" id="mobileToggle">☰</button>
+
+    <div class="dashboard-layout">
+        
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2 style="font-size:1.2rem;">AD Rodovia A</h2>
+                <div class="user-info" id="userInfo">Carregando...</div>
+            </div>
+
+            <div class="menu-items" id="menuContainer">
+                </div>
+
+            <div style="padding: 1.5rem;">
+                <button onclick="logout()" style="width:100%; padding:0.5rem; background:#334155; color:white; border:none; border-radius:4px; cursor:pointer;">Sair</button>
+            </div>
+        </nav>
+
+        <main class="main-content" id="mainContainer">
+            <div class="panel-card">
+                <h2>Bem-vindo ao Sistema</h2>
+                <p>Selecione uma opção no menu lateral.</p>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        const API_BASE = 'https://api-escala.onrender.com/api';
+        let usuario = null;
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verifica Login
+            const userStr = sessionStorage.getItem('usuario_sistema');
+            if (!userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            usuario = JSON.parse(userStr);
+            
+            // Preenche Header
+            document.getElementById('userInfo').innerHTML = `
+                <strong>${usuario.NOME.split(' ')[0]}</strong><br>
+                <span style="font-size:0.8rem; text-transform:uppercase;">${usuario.PERFIL}</span>
+            `;
+
+            // Gera Menu
+            gerarMenu(usuario.PERFIL);
+
+            // Carrega tela inicial baseada no perfil
+            if(usuario.PERFIL === 'PASTOR') carregarVisaoPastor();
+            else if (usuario.PERFIL === 'SECRETARIA' || usuario.PERFIL === 'ADMIN') carregarVisaoSecretaria();
+            else carregarVisaoMembro();
+            
+            // Botão mobile
+            if(window.innerWidth <= 768) document.getElementById('mobileToggle').style.display = 'block';
+        });
+
+        function gerarMenu(perfil) {
+            const menu = document.getElementById('menuContainer');
+            let html = '';
+
+            // Itens comuns
+            html += `<button class="menu-btn" onclick="abrirEBD()"><span class="menu-icon">📖</span> Ir para EBD</button>`;
+
+            if (perfil === 'PASTOR') {
+                html += `<button class="menu-btn active" onclick="carregarVisaoPastor()"><span class="menu-icon">📅</span> Minha Agenda</button>`;
+                html += `<button class="menu-btn" onclick="carregarMembrosRead()"><span class="menu-icon">👥</span> Membros</button>`;
+            } 
+            else if (['SECRETARIA', 'ADMIN'].includes(perfil)) {
+                html += `<button class="menu-btn active" onclick="carregarVisaoSecretaria()"><span class="menu-icon">🏠</span> Início</button>`;
+                html += `<button class="menu-btn" onclick="carregarCRUDMembros()"><span class="menu-icon">👥</span> Gestão Membros</button>`;
+                html += `<button class="menu-btn" onclick="carregarGestaoAgendaPastor()"><span class="menu-icon">👔</span> Agenda Pastor</button>`;
+            } 
+            else { // Membro
+                html += `<button class="menu-btn active" onclick="carregarVisaoMembro()"><span class="menu-icon">👤</span> Meus Dados</button>`;
+                html += `<button class="menu-btn" onclick="carregarAgendaIgreja()"><span class="menu-icon">📅</span> Agenda Igreja</button>`;
+            }
+
+            menu.innerHTML = html;
+        }
+
+        // ============================================
+        // VISÃO DO PASTOR (SEPARAÇÃO DE AGENDAS)
+        // ============================================
+        async function carregarVisaoPastor() {
+            const container = document.getElementById('mainContainer');
+            container.innerHTML = '<div class="panel-card"><p>Carregando agendas...</p></div>';
+
+            try {
+                // Busca em paralelo: Agenda Dele e Agenda Igreja
+                const [resPastor, resIgreja] = await Promise.all([
+                    fetch(`${API_BASE}/agenda-pastor`),
+                    fetch(`${API_BASE}/patrimonio/dados`)
+                ]);
+
+                const agendaPastor = await resPastor.json();
+                const dadosIgreja = await resIgreja.json();
+                const agendaIgreja = dadosIgreja.agenda || [];
+
+                // Renderiza separado
+                container.innerHTML = `
+                    <div class="agenda-pastor-grid">
+                        
+                        <div class="panel-card" style="border-top: 4px solid #3b82f6;">
+                            <div class="panel-title">
+                                <span>👔 Meus Compromissos (Pastoral)</span>
+                            </div>
+                            <div id="listaPastor">
+                                ${renderListaAgenda(agendaPastor, 'pessoal')}
+                            </div>
+                        </div>
+
+                        <div class="panel-card" style="border-top: 4px solid #dc2626;">
+                            <div class="panel-title">
+                                <span>⛪ Agenda Oficial da Igreja</span>
+                            </div>
+                            <div id="listaIgreja">
+                                ${renderListaAgenda(agendaIgreja, 'igreja')}
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+
+            } catch (e) {
+                container.innerHTML = `<div class="panel-card error">Erro ao carregar: ${e.message}</div>`;
+            }
+        }
+
+        // Helper para renderizar listas
+        function renderListaAgenda(lista, tipo) {
+            if (!lista || lista.length === 0) return '<p style="color:#94a3b8; font-style:italic;">Nada agendado.</p>';
+            
+            // Ordena e filtra passados
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            
+            const futuros = lista.filter(item => {
+                const d = parseDate(item.DATA || item.data);
+                return d >= hoje;
+            }).sort((a,b) => parseDate(a.DATA||a.data) - parseDate(b.DATA||b.data));
+
+            if (futuros.length === 0) return '<p style="color:#94a3b8;">Sem eventos futuros.</p>';
+
+            return futuros.map(item => {
+                const dataStr = item.DATA || item.data;
+                const titulo = item.EVENTO || item.evento;
+                const obs = item.OBSERVACAO || item.obs || item.local || '';
+                const dia = dataStr.split('/')[0];
+                const mes = obterNomeMes(dataStr.split('/')[1]);
+
+                return `
+                <div class="timeline-row">
+                    <div class="timeline-date">
+                        <div class="timeline-day">${dia}</div>
+                        <div class="timeline-month">${mes}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:bold; color:#1e293b;">${titulo}</div>
+                        <div style="font-size:0.9rem; color:#64748b;">${obs}</div>
+                        ${item.HORARIO ? `<div style="font-size:0.8rem; color:#3b82f6; font-weight:bold;">🕒 ${item.HORARIO}</div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ============================================
+        // OUTRAS FUNÇÕES (MOCKS PARA ESTRUTURA)
+        // ============================================
+        function carregarVisaoSecretaria() {
+            document.getElementById('mainContainer').innerHTML = `
+                <div class="panel-card">
+                    <h2>Painel da Secretaria</h2>
+                    <p>Utilize o menu lateral para gerenciar membros ou a agenda do pastor.</p>
+                </div>
+            `;
+        }
+
+        function carregarVisaoMembro() {
+             document.getElementById('mainContainer').innerHTML = `
+                <div class="panel-card">
+                    <h2>Olá, ${usuario.NOME}</h2>
+                    <p>Bem-vindo ao portal do membro.</p>
+                    <hr style="margin:1rem 0; border:0; border-top:1px solid #eee;">
+                    <h3>Meus Dados Cadastrais</h3>
+                    <p><strong>CPF:</strong> ${usuario.CPF}</p>
+                    <p><strong>Cargo:</strong> ${usuario.CARGO}</p>
+                    <p><strong>Departamento:</strong> ${usuario.DEPARTAMENTO || '-'}</p>
+                </div>
+            `;
+        }
+
+        function abrirEBD() {
+            window.open('index.html', '_blank');
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Utils
+        function parseDate(str) { if(!str) return new Date(0); const p = str.split('/'); return new Date(p[2], p[1]-1, p[0]); }
+        function obterNomeMes(num) { const m = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]; return m[parseInt(num)-1]; }
+
+    </script>
+</body>
+</html>
