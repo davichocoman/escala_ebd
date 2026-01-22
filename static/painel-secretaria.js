@@ -2,25 +2,39 @@ const API_BASE = 'https://api-escala.onrender.com/api';
 let usuario = null;
 let token = null;
 
+// Cache global para evitar re-buscas desnecessárias, se desejar
 let cacheMembros = [];
 let cacheAgendaPastor = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Recupera sessão
     const userStr = sessionStorage.getItem('usuario_sistema');
     token = sessionStorage.getItem('token_sistema');
 
-    if (!userStr) { sair(); return; }
-    usuario = JSON.parse(userStr);
+    if (!userStr) { 
+        console.warn("Usuário não encontrado na sessão. Redirecionando...");
+        sair(); 
+        return; 
+    }
 
-    // Header com tratamento de erro se NOME for undefined
-    const nomeUser = (usuario.NOME || usuario.nome || 'Secretaria').split(' ')[0];
-    const cargoUser = usuario.CARGO || usuario.cargo || 'Admin';
+    try {
+        usuario = JSON.parse(userStr);
+    } catch (e) {
+        console.error("Erro ao processar dados do usuário:", e);
+        sair();
+        return;
+    }
+
+    // 2. Renderiza Header
+    const nomeUser = (getVal(usuario, 'NOME') || 'Secretaria').split(' ')[0];
+    const cargoUser = getVal(usuario, 'CARGO') || 'Admin';
     
     const userDisplay = document.getElementById('userDisplay');
     if(userDisplay) {
         userDisplay.innerHTML = `Olá, <strong>${nomeUser}</strong><br><span style="color:#3b82f6;">${cargoUser}</span>`;
     }
 
+    // 3. Carrega Dashboard Inicial
     await carregarDashboard();
 });
 
@@ -30,16 +44,57 @@ function sair() {
 }
 
 function toggleSidebar() {
-    document.querySelector('.sidebar').classList.toggle('open');
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.classList.toggle('open');
 }
 
 // ========================================================
-// FUNÇÃO MÁGICA: Resolve Maiúsculas/Minúsculas
+// FUNÇÃO MÁGICA: Resolve Maiúsculas/Minúsculas de forma segura
 // ========================================================
 function getVal(obj, key) {
-    if (!obj) return '';
-    // Tenta Maiúsculo, Minúsculo e Título
-    return obj[key.toUpperCase()] || obj[key.toLowerCase()] || obj[key] || '';
+    if (!obj || typeof obj !== 'object') return '';
+    if (!key) return '';
+    
+    // Tenta encontrar a chave exata, ou maiúscula, ou minúscula
+    return obj[key] || obj[key.toUpperCase()] || obj[key.toLowerCase()] || '';
+}
+
+// ========================================================
+// FUNÇÃO DE DATA BLINDADA (Correção Principal)
+// ========================================================
+function parseDate(str) {
+    // Se não for string ou for vazia, retorna data "zero" (seguro para ordenação)
+    if (!str || typeof str !== 'string' || str.length < 6) return new Date(0);
+    
+    try {
+        // Tenta formato BR: dd/mm/yyyy
+        if (str.includes('/')) {
+            const p = str.split('/');
+            if (p.length === 3) return new Date(p[2], p[1]-1, p[0]);
+        }
+        // Tenta formato ISO: yyyy-mm-dd
+        if (str.includes('-')) {
+            const p = str.split('-');
+            if (p.length === 3) return new Date(p[0], p[1]-1, p[2]);
+        }
+    } catch (e) {
+        console.warn("Erro ao fazer parse da data:", str);
+    }
+    return new Date(0);
+}
+
+function dataParaInput(str) {
+    if(!str || str.length !== 10) return '';
+    const p = str.split('/');
+    if(p.length !== 3) return '';
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+function dataDoInput(str) {
+    if(!str) return '';
+    const p = str.split('-');
+    if(p.length !== 3) return '';
+    return `${p[2]}/${p[1]}/${p[0]}`;
 }
 
 // ========================================================
@@ -47,9 +102,14 @@ function getVal(obj, key) {
 // ========================================================
 async function carregarDashboard() {
     try {
+        console.log("Iniciando carregamento do Dashboard...");
+        
+        // Adiciona headers para evitar cache agressivo
+        const headers = { 'Cache-Control': 'no-cache' };
+
         const [resPastor, resGeral] = await Promise.all([
-            fetch(`${API_BASE}/agenda-pastor`),
-            fetch(`${API_BASE}/patrimonio/dados`)
+            fetch(`${API_BASE}/agenda-pastor`, { headers }),
+            fetch(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
 
         const agendaPastor = await resPastor.json();
@@ -67,53 +127,78 @@ async function carregarDashboard() {
         renderizarListaDash('list-dash-reservas', dadosGerais.reservas || [], 'evento', 'data', filtroSemana);
         renderizarListaDash('list-dash-pastor', agendaPastor || [], 'EVENTO', 'DATA', filtroSemana);
 
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Erro no Dashboard:", e); 
+    }
 }
 
 function renderizarListaDash(elementId, lista, keyTitulo, keyData, filtroFn) {
     const ul = document.getElementById(elementId);
     if (!ul) return;
     
-    // Filtra usando a função auxiliar getVal
-    const filtrados = lista.filter(item => filtroFn(getVal(item, keyData)));
-    filtrados.sort((a, b) => parseDate(getVal(a, keyData)) - parseDate(getVal(b, keyData)));
-
-    if (filtrados.length === 0) {
-        ul.innerHTML = '<li class="empty-msg">Nada esta semana.</li>';
+    if (!Array.isArray(lista)) {
+        ul.innerHTML = '<li class="empty-msg">Erro nos dados.</li>';
         return;
     }
 
-    ul.innerHTML = filtrados.map(item => `
-        <li>
-            <strong>${getVal(item, keyTitulo)}</strong>
-            <span>${getVal(item, keyData)}</span>
-        </li>
-    `).join('');
+    try {
+        const filtrados = lista.filter(item => filtroFn(getVal(item, keyData)));
+        // Ordenação segura
+        filtrados.sort((a, b) => parseDate(getVal(a, keyData)) - parseDate(getVal(b, keyData)));
+
+        if (filtrados.length === 0) {
+            ul.innerHTML = '<li class="empty-msg">Nada esta semana.</li>';
+            return;
+        }
+
+        ul.innerHTML = filtrados.map(item => `
+            <li>
+                <strong>${getVal(item, keyTitulo)}</strong>
+                <span>${getVal(item, keyData)}</span>
+            </li>
+        `).join('');
+    } catch (e) {
+        console.error(`Erro ao renderizar lista ${elementId}:`, e);
+    }
 }
 
 // ========================================================
-// 2. MEMBROS (Correção de Dados)
+// 2. MEMBROS
 // ========================================================
 async function carregarMembros() {
+    console.log("Chamando carregarMembros()...");
     const tbody = document.getElementById('tabela-membros');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Carregando...</td></tr>';
+    if (!tbody) {
+        console.error("ERRO: Elemento 'tabela-membros' não encontrado no HTML.");
+        return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Carregando dados...</td></tr>';
 
     try {
-        const res = await fetch(`${API_BASE}/membros`);
-        if(!res.ok) throw new Error("Erro API");
+        // Headers para evitar cache
+        const res = await fetch(`${API_BASE}/membros`, {
+            method: 'GET',
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+
+        console.log("Fetch membros status:", res.status);
+        if(!res.ok) throw new Error(`Erro API: ${res.status}`);
         
         cacheMembros = await res.json();
+        console.log("Membros carregados:", cacheMembros.length);
+        
         renderizarTabelaMembros(cacheMembros);
     } catch (e) {
-        console.error("Erro detalhado:", e);
-        tbody.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center">Erro ao buscar dados. Verifique se a rota /api/membros existe no main.py</td></tr>';
+        console.error("Erro detalhado em Membros:", e);
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center">Erro ao buscar dados: ${e.message}</td></tr>`;
     }
 }
 
 function renderizarTabelaMembros(lista) {
     const tbody = document.getElementById('tabela-membros');
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum registro.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum registro encontrado.</td></tr>';
         return;
     }
 
@@ -132,14 +217,20 @@ function renderizarTabelaMembros(lista) {
 }
 
 // ========================================================
-// 3. AGENDA PASTOR (Correção de Dados)
+// 3. AGENDA PASTOR
 // ========================================================
 async function carregarAgendaPastor() {
+    console.log("Chamando carregarAgendaPastor()...");
     const tbody = document.getElementById('tabela-agenda-pastor');
+    if (!tbody) return;
+
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Carregando...</td></tr>';
 
     try {
-        const res = await fetch(`${API_BASE}/agenda-pastor`);
+        const res = await fetch(`${API_BASE}/agenda-pastor`, {
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        
         cacheAgendaPastor = await res.json();
         
         if (!cacheAgendaPastor || cacheAgendaPastor.length === 0) {
@@ -147,7 +238,7 @@ async function carregarAgendaPastor() {
             return;
         }
         
-        // Ordena
+        // Ordena com segurança
         cacheAgendaPastor.sort((a,b) => parseDate(getVal(a, 'DATA')) - parseDate(getVal(b, 'DATA')));
 
         tbody.innerHTML = cacheAgendaPastor.map(a => `
@@ -164,6 +255,7 @@ async function carregarAgendaPastor() {
         `).join('');
 
     } catch (e) {
+        console.error(e);
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red">Erro ao carregar agenda.</td></tr>';
     }
 }
@@ -173,16 +265,24 @@ async function carregarAgendaPastor() {
 // ========================================================
 function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
+    if (!div) return;
+    if (!usuario) {
+        div.innerHTML = '<p style="color:red">Erro: Dados do usuário não disponíveis.</p>';
+        return;
+    }
+
     let html = '';
-    const ignorar = ['ID', 'SENHA', 'id', 'senha'];
+    const ignorar = ['ID', 'SENHA', 'id', 'senha', 'TOKEN', 'token'];
     
-    // Itera chaves do objeto usuário
     for (const key in usuario) {
         if (ignorar.includes(key)) continue;
+        // Evita mostrar valores nulos/undefined
+        const valor = usuario[key] === null || usuario[key] === undefined ? '' : usuario[key];
+        
         html += `
             <div class="form-group">
                 <label>${key.replace(/_/g, ' ').toUpperCase()}</label>
-                <input class="form-input" value="${usuario[key] || ''}" disabled style="background:#f1f5f9;">
+                <input class="form-input" value="${valor}" disabled style="background:#f1f5f9;">
             </div>
         `;
     }
@@ -190,83 +290,122 @@ function renderizarMeusDados() {
 }
 
 // ========================================================
-// 5. UTILITÁRIOS E MODAIS (Mantidos iguais, só ajustando getVal)
+// 5. UTILITÁRIOS DE NAVEGAÇÃO
 // ========================================================
 window.mostrarTela = function(telaId, btn) {
+    // Esconde todas as seções
     ['dashboard', 'membros', 'pastor', 'perfil'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if(el) el.classList.add('hidden');
     });
+    
+    // Remove classe active do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
+    // Mostra a escolhida
     const alvo = document.getElementById('sec-' + telaId);
     if(alvo) alvo.classList.remove('hidden');
+    
+    // Ativa o botão clicado
     if (btn) btn.classList.add('active');
     
-    // Fecha menu no mobile ao clicar
+    // Fecha sidebar mobile
     const sidebar = document.querySelector('.sidebar');
     if(sidebar) sidebar.classList.remove('open');
 
+    // Carrega os dados específicos
     if (telaId === 'membros') carregarMembros();
     if (telaId === 'pastor') carregarAgendaPastor();
     if (telaId === 'perfil') renderizarMeusDados();
 };
 
-window.abrirModalMembro = function(idEditar = null) {
-    document.getElementById('formMembro').reset();
-    document.getElementById('m_id').value = '';
-    document.getElementById('tituloModalMembro').innerText = 'Novo Membro';
+// ========================================================
+// 6. MODAIS E EDIÇÃO (CRUD)
+// ========================================================
 
-    if (idEditar) {
-        // Usa getVal para garantir que achamos o ID independente da caixa
+// --- MEMBROS ---
+window.abrirModalMembro = function(idEditar = null) {
+    const form = document.getElementById('formMembro');
+    if(form) form.reset();
+    
+    document.getElementById('m_id').value = '';
+    const titulo = document.getElementById('tituloModalMembro');
+    if(titulo) titulo.innerText = 'Novo Membro';
+
+    if (idEditar && cacheMembros.length > 0) {
         const m = cacheMembros.find(x => getVal(x, 'ID') == idEditar);
         if (m) {
-            document.getElementById('tituloModalMembro').innerText = 'Editar Membro';
-            document.getElementById('m_id').value = getVal(m, 'ID');
-            document.getElementById('m_nome').value = getVal(m, 'NOME');
-            document.getElementById('m_cpf').value = getVal(m, 'CPF');
-            document.getElementById('m_nasc').value = dataParaInput(getVal(m, 'NASCIMENTO'));
-            // ... preencher os outros campos aqui usando getVal(m, 'CAMPO') ...
+            if(titulo) titulo.innerText = 'Editar Membro';
+            
+            // Helper para preencher inputs com segurança
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if(el) el.value = val || '';
+            };
+
+            setVal('m_id', getVal(m, 'ID'));
+            setVal('m_nome', getVal(m, 'NOME'));
+            setVal('m_cpf', getVal(m, 'CPF'));
+            setVal('m_nasc', dataParaInput(getVal(m, 'NASCIMENTO')));
+            setVal('m_estado', getVal(m, 'ESTADO_CIVIL'));
+            setVal('m_conjuge', getVal(m, 'CONJUGE'));
+            setVal('m_data_casamento', dataParaInput(getVal(m, 'DATA_CASAMENTO')));
+            setVal('m_filhos', getVal(m, 'FILHOS'));
+            setVal('m_pai', getVal(m, 'PAI'));
+            setVal('m_mae', getVal(m, 'MAE'));
+            setVal('m_profissao', getVal(m, 'PROFISSAO'));
+            setVal('m_situacao', getVal(m, 'SITUACAO_TRABALHO'));
+            setVal('m_cargo', getVal(m, 'CARGO'));
+            setVal('m_departamento', getVal(m, 'DEPARTAMENTO'));
+            setVal('m_perfil', getVal(m, 'PERFIL'));
+            // Senha fica vazia por segurança
         }
     }
     document.getElementById('modalMembro').classList.remove('hidden');
 };
-window.fecharModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+
+window.fecharModal = function(id) { 
+    const el = document.getElementById(id);
+    if(el) el.classList.add('hidden'); 
+};
+
 window.editarMembro = window.abrirModalMembro;
 
-// Funções de Data
-function parseDate(str) {
-    if(!str) return new Date(0);
-    const p = str.split('/');
-    return new Date(p[2], p[1]-1, p[0]);
-}
-function dataParaInput(str) {
-    if(!str || str.length !== 10) return '';
-    const p = str.split('/');
-    return `${p[2]}-${p[1]}-${p[0]}`;
-}
-function dataDoInput(str) {
-    if(!str) return '';
-    const p = str.split('-');
-    return `${p[2]}/${p[1]}/${p[0]}`;
-}
+window.salvarMembro = async function(e) {
+    e.preventDefault();
+    // Implementar a lógica de salvar/POST aqui se necessário, 
+    // seguindo o padrão do salvarAgendaPastor
+    alert("Funcionalidade de salvar membro precisa ser implementada igual à do Pastor.");
+};
 
-window.fecharModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+window.deletarMembro = async function(id) {
+    if(!confirm("Tem certeza que deseja excluir este membro?")) return;
+    try {
+        await fetch(`${API_BASE}/membros/${id}`, { 
+            method: 'DELETE', 
+            headers: {'x-admin-token': 'admin_secret'} // Ajuste conforme seu backend
+        });
+        carregarMembros();
+    } catch(e) {
+        alert("Erro ao excluir: " + e);
+    }
+};
 
-// Funções da Agenda do Pastor (Modais)
+// --- AGENDA PASTOR ---
 window.abrirModalEventoPastor = function(idEditar = null) {
     const form = document.getElementById('formPastor');
-    form.reset();
+    if(form) form.reset();
     document.getElementById('p_id').value = '';
     
-    if(idEditar) {
-        const a = cacheAgendaPastor.find(x => x.ID === idEditar);
+    if(idEditar && cacheAgendaPastor.length > 0) {
+        const a = cacheAgendaPastor.find(x => getVal(x, 'ID') == idEditar);
         if(a) {
-            document.getElementById('p_id').value = a.ID;
-            document.getElementById('p_data').value = dataParaInput(a.DATA);
-            document.getElementById('p_evento').value = a.EVENTO;
-            document.getElementById('p_hora').value = a.HORARIO || '';
-            document.getElementById('p_local').value = a.LOCAL || '';
+            document.getElementById('p_id').value = getVal(a, 'ID');
+            document.getElementById('p_data').value = dataParaInput(getVal(a, 'DATA'));
+            document.getElementById('p_evento').value = getVal(a, 'EVENTO');
+            document.getElementById('p_hora').value = getVal(a, 'HORARIO');
+            document.getElementById('p_local').value = getVal(a, 'LOCAL');
+            document.getElementById('p_obs').value = getVal(a, 'OBSERVACAO');
         }
     }
     document.getElementById('modalPastor').classList.remove('hidden');
@@ -287,19 +426,25 @@ window.salvarAgendaPastor = async function(e) {
     const url = id ? `${API_BASE}/agenda-pastor/${id}` : `${API_BASE}/agenda-pastor`;
     const method = id ? 'PUT' : 'POST';
     
-    await fetch(url, {
-        method: method,
-        headers: {'Content-Type': 'application/json', 'x-admin-token': 'admin_secret'},
-        body: JSON.stringify(payload)
-    });
-    
-    document.getElementById('modalPastor').classList.add('hidden');
-    carregarAgendaPastor();
-    carregarDashboard();
+    try {
+        await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json', 'x-admin-token': 'admin_secret'},
+            body: JSON.stringify(payload)
+        });
+        
+        document.getElementById('modalPastor').classList.add('hidden');
+        carregarAgendaPastor();
+        carregarDashboard();
+    } catch(e) {
+        alert("Erro ao salvar: " + e);
+    }
 };
 
 window.deletarEventoPastor = async function(id) {
     if(!confirm("Excluir?")) return;
-    await fetch(`${API_BASE}/agenda-pastor/${id}`, { method: 'DELETE', headers: {'x-admin-token': 'admin_secret'} });
-    carregarAgendaPastor();
+    try {
+        await fetch(`${API_BASE}/agenda-pastor/${id}`, { method: 'DELETE', headers: {'x-admin-token': 'admin_secret'} });
+        carregarAgendaPastor();
+    } catch(e) { alert("Erro: " + e); }
 };
