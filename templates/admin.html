@@ -203,8 +203,11 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-admin-token': token // HÍFEN É IMPORTANTE!
-                    }
+                        'x-admin-token': token
+                    },
+                    body: JSON.stringify({
+                        scope: 'ebd'
+                    })
                 });
 
                 const data = await response.json();
