@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Membro</title>
+    <link rel="stylesheet" href="../static/portal.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">AD Rodovia A</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span class="user-badge" id="nomeUsuario">Carregando...</span>
+            <button onclick="sair()" style="background:none; border:none; color:white; cursor:pointer;">Sair</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="nav-card" onclick="mostrarMeusDados()">
+            <span class="nav-icon">👤</span>
+            <span class="nav-title">Meus Dados</span>
+        </div>
+
+        <a href="/agenda" class="nav-card">
+            <span class="nav-icon">📅</span>
+            <span class="nav-title">Agenda da Igreja</span>
+        </a>
+
+        <a href="/reservas" class="nav-card">
+            <span class="nav-icon">🔑</span>
+            <span class="nav-title">Reservas de Salas</span>
+        </a>
+    </div>
+
+    <div id="areaDados" class="container" style="display:none;">
+        <div class="card">
+            <div class="page-header">
+                <h3>Meus Dados Cadastrais</h3>
+                <button onclick="fecharMeusDados()" class="btn-back">Fechar</button>
+            </div>
+            <div id="formDados" class="form-grid">
+                </div>
+        </div>
+    </div>
+
+    <script src="../static/painel-membro.js"></script>
+</body>
+</html>
