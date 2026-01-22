@@ -347,31 +347,69 @@ body {
 }
 
 /* --- 9. RESPONSIVIDADE --- */
+/* ... (Mantenha o resto do CSS igual, mude apenas do @media para baixo) ... */
+
+/* --- 9. RESPONSIVIDADE E MOBILE --- */
 @media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-    }
-    
     .app-container {
         flex-direction: column;
     }
 
+    /* Esconde a Sidebar no celular por padrão */
+    .sidebar {
+        position: fixed;
+        left: -260px; /* Joga para fora da tela */
+        top: 0;
+        bottom: 0;
+        width: 260px;
+        transition: left 0.3s ease;
+        z-index: 1000;
+        height: 100vh;
+    }
+
+    /* Classe para mostrar a Sidebar quando clicar no botão */
+    .sidebar.open {
+        left: 0;
+    }
+
+    /* Conteúdo ocupa tudo */
     .main-content {
         margin-left: 0;
         width: 100%;
         padding: 1rem;
+        padding-top: 4rem; /* Espaço para o botão do menu */
     }
 
-    .form-grid-2, .form-grid-3 {
-        grid-template-columns: 1fr; /* Tudo vira 1 coluna no celular */
+    /* Ajuste das tabelas para não quebrar */
+    .data-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
     
-    .data-table th, .data-table td {
-        padding: 8px;
-        font-size: 0.85rem;
+    .form-grid-2, .form-grid-3 {
+        grid-template-columns: 1fr;
     }
+}
+
+/* Botão Flutuante do Menu (Só aparece no Mobile) */
+.mobile-menu-btn {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1100;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn { display: block; }
 }
 /* --- ATUALIZAÇÃO E CORREÇÃO DE BOTÕES --- */
 
