@@ -105,6 +105,7 @@ async function carregarMembros() {
         cacheMembros = await res.json();
         renderizarTabelaMembros(cacheMembros);
     } catch (e) {
+        console.error("Erro detalhado:", e);
         tbody.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center">Erro ao buscar dados. Verifique se a rota /api/membros existe no main.py</td></tr>';
     }
 }
