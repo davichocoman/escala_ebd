@@ -3,25 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Geral da Igreja</title>
+    <title>Agenda Geral - AD Rodovia A</title>
     <link rel="stylesheet" href="../static/portal.css">
+    <style>
+        .agenda-card { border-left: 5px solid #dc2626; margin-bottom: 1rem; }
+    </style>
 </head>
 <body>
     <div class="top-bar">
         <div class="brand">📅 Agenda 2026</div>
-        <button onclick="history.back()" class="btn-back">⬅ Voltar</button>
+        <a href="/secretaria" class="btn btn-back" style="text-decoration:none;">⬅ Voltar</a>
     </div>
 
     <div class="container">
-        <div class="card" style="margin-bottom: 20px;">
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="card">
+            <div class="form-grid-2">
                 <div class="form-group">
                     <label>Filtrar por Mês</label>
                     <select id="filtroMes" class="form-input" onchange="renderizarAgenda()">
                         <option value="todos">Todos</option>
-                        <option value="1">Janeiro</option>
-                        <option value="2">Fevereiro</option>
-                        </select>
+                        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                        <option value="3">Março</option><option value="4">Abril</option>
+                        <option value="5">Maio</option><option value="6">Junho</option>
+                        <option value="7">Julho</option><option value="8">Agosto</option>
+                        <option value="9">Setembro</option><option value="10">Outubro</option>
+                        <option value="11">Novembro</option><option value="12">Dezembro</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Pesquisar Evento</label>
@@ -31,7 +38,7 @@
         </div>
 
         <div id="listaEventos">
-            <p style="text-align:center">Carregando eventos...</p>
+            <p style="text-align:center; padding:2rem;">Carregando eventos...</p>
         </div>
     </div>
 
@@ -40,12 +47,15 @@
 
         async function carregar() {
             try {
+                // Endpoint correto
                 const res = await fetch('https://api-escala.onrender.com/api/patrimonio/dados');
                 const dados = await res.json();
-                agendaGlobal = dados.agenda;
+                
+                // IMPORTANTE: Aqui usamos 'agenda' (minúsculo) que vem da sua API
+                agendaGlobal = dados.agenda || [];
                 renderizarAgenda();
             } catch(e) {
-                document.getElementById('listaEventos').innerHTML = '<p>Erro ao carregar.</p>';
+                document.getElementById('listaEventos').innerHTML = '<p>Erro ao carregar agenda.</p>';
             }
         }
 
@@ -55,11 +65,14 @@
             const texto = document.getElementById('busca').value.toLowerCase();
 
             const filtrados = agendaGlobal.filter(item => {
+                // IMPORTANTE: item.data (minúsculo)
                 const dataObj = converterData(item.data);
-                const mesEvento = dataObj ? dataObj.getMonth() + 1 : 0;
+                if(!dataObj) return false;
+                
+                const mesEvento = dataObj.getMonth() + 1;
                 
                 const matchMes = mes === 'todos' || mesEvento == mes;
-                const matchTexto = item.evento.toLowerCase().includes(texto);
+                const matchTexto = (item.evento || '').toLowerCase().includes(texto);
                 
                 return matchMes && matchTexto;
             });
@@ -69,13 +82,16 @@
                 return;
             }
 
+            // Ordena
+            filtrados.sort((a,b) => converterData(a.data) - converterData(b.data));
+
             container.innerHTML = filtrados.map(item => `
-                <div class="card" style="margin-bottom:1rem; border-left: 5px solid #dc2626;">
-                    <div style="font-weight:bold; font-size:1.1rem;">${item.evento}</div>
-                    <div style="color:#666; margin-top:5px;">
-                        📅 ${item.data} &nbsp;|&nbsp; 📍 ${item.local}
+                <div class="card agenda-card">
+                    <div style="font-weight:bold; font-size:1.1rem; color:#1e293b;">${item.evento}</div>
+                    <div style="color:#64748b; margin-top:5px; font-size:0.95rem;">
+                        📅 ${item.data} &nbsp;|&nbsp; 📍 ${item.local || 'Local a definir'}
                     </div>
-                    <div style="font-size:0.9rem; color:#888; margin-top:5px;">Resp: ${item.responsavel}</div>
+                    ${item.responsavel ? `<div style="font-size:0.85rem; color:#94a3b8; margin-top:5px;">Resp: ${item.responsavel}</div>` : ''}
                 </div>
             `).join('');
         }
