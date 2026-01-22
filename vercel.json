@@ -13,7 +13,15 @@
       "destination": "/templates/login.html"
     },
     {
+      "source": "/login.html",
+      "destination": "/templates/login.html"
+    },
+    {
       "source": "/portal",
+      "destination": "/templates/portal.html"
+    },
+    {
+      "source": "/portal.html",
       "destination": "/templates/portal.html"
     },
     {
