@@ -1,0 +1,93 @@
+/* --- Layout Base --- */
+body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; }
+.dashboard-layout { display: flex; min-height: 100vh; }
+
+/* --- Sidebar (Menu Lateral) --- */
+.sidebar {
+    width: 260px;
+    background-color: #0f172a;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100%;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+.sidebar-header { padding: 1.5rem; border-bottom: 1px solid #1e293b; }
+.user-info { font-size: 0.9rem; color: #94a3b8; margin-top: 5px; }
+.menu-items { flex: 1; padding: 1rem 0; overflow-y: auto; }
+.menu-btn {
+    display: flex; align-items: center; width: 100%; padding: 1rem 1.5rem;
+    color: #cbd5e1; background: none; border: none; text-align: left;
+    cursor: pointer; font-size: 1rem; transition: all 0.2s;
+}
+.menu-btn:hover, .menu-btn.active { background-color: #1e293b; color: white; border-left: 4px solid #3b82f6; }
+.menu-icon { margin-right: 10px; width: 20px; text-align: center; }
+
+.btn-logout { width:100%; padding:0.5rem; background:#334155; color:white; border:none; border-radius:4px; cursor:pointer; }
+.btn-logout:hover { background: #475569; }
+
+/* --- Conteúdo Principal --- */
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    padding: 2rem;
+    width: 100%;
+}
+
+/* --- Mobile Responsive --- */
+.mobile-toggle-btn {
+    display: none;
+    position: fixed; top: 15px; right: 15px; z-index: 2000;
+    background: #0f172a; color: white; border: none;
+    padding: 10px 15px; border-radius: 6px; font-size: 1.2rem; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+    .mobile-toggle-btn { display: block; }
+}
+
+/* --- Cards e Tabelas --- */
+.panel-card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+.panel-title { font-size: 1.25rem; font-weight: bold; color: #1e293b; margin-bottom: 1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+
+.data-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+.data-table th { background: #f8fafc; text-align: left; padding: 10px; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+.data-table tr:hover { background: #f1f5f9; }
+
+/* --- Botões e Badges --- */
+.btn-action { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; margin-right: 5px; }
+.btn-edit { background: #e0f2fe; color: #0284c7; }
+.btn-delete { background: #fee2e2; color: #dc2626; }
+.btn-add { background: #16a34a; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+
+.badge { padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+.badge-admin { background: #fce7f3; color: #db2777; }
+.badge-pastor { background: #e0e7ff; color: #4f46e5; }
+.badge-membro { background: #dcfce7; color: #166534; }
+.badge-secretaria { background: #fff7ed; color: #c2410c; }
+
+/* --- Formulários Avançados --- */
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 10px; }
+
+@media (max-width: 600px) {
+    .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+}
+
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; margin-bottom: 5px; color: #475569; font-size: 0.85rem; font-weight: 600; }
+.form-input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.95rem; }
+.form-section-title { color: #1e293b; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin: 15px 0 10px 0; font-size: 0.95rem; }
+
+/* Modal */
+.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2000; }
+.modal-card { width: 90%; max-width: 800px; margin: 0; max-height: 90vh; overflow-y: auto; }
+.btn-close-modal { background:none; border:none; font-size:1.5rem; cursor:pointer; color: #64748b; }
+.hidden { display: none !important; }
