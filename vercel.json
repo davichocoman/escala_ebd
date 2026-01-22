@@ -9,6 +9,14 @@
       "destination": "/templates/admin.html"
     },
     {
+      "source": "/login",
+      "destination": "/templates/login.html"
+    },
+    {
+      "source": "/portal",
+      "destination": "/templates/portal.html"
+    },
+    {
       "source": "/patrimonio",
       "destination": "/templates/painel.html"
     },
