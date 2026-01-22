@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Geral da Igreja</title>
+    <link rel="stylesheet" href="../static/portal.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">📅 Agenda 2026</div>
+        <button onclick="history.back()" class="btn-back">⬅ Voltar</button>
+    </div>
+
+    <div class="container">
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="form-group">
+                    <label>Filtrar por Mês</label>
+                    <select id="filtroMes" class="form-input" onchange="renderizarAgenda()">
+                        <option value="todos">Todos</option>
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label>Pesquisar Evento</label>
+                    <input type="text" id="busca" class="form-input" placeholder="Ex: Santa Ceia..." onkeyup="renderizarAgenda()">
+                </div>
+            </div>
+        </div>
+
+        <div id="listaEventos">
+            <p style="text-align:center">Carregando eventos...</p>
+        </div>
+    </div>
+
+    <script>
+        let agendaGlobal = [];
+
+        async function carregar() {
+            try {
+                const res = await fetch('https://api-escala.onrender.com/api/patrimonio/dados');
+                const dados = await res.json();
+                agendaGlobal = dados.agenda;
+                renderizarAgenda();
+            } catch(e) {
+                document.getElementById('listaEventos').innerHTML = '<p>Erro ao carregar.</p>';
+            }
+        }
+
+        function renderizarAgenda() {
+            const container = document.getElementById('listaEventos');
+            const mes = document.getElementById('filtroMes').value;
+            const texto = document.getElementById('busca').value.toLowerCase();
+
+            const filtrados = agendaGlobal.filter(item => {
+                const dataObj = converterData(item.data);
+                const mesEvento = dataObj ? dataObj.getMonth() + 1 : 0;
+                
+                const matchMes = mes === 'todos' || mesEvento == mes;
+                const matchTexto = item.evento.toLowerCase().includes(texto);
+                
+                return matchMes && matchTexto;
+            });
+
+            if(filtrados.length === 0) {
+                container.innerHTML = '<div class="card"><p>Nenhum evento encontrado.</p></div>';
+                return;
+            }
+
+            container.innerHTML = filtrados.map(item => `
+                <div class="card" style="margin-bottom:1rem; border-left: 5px solid #dc2626;">
+                    <div style="font-weight:bold; font-size:1.1rem;">${item.evento}</div>
+                    <div style="color:#666; margin-top:5px;">
+                        📅 ${item.data} &nbsp;|&nbsp; 📍 ${item.local}
+                    </div>
+                    <div style="font-size:0.9rem; color:#888; margin-top:5px;">Resp: ${item.responsavel}</div>
+                </div>
+            `).join('');
+        }
+
+        function converterData(str) {
+            if(!str) return null;
+            const p = str.split('/');
+            return new Date(p[2], p[1]-1, p[0]);
+        }
+
+        carregar();
+    </script>
+</body>
+</html>
