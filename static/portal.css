@@ -616,3 +616,52 @@ body {
         text-indent: -1.4rem;
     }
 }
+
+/* Campos de "Meus Dados" - padrão */
+.valor-box {
+    padding: 0.65rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 2.2rem;          /* compacto para campos normais */
+    line-height: 1.45;
+    color: #1e293b;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Apenas FILHOS e CARGO ganham mais espaço e estilo de lista */
+.form-group.long-field .valor-box {
+    min-height: 2.8rem;          /* um pouco mais alto só nesses campos */
+    padding: 0.8rem 1rem;
+}
+
+/* Estilo dos bullets (somente quando tem <span>• </span>) */
+.valor-box.special span {
+    display: block;
+    margin: 0.2rem 0;
+    padding-left: 1.4rem;
+    text-indent: -1.4rem;
+}
+
+/* Mobile: ajuste fino para não espremer */
+@media (max-width: 768px) {
+    .valor-box {
+        padding: 0.6rem 0.9rem;
+        font-size: 0.93rem;
+        min-height: 2.1rem;
+    }
+
+    .form-group.long-field .valor-box {
+        min-height: 3rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .valor-box.special span {
+        margin: 0.3rem 0;
+        padding-left: 1.6rem;
+        text-indent: -1.6rem;
+    }
+}
