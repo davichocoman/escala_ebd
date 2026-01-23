@@ -526,7 +526,7 @@ body {
 
     /* Botão menu mais alto e discreto */
     .mobile-menu-btn {
-        top: 8px !important;
+        top: 4px !important;
         left: 8px !important;
         width: 42px;
         height: 42px;
@@ -558,4 +558,8 @@ body {
     margin: 0 auto;
     max-width: 100%;
     overflow-x: hidden;   /* evita scroll lateral indesejado */
+}
+
+.sidebar.open ~ .mobile-menu-btn {
+    display: none !important;  /* Esconde botão quando sidebar aberta */
 }
