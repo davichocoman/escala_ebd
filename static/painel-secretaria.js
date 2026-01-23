@@ -146,14 +146,14 @@ function renderizarMembros() {
         return;
     }
 
-    tbody.innerHTML = filtrados.map(m => `
+    tbody.innerHTML = lista.map(m => `
         <tr>
-            <td>${m.NOME}</td>
-            <td>${m.CPF}</td>
-            <td>${m.PERFIL || 'MEMBRO'}</td>
-            <td>
-                <button class="btn-icon" onclick="prepararEdicaoMembro('${m.ID}')">✏️</button>
-                <button class="btn-icon" onclick="deletarItem('${m.ID}', 'membros')" style="color:red">🗑️</button>
+            <td data-label="Nome">${getVal(m, 'NOME')}</td>
+            <td data-label="CPF">${getVal(m, 'CPF')}</td>
+            <td data-label="Perfil"><span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span></td>
+            <td data-label="Ações">
+                <button class="btn-icon edit" onclick="editarMembro('${getVal(m, 'ID')}')">✏️</button>
+                <button class="btn-icon delete" onclick="deletarMembro('${getVal(m, 'ID')}')">🗑️</button>
             </td>
         </tr>
     `).join('');
@@ -171,15 +171,15 @@ function renderizarAgendaPastor() {
         return;
     }
 
-    tbody.innerHTML = lista.map(a => `
+    tbody.innerHTML = cacheAgendaPastor.map(a => `
         <tr>
-            <td>${a.DATA}</td>
-            <td>${a.HORARIO}</td>
-            <td><strong>${a.EVENTO}</strong><br><small>${a.OBSERVACAO || ''}</small></td>
-            <td>${a.LOCAL}</td>
-            <td>
-                <button class="btn-icon" onclick="prepararEdicaoPastor('${a.ID}')">✏️</button>
-                <button class="btn-icon" onclick="deletarItem('${a.ID}', 'agenda-pastor')" style="color:red">🗑️</button>
+            <td data-label="Data">${getVal(a, 'DATA')}</td>
+            <td data-label="Hora">${getVal(a, 'HORARIO')}</td>
+            <td data-label="Evento">${getVal(a, 'EVENTO')}<br><small>${getVal(a, 'OBSERVACAO') || ''}</small></td>
+            <td data-label="Local">${getVal(a, 'LOCAL')}</td>
+            <td data-label="Ações">
+                <button class="btn-icon edit" onclick="editarEventoPastor('${getVal(a, 'ID')}')">✏️</button>
+                <button class="btn-icon delete" onclick="deletarEventoPastor('${getVal(a, 'ID')}')">🗑️</button>
             </td>
         </tr>
     `).join('');
