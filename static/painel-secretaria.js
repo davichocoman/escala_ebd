@@ -1,3 +1,13 @@
+// Inclui SweetAlert2 via CDN (adicione isso no <head> do HTML se preferir)
+const swalScript = document.createElement('script');
+swalScript.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+document.head.appendChild(swalScript);
+
+// Aguarda o SweetAlert carregar (opcional, mas garante que Swal esteja disponível)
+swalScript.onload = () => {
+    console.log('SweetAlert2 carregado com sucesso');
+};
+
 const API_BASE = 'https://api-escala.onrender.com/api';
 
 // ============================================================
@@ -33,7 +43,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userStr = sessionStorage.getItem('usuario_sistema');
     SISTEMA.token = sessionStorage.getItem('token_sistema');
     if (!userStr || !SISTEMA.token) {
-        window.location.href = '/login';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sessão expirada',
+            text: 'Por favor, faça login novamente.',
+            timer: 3000,
+            showConfirmButton: false
+        }).then(() => {
+            window.location.href = '/login';
+        });
         return;
     }
     SISTEMA.usuario = JSON.parse(userStr);
@@ -58,12 +76,12 @@ async function carregarTudoDoBanco() {
 
     // Feedback visual
     const igrejaEl = document.getElementById('list-dash-igreja');
-    const membrosEl = document.getElementById('tabela-membros');
-    const pastorEl = document.getElementById('tabela-agenda-pastor');
+    const membrosEl = document.getElementById('lista-membros'); // atualizado para card-list
+    const pastorEl = document.getElementById('lista-agenda-pastor');
 
     if (igrejaEl) igrejaEl.innerHTML = '<li>Carregando...</li>';
-    if (membrosEl) membrosEl.innerHTML = '<tr><td colspan="4">Atualizando...</td></tr>';
-    if (pastorEl) pastorEl.innerHTML = '<tr><td colspan="5">Atualizando...</td></tr>';
+    if (membrosEl) membrosEl.innerHTML = '<div class="empty-msg">Atualizando...</div>';
+    if (pastorEl) pastorEl.innerHTML = '<div class="empty-msg">Atualizando...</div>';
 
     const headers = {
         'Content-Type': 'application/json',
@@ -90,12 +108,22 @@ async function carregarTudoDoBanco() {
         renderizarMeusDados();
     } catch (erro) {
         console.error("Erro fatal ao carregar:", erro);
-        alert("Erro ao conectar com o servidor. Verifique sua internet ou credenciais.");
+        Swal.fire({
+            icon: 'error',
+            title: 'Falha na conexão',
+            text: 'Não foi possível carregar os dados. Verifique sua internet ou credenciais.',
+            confirmButtonText: 'Tentar novamente',
+            confirmButtonColor: '#3b82f6'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                carregarTudoDoBanco();
+            }
+        });
     }
 }
 
 // ============================================================
-// 4. RENDERIZAÇÃO
+// 4. RENDERIZAÇÃO (mantidas como cards)
 // ============================================================
 function renderizarDashboard() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -155,9 +183,7 @@ function renderizarMembros() {
         <div class="member-card">
             <div class="card-header">
                 <strong>${getVal(m, 'NOME')}</strong>
-            </div>
-            <div class="card-body">
-                <strong>PERFIL:</strong><span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
+                <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
             </div>
             <div class="card-body">
                 <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
@@ -237,45 +263,44 @@ function configurarBotoes() {
 }
 
 window.mostrarTela = function(telaId, btn) {
-    // Esconde todas as seções
     ['dashboard', 'membros', 'pastor', 'perfil'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
 
-    // Remove active de todos os itens do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
-    // Mostra a aba escolhida
     const alvo = document.getElementById('sec-' + telaId);
     if (alvo) alvo.classList.remove('hidden');
-
-    // Ativa o botão clicado
     if (btn) btn.classList.add('active');
 
-    // Fecha sidebar no mobile
     const sidebar = document.querySelector('.sidebar');
     if (sidebar && window.innerWidth < 768) {
         sidebar.classList.remove('open');
     }
 
-    // Força re-renderização das listas ao abrir a aba
-    if (telaId === 'membros') {
-        console.log("Forçando render de membros");
-        renderizarMembros();
-    }
-    if (telaId === 'pastor') {
-        console.log("Forçando render de agenda pastor");
-        renderizarAgendaPastor();
-    }
-    if (telaId === 'perfil') {
-        renderizarMeusDados();
-    }
+    // Força re-render
+    if (telaId === 'membros') renderizarMembros();
+    if (telaId === 'pastor') renderizarAgendaPastor();
+    if (telaId === 'perfil') renderizarMeusDados();
 };
 
 window.logout = function() {
-    sessionStorage.clear();
-    window.location.href = '/login';
+    Swal.fire({
+        icon: 'question',
+        title: 'Deseja sair?',
+        text: "Você será redirecionado para a tela de login.",
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#dc2626',
+        confirmButtonText: 'Sim, sair',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            sessionStorage.clear();
+            window.location.href = '/login';
+        }
+    });
 };
 
 // ============================================================
@@ -289,7 +314,14 @@ window.abrirModalMembro = function() {
 
 window.prepararEdicaoMembro = function(id) {
     const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
-    if (!m) return;
+    if (!m) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Membro não encontrado',
+            text: 'O membro selecionado não está mais na lista.'
+        });
+        return;
+    }
 
     const set = (eid, val) => {
         const el = document.getElementById(eid);
@@ -318,27 +350,36 @@ window.prepararEdicaoMembro = function(id) {
 async function salvarMembro() {
     const id = document.getElementById('m_id')?.value;
     const dados = {
-        NOME: document.getElementById('m_nome')?.value || '',
+        NOME: document.getElementById('m_nome')?.value.trim() || '',
         NASCIMENTO: dataBr(document.getElementById('m_nasc')?.value),
-        CPF: document.getElementById('m_cpf')?.value || '',
+        CPF: document.getElementById('m_cpf')?.value.trim() || '',
         ESTADO_CIVIL: document.getElementById('m_estado')?.value || '',
         DATA_CASAMENTO: dataBr(document.getElementById('m_data_casamento')?.value),
-        CONJUGE: document.getElementById('m_conjuge')?.value || '',
-        FILHOS: document.getElementById('m_filhos')?.value || '',
-        PAI: document.getElementById('m_pai')?.value || '',
-        MAE: document.getElementById('m_mae')?.value || '',
-        PROFISSAO: document.getElementById('m_profissao')?.value || '',
+        CONJUGE: document.getElementById('m_conjuge')?.value.trim() || '',
+        FILHOS: document.getElementById('m_filhos')?.value.trim() || '',
+        PAI: document.getElementById('m_pai')?.value.trim() || '',
+        MAE: document.getElementById('m_mae')?.value.trim() || '',
+        PROFISSAO: document.getElementById('m_profissao')?.value.trim() || '',
         SITUACAO_TRABALHO: document.getElementById('m_situacao')?.value || '',
-        CARGO: document.getElementById('m_cargo')?.value || '',
-        DEPARTAMENTO: document.getElementById('m_departamento')?.value || '',
+        CARGO: document.getElementById('m_cargo')?.value.trim() || '',
+        DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
         PERFIL: document.getElementById('m_perfil')?.value || ''
     };
+
+    // Validação básica no front
+    if (!dados.NOME || !dados.CPF) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos obrigatórios',
+            text: 'Nome e CPF são obrigatórios!'
+        });
+        return;
+    }
 
     await enviarDados(`${API_BASE}/membros`, id, dados);
     document.getElementById('modalMembro')?.classList.add('hidden');
 }
 
-// Funções semelhantes para Pastor (já estavam boas, mantive)
 window.abrirModalEventoPastor = function() {
     document.getElementById('formPastor')?.reset();
     document.getElementById('p_id').value = '';
@@ -347,7 +388,14 @@ window.abrirModalEventoPastor = function() {
 
 window.prepararEdicaoPastor = function(id) {
     const a = SISTEMA.dados.agendaPastor.find(x => getVal(x, 'ID') == id);
-    if (!a) return;
+    if (!a) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Compromisso não encontrado',
+            text: 'O item selecionado não está mais na agenda.'
+        });
+        return;
+    }
 
     document.getElementById('p_id').value = getVal(a, 'ID');
     document.getElementById('p_evento').value = getVal(a, 'EVENTO');
@@ -362,28 +410,60 @@ window.prepararEdicaoPastor = function(id) {
 async function salvarPastor() {
     const id = document.getElementById('p_id')?.value;
     const dados = {
-        EVENTO: document.getElementById('p_evento')?.value || '',
+        EVENTO: document.getElementById('p_evento')?.value.trim() || '',
         DATA: dataBr(document.getElementById('p_data')?.value),
         HORARIO: document.getElementById('p_hora')?.value || '',
-        LOCAL: document.getElementById('p_local')?.value || '',
-        OBSERVACAO: document.getElementById('p_obs')?.value || ''
+        LOCAL: document.getElementById('p_local')?.value.trim() || '',
+        OBSERVACAO: document.getElementById('p_obs')?.value.trim() || ''
     };
+
+    if (!dados.EVENTO || !dados.DATA) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos obrigatórios',
+            text: 'Evento e Data são obrigatórios!'
+        });
+        return;
+    }
 
     await enviarDados(`${API_BASE}/agenda-pastor`, id, dados);
     document.getElementById('modalPastor')?.classList.add('hidden');
 }
 
 window.deletarItem = async function(id, endpoint) {
-    if (!confirm('Tem certeza que deseja excluir?')) return;
-    try {
-        await fetch(`${API_BASE}/${endpoint}/${id}`, {
-            method: 'DELETE',
-            headers: { 'x-admin-token': SISTEMA.token }
-        });
-        await carregarTudoDoBanco();
-    } catch (e) {
-        alert('Erro ao excluir.');
-    }
+    Swal.fire({
+        title: 'Tem certeza?',
+        text: "Esta ação não pode ser desfeita!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                await fetch(`${API_BASE}/${endpoint}/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-token': SISTEMA.token }
+                });
+                await carregarTudoDoBanco();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Excluído!',
+                    text: 'O item foi removido com sucesso.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch (e) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro ao excluir',
+                    text: 'Não foi possível remover o item. Tente novamente.'
+                });
+            }
+        }
+    });
 };
 
 window.fecharModal = function(id) {
@@ -406,12 +486,30 @@ async function enviarDados(urlBase, id, payload) {
             },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Falha na API');
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'Falha na API');
+        }
+
         await carregarTudoDoBanco();
-        alert('Salvo com sucesso!');
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Salvo com sucesso!',
+            text: 'Os dados foram atualizados corretamente.',
+            timer: 2000,
+            showConfirmButton: false
+        });
     } catch (e) {
         console.error(e);
-        alert('Erro ao salvar.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao salvar',
+            html: `Detalhes: <br><small>${e.message || 'Falha na comunicação com o servidor'}</small>`,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#3b82f6'
+        });
     }
 }
 
@@ -434,7 +532,7 @@ function dataBr(str) {
 }
 
 // ============================================================
-// 8. SIDEBAR (já estava bom, mantive)
+// 8. SIDEBAR
 // ============================================================
 window.toggleSidebar = function() {
     const sidebar = document.querySelector('.sidebar');
