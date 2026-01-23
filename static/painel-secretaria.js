@@ -55,8 +55,14 @@ function getVal(obj, key) {
     if (!obj || typeof obj !== 'object') return '';
     if (!key) return '';
     
-    // Tenta encontrar a chave exata, ou maiúscula, ou minúscula
-    return obj[key] || obj[key.toUpperCase()] || obj[key.toLowerCase()] || '';
+    // Procura ignorando case (melhoria: usa Object.keys para achar match)
+    const lowerKey = key.toLowerCase();
+    for (const k in obj) {
+        if (k.toLowerCase() === lowerKey) {
+            return obj[k];
+        }
+    }
+    return '';
 }
 
 // ========================================================
@@ -111,6 +117,10 @@ async function carregarDashboard() {
             fetch(`${API_BASE}/agenda-pastor`, { headers }),
             fetch(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
+
+        if (!resPastor.ok || !resGeral.ok) {
+            throw new Error(`Erro nas APIs: Pastor=${resPastor.status}, Geral=${resGeral.status}`);
+        }
 
         const agendaPastor = await resPastor.json();
         const dadosGerais = await resGeral.json(); 
@@ -191,7 +201,8 @@ async function carregarMembros() {
         renderizarTabelaMembros(cacheMembros);
     } catch (e) {
         console.error("Erro detalhado em Membros:", e);
-        tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center">Erro ao buscar dados: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center">Erro ao buscar dados: ${e.message}. Verifique a API ou rede.</td></tr>`;
+        cacheMembros = []; // Limpa cache se falhar
     }
 }
 
@@ -216,6 +227,15 @@ function renderizarTabelaMembros(lista) {
     `).join('');
 }
 
+// Função de filtro (estava no HTML mas não implementada)
+window.filtrarTabelaMembros = function() {
+    const busca = document.getElementById('buscaMembro').value.toLowerCase();
+    const filtrados = cacheMembros.filter(m => 
+        getVal(m, 'NOME').toLowerCase().includes(busca) || getVal(m, 'CPF').toLowerCase().includes(busca)
+    );
+    renderizarTabelaMembros(filtrados);
+};
+
 // ========================================================
 // 3. AGENDA PASTOR
 // ========================================================
@@ -230,7 +250,9 @@ async function carregarAgendaPastor() {
         const res = await fetch(`${API_BASE}/agenda-pastor`, {
             headers: { 'Cache-Control': 'no-cache' }
         });
-        
+
+        if (!res.ok) throw new Error(`Erro API: ${res.status}`);
+
         cacheAgendaPastor = await res.json();
         
         if (!cacheAgendaPastor || cacheAgendaPastor.length === 0) {
@@ -255,8 +277,9 @@ async function carregarAgendaPastor() {
         `).join('');
 
     } catch (e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red">Erro ao carregar agenda.</td></tr>';
+        console.error("Erro ao carregar agenda:", e);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red">Erro ao carregar agenda: ' + e.message + '</td></tr>';
+        cacheAgendaPastor = []; // Limpa cache
     }
 }
 
@@ -267,7 +290,7 @@ function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div) return;
     if (!usuario) {
-        div.innerHTML = '<p style="color:red">Erro: Dados do usuário não disponíveis.</p>';
+        div.innerHTML = '<p style="color:red">Erro: Dados do usuário não disponíveis. Tente relogar.</p>';
         return;
     }
 
@@ -275,7 +298,7 @@ function renderizarMeusDados() {
     const ignorar = ['ID', 'SENHA', 'id', 'senha', 'TOKEN', 'token'];
     
     for (const key in usuario) {
-        if (ignorar.includes(key)) continue;
+        if (ignorar.includes(key.toUpperCase())) continue;
         // Evita mostrar valores nulos/undefined
         const valor = usuario[key] === null || usuario[key] === undefined ? '' : usuario[key];
         
@@ -286,7 +309,7 @@ function renderizarMeusDados() {
             </div>
         `;
     }
-    div.innerHTML = html;
+    div.innerHTML = html || '<p style="color:red">Nenhum dado disponível.</p>'; // Fallback se vazio
 }
 
 // ========================================================
