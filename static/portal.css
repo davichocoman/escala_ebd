@@ -569,3 +569,47 @@ body {
         padding: 0.9rem 1.1rem;
     }
 }
+/* Estilo para campos de "Meus Dados" no painel do membro */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group.long-field {
+    margin-bottom: 1.4rem; /* mais espaço só para campos longos */
+}
+
+.valor-box {
+    padding: 0.7rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 2.4rem;          /* altura mínima confortável para campos curtos */
+    line-height: 1.45;
+    color: #1e293b;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Mobile: campos curtos ficam mais compactos */
+@media (max-width: 768px) {
+    .valor-box {
+        padding: 0.65rem 0.9rem;
+        min-height: 2.2rem;
+        font-size: 0.93rem;
+    }
+
+    .form-group.long-field .valor-box {
+        min-height: 3.2rem;      /* só campos longos ficam maiores */
+        padding: 0.8rem 1rem;
+    }
+
+    /* Garante alinhamento perfeito nos bullets de FILHOS */
+    .valor-box span {
+        display: block;
+        margin: 0.25rem 0;
+        padding-left: 1.2rem;    /* indentação bonita */
+        text-indent: -1.2rem;    /* alinha o • com o texto */
+    }
+}
