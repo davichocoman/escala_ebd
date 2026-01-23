@@ -183,9 +183,9 @@ function renderizarMembros() {
         <div class="member-card">
             <div class="card-header">
                 <strong>${getVal(m, 'NOME')}</strong>
-                <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
             </div>
             <div class="card-body">
+                <div><strong>PERFIL:</strong> <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span></div>
                 <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
             </div>
             <div class="card-actions">
