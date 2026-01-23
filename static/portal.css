@@ -160,6 +160,7 @@ body {
     font-size: 0.92rem;
     gap: 1rem;
 }
+
 .dash-list li:last-child { border-bottom: none; }
 
 /* --- 5. TABELAS DE DADOS --- */
@@ -167,34 +168,15 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.94rem;
-    min-width: 640px; /* força scroll horizontal em telas muito pequenas */
-}
-
-.data-table th {
-    background-color: #f8fafc;
-    color: var(--text-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.78rem;
-    letter-spacing: 0.4px;
-    padding: 12px 14px;
-    text-align: left;
-    border-bottom: 2px solid var(--border);
-    white-space: nowrap;
-}
-
-.data-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-main);
+    min-width: 640px; /* força scroll horizontal em telas maiores */
 }
 
 /* --- 6. FORMULÁRIOS E INPUTS --- */
-.form-grid       { display: grid; gap: 1.2rem; }
-.form-grid-2     { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
-.form-grid-3     { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
+.form-grid { display: grid; gap: 1.2rem; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
 
-.form-group      { margin-bottom: 1.2rem; }
+.form-group { margin-bottom: 1.2rem; }
 
 .form-group label {
     display: block;
@@ -240,6 +222,7 @@ body {
     background-color: var(--accent);
     color: white;
 }
+
 .btn-primary:hover { background-color: #2563eb; }
 
 /* --- 8. MODAIS --- */
@@ -290,18 +273,18 @@ body {
 .mobile-menu-btn {
     display: none;
     position: fixed;
-    top: 12px;
-    left: 12px;
-    z-index: 1100;
-    background: var(--primary-dark);
+    top: 4px;
+    left: 8px;
+    z-index: 1250;
+    background: rgba(15, 23, 42, 0.95);
     color: white;
     border: none;
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    font-size: 1.5rem;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 1.7rem;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
     align-items: center;
     justify-content: center;
 }
@@ -312,7 +295,7 @@ body {
     
     .main-content {
         padding: 1rem;
-        padding-top: 70px; /* espaço para botão menu */
+        padding-top: 70px;
     }
     
     .page-header {
@@ -363,21 +346,13 @@ body {
         margin-left: 0 !important;
         width: 100%;
         padding: 1.2rem;
-        padding-top: 4.5rem;
+        padding-top: 80px !important; /* +10px para folga maior */
+        padding-bottom: 2rem;
     }
     
     .dashboard-row {
         grid-template-columns: 1fr;
         gap: 1.2rem;
-    }
-    
-    .data-table {
-        font-size: 0.92rem;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 10px 12px;
     }
     
     .mobile-menu-btn {
@@ -413,62 +388,48 @@ body {
 @media (min-width: 1025px) {
     .dashboard-row { grid-template-columns: repeat(3, 1fr); }
 }
+
 /* ────────────────────────────────────────────────
-   CORREÇÕES ESPECÍFICAS PARA MOBILE
+   CORREÇÕES ESPECÍFICAS PARA MOBILE - TABELAS COMO CARDS
 ───────────────────────────────────────────────── */
 
-/* Botão de menu mobile - mais discreto e não sobrepõe tanto */
-.mobile-menu-btn {
-    top: 12px;
-    left: 12px;
-    width: 44px;
-    height: 44px;
-    font-size: 1.6rem;
-    border-radius: 50%;                /* mais arredondado */
-    background: rgba(15, 23, 42, 0.92);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-    z-index: 1200;                     /* fica acima de tudo */
-}
-
-/* Garante que o conteúdo principal tenha espaço suficiente no topo */
 @media (max-width: 768px) {
+    /* Espaço superior fixo para evitar sobreposição */
     .main-content {
-        padding-top: 70px !important;   /* espaço fixo para o botão menu */
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-top: 80px !important;
     }
 
-    /* Faz com que as seções de lista / tabela se comportem como cards empilhados */
-    #sec-membros, #sec-pastor, #sec-perfil {
-        padding: 0 0.5rem;
+    /* Esconde botão menu quando sidebar aberta */
+    .sidebar.open ~ .mobile-menu-btn {
+        display: none !important;
     }
 
-    /* Tabelas viram blocos empilhados no mobile (estilo mais próximo da Visão Semanal) */
+    /* Tabelas viram cards empilhados */
     .data-table {
         border: 0;
         width: 100%;
     }
 
     .data-table thead {
-        display: none;               /* esconde cabeçalho fixo */
+        display: none;
     }
 
     .data-table tr {
         display: block;
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.4rem;
         background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
         overflow: hidden;
     }
 
     .data-table td {
         display: block;
-        text-align: right;
-        border: none;
-        padding: 0.9rem 1.1rem;
+        text-align: left !important;           /* ← Correção principal: esquerda */
+        padding: 0.9rem 1.1rem 0.9rem 55% !important;  /* espaço para label */
         position: relative;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #e2e8f0;
+        min-height: 3.2rem;
     }
 
     .data-table td:last-child {
@@ -478,23 +439,31 @@ body {
     .data-table td:before {
         content: attr(data-label);
         position: absolute;
-        left: 1.1rem;
-        width: 45%;
+        left: 1rem;
+        width: 50%;
         font-weight: 600;
         text-align: left;
-        color: #475569;
+        color: #334155;
+        white-space: normal;
     }
 
-    /* Ajuste nas linhas da tabela de membros e agenda */
-    #tabela-membros tr td:nth-child(1):before { content: "Nome"; }
-    #tabela-membros tr td:nth-child(2):before { content: "CPF"; }
-    #tabela-membros tr td:nth-child(3):before { content: "Ações"; text-align: right; }
+    /* Ações ficam à direita */
+    .data-table td[data-label="Ações"] {
+        text-align: right !important;
+        padding-left: 1rem !important;
+    }
 
-    #tabela-agenda-pastor tr td:nth-child(1):before { content: "Data"; }
-    #tabela-agenda-pastor tr td:nth-child(2):before { content: "Hora"; }
-    #tabela-agenda-pastor tr td:nth-child(3):before { content: "Evento"; }
-    #tabela-agenda-pastor tr td:nth-child(4):before { content: "Local"; }
-    #tabela-agenda-pastor tr td:nth-child(5):before { content: "Ações"; text-align: right; }
+    /* Evita corte de texto longo */
+    .card {
+        overflow: visible !important;
+        margin: 0 auto;
+        max-width: 100%;
+    }
+
+    /* Padding nas seções específicas */
+    #sec-membros, #sec-pastor, #sec-perfil {
+        padding: 0 0.5rem;
+    }
 }
 
 /* Melhor estilização do botão fechar modal */
@@ -512,54 +481,16 @@ body {
 }
 
 .btn-close-modal:hover {
-    background: rgba(239, 68, 68, 0.15);   /* leve vermelho ao hover */
+    background: rgba(239, 68, 68, 0.15);
     color: var(--red);
     transform: rotate(90deg);
 }
 
-/* Aumenta espaço no topo para NÃO cobrir o header da sidebar */
-@media (max-width: 768px) {
-    .main-content {
-        padding-top: 80px !important;   /* +10px para folga */
-        padding-bottom: 2rem;
-    }
-
-    /* Botão menu mais alto e discreto */
-    .mobile-menu-btn {
-        top: 4px !important;
-        left: 8px !important;
-        width: 42px;
-        height: 42px;
-        font-size: 1.7rem;
-        border-radius: 50%;
-        background: rgba(15, 23, 42, 0.95);
-        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        z-index: 1250 !important;   /* acima de tudo */
-    }
-
-    /* Garante que o header da página não seja coberto */
-    .page-header {
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-    }
-
-    /* Overlay mais confiável */
-    #sidebar-overlay {
-        z-index: 995 !important;   /* entre botão menu e sidebar */
-    }
-
-    .sidebar {
-        z-index: 1000 !important;
-    }
+/* Overlay da sidebar mais confiável */
+#sidebar-overlay {
+    z-index: 995 !important;
 }
 
-/* Reforço no card de tabela para mobile */
-.card {
-    margin: 0 auto;
-    max-width: 100%;
-    overflow-x: hidden;   /* evita scroll lateral indesejado */
-}
-
-.sidebar.open ~ .mobile-menu-btn {
-    display: none !important;  /* Esconde botão quando sidebar aberta */
+.sidebar {
+    z-index: 1000 !important;
 }
