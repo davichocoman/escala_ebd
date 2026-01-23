@@ -346,122 +346,57 @@ body {
     padding: 1.5rem;
 }
 
-/* --- 9. RESPONSIVIDADE --- */
-/* ... (Mantenha o resto do CSS igual, mude apenas do @media para baixo) ... */
-
 /* --- 9. RESPONSIVIDADE E MOBILE --- */
-@media (max-width: 768px) {
-    .app-container {
-        flex-direction: column;
-    }
-
-    /* Esconde a Sidebar no celular por padrão */
-    .sidebar {
-        position: fixed;
-        left: -260px; /* Joga para fora da tela */
-        top: 0;
-        bottom: 0;
-        width: 260px;
-        transition: left 0.3s ease;
-        z-index: 1000;
-        height: 100vh;
-    }
-
-    /* Classe para mostrar a Sidebar quando clicar no botão */
-    .sidebar.open {
-        left: 0;
-    }
-
-    /* Conteúdo ocupa tudo */
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-        padding: 1rem;
-        padding-top: 4rem; /* Espaço para o botão do menu */
-    }
-
-    /* Ajuste das tabelas para não quebrar */
-    .data-table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-    
-    .form-grid-2, .form-grid-3 {
-        grid-template-columns: 1fr;
-    }
+/* Mobile Pequeno (<576px) */
+@media (max-width: 576px) {
+    .main-content { padding: 1rem; }
+    .dashboard-row { grid-template-columns: 1fr; } /* Cards empilhados */
+    .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+    .data-table { display: block; overflow-x: auto; white-space: nowrap; }
+    .modal-card { width: 95%; padding: 1rem; }
+    .sidebar { width: 100%; left: -100%; } /* Sidebar full-width off-screen */
 }
 
-/* Botão Flutuante do Menu (Só aparece no Mobile) */
-.mobile-menu-btn {
-    display: none;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1100;
-    background: #0f172a;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-@media (max-width: 768px) {
+/* Mobile/Tablet Médio (576px - 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+    .app-container { flex-direction: column; }
+    .sidebar { position: fixed; left: -260px; top: 0; bottom: 0; width: 260px; transition: left 0.3s ease; z-index: 1000; height: 100vh; }
+    .sidebar.open { left: 0; }
+    .main-content { margin-left: 0; width: 100%; padding: 1rem; padding-top: 4rem; }
+    .data-table { display: block; overflow-x: auto; white-space: nowrap; }
+    .form-grid-2 { grid-template-columns: 1fr 1fr; } /* Mantém 2 colunas em tablets */
+    .form-grid-3 { grid-template-columns: 1fr 1fr; } /* 2 colunas para não apertar */
+    .dashboard-row { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); } /* Cards flexíveis */
     .mobile-menu-btn { display: block; }
 }
-/* --- ATUALIZAÇÃO E CORREÇÃO DE BOTÕES --- */
 
-/* Botão Padrão */
-.btn {
-    padding: 0.6rem 1.2rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.95rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: filter 0.2s;
+/* Desktop Pequeno/Tablet Grande (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar { width: 220px; } /* Sidebar mais fina */
+    .main-content { margin-left: 220px; width: calc(100% - 220px); padding: 1.5rem; }
+    .dashboard-row { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .mobile-menu-btn { display: none; } /* Esconde botão mobile */
 }
 
-/* Botão Azul Escuro (Principal) */
-.btn-primary {
-    background-color: #0f172a;
-    color: white;
+/* Desktop Grande (>1024px) */
+@media (min-width: 1025px) {
+    .sidebar { width: 250px; }
+    .main-content { margin-left: 250px; width: calc(100% - 250px); padding: 2rem; }
+    .dashboard-row { grid-template-columns: repeat(3, 1fr); } /* 3 cards fixos */
+    .modal-card { max-width: 800px; }
+    .mobile-menu-btn { display: none; }
 }
-.btn-primary:hover { background-color: #1e293b; }
 
-/* Botão Verde (Novo Cadastro) - FORÇADO */
-.btn-success, .btn-add {
-    background-color: #16a34a !important; /* Verde */
-    color: white !important;
+/* Ajustes Gerais para Tabelas e Modais (em todos tamanhos) */
+.data-table {
+    min-width: 100%; /* Garante que tabela ocupe espaço */
 }
-.btn-success:hover, .btn-add:hover { filter: brightness(90%); }
 
-/* Botão Vermelho (Excluir) */
-.btn-danger {
-    background-color: #dc2626;
-    color: white;
+.modal-overlay {
+    padding: 1rem; /* Espaço em mobile */
 }
-.btn-danger:hover { background-color: #b91c1c; }
 
-/* Botão Voltar */
-.btn-back {
-    background-color: #e2e8f0;
-    color: #334155;
-}
-.btn-back:hover { background-color: #cbd5e1; }
-
-/* Layout do Header da Página Interna */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
+.mobile-menu-btn {
+    display: none; /* Padrão escondido, só mostra em media queries */
 }
