@@ -150,7 +150,6 @@ function renderizarMembros() {
         <tr>
             <td>${m.NOME}</td>
             <td>${m.CPF}</td>
-            <td>${m.CARGO}</td>
             <td>${m.PERFIL || 'MEMBRO'}</td>
             <td>
                 <button class="btn-icon" onclick="prepararEdicaoMembro('${m.ID}')">✏️</button>
@@ -265,11 +264,19 @@ window.prepararEdicaoMembro = function(id) {
     
     set('m_id', m.ID);
     set('m_nome', m.NOME);
-    set('m_cpf', m.CPF);
     set('m_nasc', dataIso(m.NASCIMENTO)); // Converte dd/mm/yyyy para yyyy-mm-dd pro input date
+    set('m_cpf', String(m.CPF));
+    set('m_estadocivil', m.ESTADO_CIVIL);
+    set('m_casamento', dataIso(m.DATA_CASAMENTO));
+    set('m_conjuge', m.CONJUGE);
+    set('m_filhos', m.FILHOS);
+    set('m_pai', m.PAI);
+    set('m_mae', m.MAE);
+    set('m_profissao', m.PROFISSAO);
+    set('m_situacaotrabalho', m.SITUACAO_TRABALHO);
     set('m_cargo', m.CARGO);
+    set('m_departamento', m.DEPARTAMENTO);
     set('m_perfil', m.PERFIL);
-    // ... preencha os outros campos aqui se precisar ...
 
     document.getElementById('modalMembro').classList.remove('hidden');
 };
@@ -278,11 +285,20 @@ async function salvarMembro() {
     const id = document.getElementById('m_id').value;
     const dados = {
         NOME: document.getElementById('m_nome').value,
-        CPF: document.getElementById('m_cpf').value,
         NASCIMENTO: dataBr(document.getElementById('m_nasc').value), // Converte volta para dd/mm/yyyy
+        CPF: String(document.getElementById('m_cpf').value),
+        ESTADO_CIVIL: document.getElementById('m_estadocivil').value,
+        DATA_CASAMENTO: document.getElementById('m_casamento').value,
+        CONJUGE: document.getElementById('m_conjuge').value,
+        FILHOS: document.getElementById('m_filhos').value,
+        PAI: document.getElementById('m_pai').value,
+        MAE: document.getElementById('m_mae').value,
+        PROFISSAO: document.getElementById('m_profissao').value,
+        SITUACAO_TRABALHO: document.getElementById('m_situacaotrabalho').value,
         CARGO: document.getElementById('m_cargo').value,
+        DEPARTAMENTO: document.getElementById('m_departamento').value,
         PERFIL: document.getElementById('m_perfil').value,
-        // ... pegue os outros campos ...
+
     };
 
     await enviarDados(`${API_BASE}/membros`, id, dados);
