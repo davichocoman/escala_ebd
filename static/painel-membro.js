@@ -1,34 +1,160 @@
-const usuario = JSON.parse(sessionStorage.getItem('usuario_sistema'));
-if(!usuario) window.location.href = '/login';
+const API_BASE = 'https://api-escala.onrender.com/api';
 
-document.getElementById('nomeUsuario').innerText = usuario.NOME.split(' ')[0];
+// Estado global
+let usuario = null;
 
-function sair() {
-    sessionStorage.clear();
-    window.location.href = '/login';
+// Função auxiliar para acessar chaves ignorando case
+function getVal(obj, key) {
+    if (!obj || typeof obj !== 'object') return '';
+    const upperKey = key.toUpperCase();
+    for (const k in obj) {
+        if (k.toUpperCase() === upperKey) {
+            return obj[k] || '';
+        }
+    }
+    return '';
 }
 
-function mostrarMeusDados() {
-    document.getElementById('areaDados').style.display = 'block';
-    const form = document.getElementById('formDados');
-    
-    // Gera os campos automaticamente (Read-Only)
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Recupera usuário da sessão
+    const userStr = sessionStorage.getItem('usuario_sistema');
+    if (!userStr) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sessão expirada',
+            text: 'Por favor, faça login novamente.',
+            timer: 3000,
+            showConfirmButton: false
+        }).then(() => {
+            window.location.href = '/login';
+        });
+        return;
+    }
+
+    usuario = JSON.parse(userStr);
+
+    // 2. Mostra nome no header da sidebar
+    const nome = getVal(usuario, 'NOME') ? getVal(usuario, 'NOME').split(' ')[0] : 'Membro';
+    const display = document.getElementById('userDisplay');
+    if (display) display.innerHTML = `Olá, <strong>${nome}</strong><br><small>Membro</small>`;
+
+    // 3. Renderiza os dados imediatamente (única tela)
+    renderizarMeusDados();
+});
+
+// ============================================================
+// Renderização
+// ============================================================
+function renderizarMeusDados() {
+    const container = document.getElementById('form-meus-dados');
+    if (!container || !usuario) return;
+
     let html = '';
-    for (const [key, value] of Object.entries(usuario)) {
-        if(key === 'ID' || key === 'SENHA') continue;
+    const ignorar = ['ID', 'SENHA', 'TOKEN', 'token_sistema'];
+
+    for (const [key, val] of Object.entries(usuario)) {
+        if (ignorar.includes(key.toUpperCase())) continue;
+        
+        const label = key.replace(/_/g, ' ').toUpperCase();
+        const valor = val || '-';
+
         html += `
             <div class="form-group">
-                <label>${key.replace('_', ' ')}</label>
-                <input class="form-input" value="${value || '-'}" disabled>
+                <label>${label}</label>
+                <input class="form-input" value="${valor}" disabled style="background:#f1f5f9; color:#1e293b;">
             </div>
         `;
     }
-    form.innerHTML = html;
-    
-    // Rola até os dados
-    document.getElementById('areaDados').scrollIntoView({behavior: 'smooth'});
+
+    container.innerHTML = html || '<p style="text-align:center; color:#64748b;">Nenhum dado cadastral disponível.</p>';
 }
 
-function fecharMeusDados() {
-    document.getElementById('areaDados').style.display = 'none';
-}
+// ============================================================
+// Navegação e Sidebar
+// ============================================================
+window.mostrarTela = function(telaId, btn) {
+    // Como só tem uma tela visível, não precisa esconder outras
+    // Mas mantemos o padrão para futura expansão
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    // Fecha sidebar no mobile
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && window.innerWidth < 768) {
+        sidebar.classList.remove('open');
+    }
+};
+
+// Toggle sidebar + overlay
+window.toggleSidebar = function() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.toggle('open');
+
+    let overlay = document.getElementById('sidebar-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.style.cssText = `
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 990;
+            display: none;
+            transition: opacity 0.28s ease;
+            opacity: 0;
+        `;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', toggleSidebar);
+    }
+
+    if (isOpen) {
+        overlay.style.display = 'block';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+    } else {
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 280);
+    }
+};
+
+// Fecha sidebar ao clicar em item no mobile
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    if (e.target.closest('.menu-item') &&
+        sidebar.classList.contains('open') &&
+        window.innerWidth < 768) {
+        toggleSidebar();
+    }
+});
+
+// Fecha com ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            toggleSidebar();
+        }
+    }
+});
+
+// ============================================================
+// Logout com confirmação
+// ============================================================
+window.logout = function() {
+    Swal.fire({
+        title: 'Deseja sair?',
+        text: "Você será redirecionado para a tela de login.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#dc2626',
+        confirmButtonText: 'Sim, sair',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            sessionStorage.clear();
+            window.location.href = '/login';
+        }
+    });
+};
