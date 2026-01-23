@@ -113,7 +113,7 @@ function renderizarDashboard() {
     preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', filtroSemana);
 
     const listaReservas = SISTEMA.dados.dashboard.reservas || [];
-    preencherListaDash('list-dash-reservas', listaReservas, 'ATIVIDADE', 'DATA', filtroSemana);
+    preencherListaDash('list-dash-reservas', listaReservas, 'EVENTO', 'DATA', filtroSemana);
 }
 
 function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro) {
@@ -137,6 +137,8 @@ function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro) {
 }
 
 function renderizarMembros() {
+    console.log('Renderizando membros:', SISTEMA.dados.membros.length);
+    console.log('Renderizando agenda:', SISTEMA.dados.agendaPastor.length);
     const busca = (document.getElementById('buscaMembro')?.value || '').toLowerCase();
     const tbody = document.getElementById('tabela-membros');
     if (!tbody) return;
@@ -230,6 +232,9 @@ window.mostrarTela = function(telaId, btn) {
     ['dashboard', 'membros', 'pastor', 'perfil'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
+        if (telaId === 'membros') renderizarMembros();
+        if (telaId === 'pastor') renderizarAgendaPastor();
+        if (telaId === 'perfil') renderizarMeusDados();
     });
 
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
