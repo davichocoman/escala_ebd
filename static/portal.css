@@ -516,3 +516,46 @@ body {
     color: var(--red);
     transform: rotate(90deg);
 }
+
+/* Aumenta espaço no topo para NÃO cobrir o header da sidebar */
+@media (max-width: 768px) {
+    .main-content {
+        padding-top: 80px !important;   /* +10px para folga */
+        padding-bottom: 2rem;
+    }
+
+    /* Botão menu mais alto e discreto */
+    .mobile-menu-btn {
+        top: 8px !important;
+        left: 8px !important;
+        width: 42px;
+        height: 42px;
+        font-size: 1.7rem;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.95);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        z-index: 1250 !important;   /* acima de tudo */
+    }
+
+    /* Garante que o header da página não seja coberto */
+    .page-header {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+    }
+
+    /* Overlay mais confiável */
+    #sidebar-overlay {
+        z-index: 995 !important;   /* entre botão menu e sidebar */
+    }
+
+    .sidebar {
+        z-index: 1000 !important;
+    }
+}
+
+/* Reforço no card de tabela para mobile */
+.card {
+    margin: 0 auto;
+    max-width: 100%;
+    overflow-x: hidden;   /* evita scroll lateral indesejado */
+}
