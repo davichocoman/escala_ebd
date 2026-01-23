@@ -551,3 +551,21 @@ body {
         max-width: 100%;
     }
 }
+.valor-long {
+    padding: 0.8rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 2.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    color: #1e293b;
+}
+
+@media (max-width: 768px) {
+    .valor-long {
+        font-size: 0.95rem;
+        padding: 0.9rem 1.1rem;
+    }
+}
