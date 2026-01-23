@@ -229,23 +229,40 @@ function configurarBotoes() {
 }
 
 window.mostrarTela = function(telaId, btn) {
+    // Esconde todas as seções
     ['dashboard', 'membros', 'pastor', 'perfil'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
-        if (telaId === 'membros') renderizarMembros();
-        if (telaId === 'pastor') renderizarAgendaPastor();
-        if (telaId === 'perfil') renderizarMeusDados();
     });
 
+    // Remove active de todos os itens do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
+    // Mostra a aba escolhida
     const alvo = document.getElementById('sec-' + telaId);
     if (alvo) alvo.classList.remove('hidden');
+
+    // Ativa o botão clicado
     if (btn) btn.classList.add('active');
 
     // Fecha sidebar no mobile
     const sidebar = document.querySelector('.sidebar');
-    if (sidebar && window.innerWidth < 768) sidebar.classList.remove('open');
+    if (sidebar && window.innerWidth < 768) {
+        sidebar.classList.remove('open');
+    }
+
+    // Força re-renderização das listas ao abrir a aba
+    if (telaId === 'membros') {
+        console.log("Forçando render de membros");
+        renderizarMembros();
+    }
+    if (telaId === 'pastor') {
+        console.log("Forçando render de agenda pastor");
+        renderizarAgendaPastor();
+    }
+    if (telaId === 'perfil') {
+        renderizarMeusDados();
+    }
 };
 
 window.logout = function() {
