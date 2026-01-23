@@ -410,35 +410,60 @@ function dataBr(str) {
 
 window.toggleSidebar = function() {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('open');
-    
-    // Cria um overlay escuro se não existir, para clicar e fechar
+    if (!sidebar) return;
+
+    const isOpen = sidebar.classList.toggle('open');
+
+    // Gerencia overlay
     let overlay = document.getElementById('sidebar-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'sidebar-overlay';
         overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 900; display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 990;           // fica atrás da sidebar (que é 1000)
+            display: none;
+            transition: opacity 0.28s ease;
+            opacity: 0;
         `;
-        overlay.onclick = toggleSidebar; // Clicar fora fecha
         document.body.appendChild(overlay);
+
+        // Fecha ao clicar no overlay
+        overlay.addEventListener('click', () => {
+            toggleSidebar();
+        });
     }
-    
-    // Mostra ou esconde o overlay junto com a sidebar
-    if (sidebar.classList.contains('open')) {
+
+    // Controla visibilidade e animação do overlay
+    if (isOpen) {
         overlay.style.display = 'block';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
     } else {
-        overlay.style.display = 'none';
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 280);
     }
 };
 
-// Ao clicar em qualquer item do menu no celular, fecha a sidebar automaticamente
-document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', () => {
+// Fecha sidebar ao clicar em item do menu no mobile
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    // Se for clique em menu-item E sidebar aberta E tela pequena
+    if (e.target.closest('.menu-item') && 
+        sidebar.classList.contains('open') && 
+        window.innerWidth < 768) {
+        toggleSidebar();
+    }
+});
+
+// Opcional: fecha ao apertar ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
         const sidebar = document.querySelector('.sidebar');
-        if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+        if (sidebar && sidebar.classList.contains('open')) {
             toggleSidebar();
         }
-    });
+    }
 });
