@@ -57,12 +57,33 @@ function renderizarMeusDados() {
         if (ignorar.includes(key.toUpperCase())) continue;
         
         const label = key.replace(/_/g, ' ').toUpperCase();
-        const valor = val || '-';
+        let valor = val || '-';
+
+        // Tratamento especial para campos que podem ser listas longas (ex: FILHOS)
+        if (key.toUpperCase() === 'FILHOS' && typeof valor === 'string' && valor.includes(',')) {
+            valor = valor.split(',')
+                .map(item => item.trim())
+                .filter(Boolean)
+                .map(item => `• ${item}`)
+                .join('<br>');
+        }
 
         html += `
             <div class="form-group">
                 <label>${label}</label>
-                <input class="form-input" value="${valor}" disabled style="background:#f1f5f9; color:#1e293b;">
+                <div class="valor-long" style="
+                    padding: 0.8rem 1rem;
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    min-height: 2.8rem;
+                    white-space: pre-wrap;
+                    word-break: break-word;
+                    line-height: 1.5;
+                    color: #1e293b;
+                ">
+                    ${valor}
+                </div>
             </div>
         `;
     }
