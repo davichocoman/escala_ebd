@@ -1,8 +1,8 @@
 /* ==========================================================================
-   PORTAL.CSS - Estilo Unificado e Responsivo
+   PORTAL.CSS - Estilo Unificado do Sistema de Gestão (AD Rodovia A)
    ========================================================================== */
 
-/* --- 1. VARIÁVEIS E BASE --- */
+/* --- 1. RESET E BASE --- */
 :root {
     --primary-dark: #0f172a;
     --primary-light: #1e293b;
@@ -12,141 +12,203 @@
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border: #e2e8f0;
-    --red: #ef4444; --green: #22c55e; --blue: #3b82f6;
+
+    --red: #ef4444;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --orange: #f97316;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
-    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
     background-color: var(--bg-page);
     color: var(--text-main);
     font-size: 15px;
     line-height: 1.5;
-    overflow-x: hidden; /* Evita rolagem lateral indesejada */
+    overflow-x: hidden;
 }
 
-/* --- 2. LAYOUT GERAL (Desktop First) --- */
+/* --- 2. LAYOUT --- */
 .app-container {
     display: flex;
     min-height: 100vh;
-    width: 100%;
 }
 
-/* Sidebar (Padrão Desktop) */
+/* --- SIDEBAR --- */
 .sidebar {
-    width: 260px;
+    width: 250px;
     background-color: var(--primary-dark);
     color: white;
     display: flex;
     flex-direction: column;
     position: fixed;
-    top: 0; bottom: 0; left: 0;
+    inset: 0 auto 0 0;
     z-index: 1000;
-    transition: transform 0.3s ease; /* Animação suave */
+    transition: left 0.3s ease;
 }
 
-.sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; }
-.sidebar-menu { flex: 1; padding: 1rem 0; overflow-y: auto; }
+.sidebar-header {
+    padding: 1.5rem;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-menu {
+    flex: 1;
+    overflow-y: auto;
+}
 
 .menu-item {
-    display: flex; align-items: center; padding: 0.85rem 1.5rem;
-    color: #94a3b8; text-decoration: none; cursor: pointer;
-    border-left: 4px solid transparent; transition: 0.2s;
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 1.5rem;
+    color: #94a3b8;
+    text-decoration: none;
+    border-left: 4px solid transparent;
+    transition: 0.2s;
 }
-.menu-item:hover, .menu-item.active { background-color: var(--primary-light); color: white; border-left-color: var(--accent); }
-.menu-icon { margin-right: 12px; font-size: 20px; }
 
-/* Conteúdo Principal (Padrão Desktop) */
+.menu-item:hover,
+.menu-item.active {
+    background: var(--primary-light);
+    color: #fff;
+}
+
+.menu-item.active {
+    border-left-color: var(--accent);
+}
+
+.menu-icon {
+    margin-right: 12px;
+    font-size: 20px;
+}
+
+/* --- 3. CONTEÚDO PRINCIPAL --- */
 .main-content {
-    margin-left: 260px; /* Espaço da sidebar */
-    width: calc(100% - 260px);
-    padding: 2rem;
     flex: 1;
+    margin-left: 250px;
+    padding: 2rem;
+    width: calc(100% - 250px);
 }
 
-/* --- 3. COMPONENTES VISUAIS --- */
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 10px; }
-.card { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+/* --- 4. CARDS --- */
+.card {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+}
 
-/* Dashboard Cards */
 .dashboard-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsivo automático */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
-    margin-bottom: 2rem;
 }
-.dash-card { background: white; border-radius: 8px; padding: 1.5rem; border-left: 5px solid #ccc; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.border-red { border-color: var(--red); }
-.border-blue { border-color: var(--blue); }
-.border-green { border-color: var(--green); }
-.dash-list { list-style: none; margin-top: 1rem; }
-.dash-list li { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; font-size: 0.9rem; }
 
-/* Tabelas */
-.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; } /* Wrapper para tabelas não estourarem */
-.data-table { width: 100%; border-collapse: collapse; min-width: 600px; /* Força largura mínima pra scrollar */ }
-.data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-.data-table th { background: #f8fafc; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); }
+/* --- 5. TABELAS --- */
+.table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+}
 
-/* Formulários */
-.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
-.form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
-.form-input { width: 100%; padding: 0.7rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
 
-/* Botão Mobile (Hambúrguer) */
-.mobile-menu-btn {
-    display: none; /* Escondido no Desktop */
-    position: fixed;
-    top: 15px; left: 15px;
-    z-index: 1100;
-    background: var(--primary-dark);
-    color: white;
-    border: none;
-    padding: 10px;
+/* --- 6. FORMULÁRIOS --- */
+.form-grid-2,
+.form-grid-3 {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+/* --- 7. BOTÕES --- */
+.btn {
+    padding: 0.6rem 1.2rem;
     border-radius: 6px;
+    font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-/* Modais */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 1rem; }
-.modal-card { background: white; width: 100%; max-width: 600px; border-radius: 12px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
-.hidden { display: none !important; }
-.btn { padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
-.btn-primary { background: var(--accent); color: white; }
+/* --- 8. MODAIS --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
 
-/* --- 4. RESPONSIVIDADE (Mobile & Tablet) --- */
+.modal-card {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* --- 9. MOBILE FIRST --- */
+.mobile-menu-btn {
+    display: none;
+}
+
+/* ≤ 768px */
 @media (max-width: 768px) {
-    /* Layout */
     .sidebar {
-        transform: translateX(-100%); /* Esconde sidebar para esquerda */
-        width: 260px; /* Largura fixa do drawer */
-        box-shadow: 2px 0 15px rgba(0,0,0,0.2);
+        left: -260px;
     }
-    
+
     .sidebar.open {
-        transform: translateX(0); /* Mostra sidebar */
+        left: 0;
     }
 
     .main-content {
-        margin-left: 0; /* Remove margem */
-        width: 100%; /* Ocupa tudo */
+        margin-left: 0;
+        width: 100%;
         padding: 1rem;
-        padding-top: 4rem; /* Espaço para o botão mobile */
+        padding-top: 4rem;
     }
 
-    /* Mostra o botão */
-    .mobile-menu-btn { display: block; }
+    .mobile-menu-btn {
+        display: block;
+    }
 
-    /* Grids de Formulário viram 1 coluna */
-    .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+    .form-grid-2,
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
 
-    /* Dashboard */
-    .dashboard-row { grid-template-columns: 1fr; }
+/* 769px – 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
 
-    /* Header da Página */
-    .page-header { flex-direction: column; align-items: flex-start; }
-    .page-header button { width: 100%; margin-top: 10px; }
+    .main-content {
+        margin-left: 220px;
+        width: calc(100% - 220px);
+    }
+}
+
+/* ≥ 1025px */
+@media (min-width: 1025px) {
+    .dashboard-row {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
