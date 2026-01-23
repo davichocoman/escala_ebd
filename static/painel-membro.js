@@ -58,24 +58,27 @@ function renderizarMeusDados() {
         
         const label = key.replace(/_/g, ' ').toUpperCase();
         let valor = val || '-';
-
-        // Tratamento especial para FILHOS (lista com bullets)
         let valorHtml = valor;
-        let isLongField = false;
+        let isSpecialField = false;
 
-        if (key.toUpperCase() === 'FILHOS' && typeof valor === 'string' && valor.includes(',')) {
-            isLongField = true;
-            valorHtml = valor.split(',')
-                .map(item => item.trim())
-                .filter(Boolean)
-                .map(item => `<span style="display:block; margin: 0.3rem 0;">• ${item}</span>`)
-                .join('');
-        } else if (['PROFISSAO', 'OBSERVACAO', 'CARGO', 'DEPARTAMENTO'].includes(key.toUpperCase()) && valor.length > 30) {
-            isLongField = true;
+        // Tratamento especial SOMENTE para FILHOS e CARGO(S)
+        const upperKey = key.toUpperCase();
+        if (upperKey === 'FILHOS' || upperKey.includes('CARGO')) {
+            isSpecialField = true;
+            if (typeof valor === 'string' && valor.includes(',')) {
+                valorHtml = valor.split(',')
+                    .map(item => item.trim())
+                    .filter(Boolean)
+                    .map(item => `<span style="display:block; margin: 0.3rem 0;">• ${item}</span>`)
+                    .join('');
+            } else if (valor !== '-') {
+                // Se não tiver vírgula, mas for cargo/filhos, mantém como está
+                valorHtml = valor;
+            }
         }
 
         html += `
-            <div class="form-group ${isLongField ? 'long-field' : ''}">
+            <div class="form-group ${isSpecialField ? 'long-field' : ''}">
                 <label>${label}</label>
                 <div class="valor-box">
                     ${valorHtml}
