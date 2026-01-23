@@ -3,45 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Área do Membro</title>
+    <title>Área do Membro - AD Rodovia A</title>
     <link rel="stylesheet" href="../static/portal.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="brand">AD Rodovia A</div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <span class="user-badge" id="nomeUsuario">Carregando...</span>
-            <button onclick="sair()" style="background:none; border:none; color:white; cursor:pointer;">Sair</button>
-        </div>
-    </div>
+    <!-- Botão hambúrguer para mobile -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
 
-    <div class="dashboard-grid">
-        <div class="nav-card" onclick="mostrarMeusDados()">
-            <span class="nav-icon">👤</span>
-            <span class="nav-title">Meus Dados</span>
-        </div>
-
-        <a href="/agenda" class="nav-card">
-            <span class="nav-icon">📅</span>
-            <span class="nav-title">Agenda da Igreja</span>
-        </a>
-
-        <a href="/reservas" class="nav-card">
-            <span class="nav-icon">🔑</span>
-            <span class="nav-title">Reservas de Salas</span>
-        </a>
-    </div>
-
-    <div id="areaDados" class="container" style="display:none;">
-        <div class="card">
-            <div class="page-header">
-                <h3>Meus Dados Cadastrais</h3>
-                <button onclick="fecharMeusDados()" class="btn-back">Fechar</button>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                Área do Membro<br>
+                <span id="userDisplay">Carregando...</span>
             </div>
-            <div id="formDados" class="form-grid">
+
+            <div class="sidebar-menu">
+                <div class="menu-item active" onclick="mostrarTela('meus-dados', this)">
+                    <span class="material-icons menu-icon">account_circle</span> Meus Dados
                 </div>
-        </div>
+                <a href="/agenda" class="menu-item" target="_blank">
+                    <span class="material-icons menu-icon">calendar_month</span> Agenda da Igreja
+                </a>
+                <a href="/reservas" class="menu-item" target="_blank">
+                    <span class="material-icons menu-icon">vpn_key</span> Reservas de Salas
+                </a>
+            </div>
+
+            <div style="padding: 1.4rem;">
+                <button onclick="logout()" class="btn btn-primary" style="width:100%; background:#dc2626;">Sair</button>
+            </div>
+        </nav>
+
+        <!-- Conteúdo principal -->
+        <main class="main-content">
+            <!-- Meus Dados -->
+            <div id="sec-meus-dados">
+                <div class="page-header">
+                    <h2>Meus Dados Cadastrais</h2>
+                </div>
+                <div class="card">
+                    <div id="form-meus-dados" class="form-grid">
+                        <!-- Campos serão gerados via JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <!-- Overlay para fechar sidebar no mobile -->
+    <div id="sidebar-overlay"></div>
 
     <script src="../static/painel-membro.js"></script>
 </body>
