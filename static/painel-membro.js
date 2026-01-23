@@ -61,7 +61,7 @@ function renderizarMeusDados() {
         let valorHtml = valor;
         let isSpecialField = false;
 
-        // Tratamento especial SOMENTE para FILHOS e CARGO(S)
+        // Tratamento ESPECIAL SOMENTE para FILHOS e CARGO(S)
         const upperKey = key.toUpperCase();
         if (upperKey === 'FILHOS' || upperKey.includes('CARGO')) {
             isSpecialField = true;
@@ -69,18 +69,15 @@ function renderizarMeusDados() {
                 valorHtml = valor.split(',')
                     .map(item => item.trim())
                     .filter(Boolean)
-                    .map(item => `<span style="display:block; margin: 0.3rem 0;">• ${item}</span>`)
-                    .join('');
-            } else if (valor !== '-') {
-                // Se não tiver vírgula, mas for cargo/filhos, mantém como está
-                valorHtml = valor;
+                    .map(item => `<span>• ${item}</span>`)
+                    .join('<br>');
             }
         }
 
         html += `
             <div class="form-group ${isSpecialField ? 'long-field' : ''}">
                 <label>${label}</label>
-                <div class="valor-box">
+                <div class="valor-box ${isSpecialField ? 'special' : ''}">
                     ${valorHtml}
                 </div>
             </div>
@@ -89,7 +86,6 @@ function renderizarMeusDados() {
 
     container.innerHTML = html || '<p style="text-align:center; color:#64748b;">Nenhum dado cadastral disponível.</p>';
 }
-
 // ============================================================
 // Navegação e Sidebar
 // ============================================================
