@@ -137,11 +137,9 @@ function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro) {
 }
 
 function renderizarMembros() {
-    console.log('Renderizando membros:', SISTEMA.dados.membros.length);
-    console.log('Renderizando agenda:', SISTEMA.dados.agendaPastor.length);
     const busca = (document.getElementById('buscaMembro')?.value || '').toLowerCase();
-    const tbody = document.getElementById('tabela-membros');
-    if (!tbody) return;
+    const container = document.getElementById('lista-membros');
+    if (!container) return;
 
     const filtrados = SISTEMA.dados.membros.filter(m =>
         getVal(m, 'NOME').toLowerCase().includes(busca) ||
@@ -149,47 +147,55 @@ function renderizarMembros() {
     );
 
     if (filtrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" align="center">Nenhum membro encontrado.</td></tr>';
+        container.innerHTML = '<div class="empty-msg">Nenhum membro encontrado.</div>';
         return;
     }
 
-    tbody.innerHTML = filtrados.map(m => `
-        <tr>
-            <td data-label="Nome">${getVal(m, 'NOME')}</td>
-            <td data-label="CPF">${getVal(m, 'CPF')}</td>
-            <td data-label="Perfil"><span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span></td>
-            <td data-label="Ações">
+    container.innerHTML = filtrados.map(m => `
+        <div class="member-card">
+            <div class="card-header">
+                <strong>${getVal(m, 'NOME')}</strong>
+                <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
+            </div>
+            <div class="card-body">
+                <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
+            </div>
+            <div class="card-actions">
                 <button class="btn-icon edit" onclick="prepararEdicaoMembro('${getVal(m, 'ID')}')">✏️</button>
                 <button class="btn-icon delete" onclick="deletarItem('${getVal(m, 'ID')}', 'membros')">🗑️</button>
-            </td>
-        </tr>
+            </div>
+        </div>
     `).join('');
 }
 
 function renderizarAgendaPastor() {
-    const tbody = document.getElementById('tabela-agenda-pastor');
-    if (!tbody) return;
+    const container = document.getElementById('lista-agenda-pastor');
+    if (!container) return;
 
     const lista = SISTEMA.dados.agendaPastor || [];
-
     lista.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
 
     if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" align="center">Agenda vazia.</td></tr>';
+        container.innerHTML = '<div class="empty-msg">Agenda vazia.</div>';
         return;
     }
 
-    tbody.innerHTML = lista.map(a => `
-        <tr>
-            <td data-label="Data">${getVal(a, 'DATA')}</td>
-            <td data-label="Hora">${getVal(a, 'HORARIO')}</td>
-            <td data-label="Evento">${getVal(a, 'EVENTO')}<br><small>${getVal(a, 'OBSERVACAO') || ''}</small></td>
-            <td data-label="Local">${getVal(a, 'LOCAL')}</td>
-            <td data-label="Ações">
+    container.innerHTML = lista.map(a => `
+        <div class="agenda-card">
+            <div class="card-header">
+                <strong>${getVal(a, 'EVENTO')}</strong>
+                <span>${getVal(a, 'DATA')}</span>
+            </div>
+            <div class="card-body">
+                <div><strong>Hora:</strong> ${getVal(a, 'HORARIO')}</div>
+                <div><strong>Local:</strong> ${getVal(a, 'LOCAL')}</div>
+                ${getVal(a, 'OBSERVACAO') ? `<div><strong>Obs:</strong> ${getVal(a, 'OBSERVACAO')}</div>` : ''}
+            </div>
+            <div class="card-actions">
                 <button class="btn-icon edit" onclick="prepararEdicaoPastor('${getVal(a, 'ID')}')">✏️</button>
                 <button class="btn-icon delete" onclick="deletarItem('${getVal(a, 'ID')}', 'agenda-pastor')">🗑️</button>
-            </td>
-        </tr>
+            </div>
+        </div>
     `).join('');
 }
 
