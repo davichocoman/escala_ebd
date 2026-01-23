@@ -407,3 +407,38 @@ function dataBr(str) {
     const p = str.split('-');
     return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '';
 }
+
+window.toggleSidebar = function() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('open');
+    
+    // Cria um overlay escuro se não existir, para clicar e fechar
+    let overlay = document.getElementById('sidebar-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 900; display: none;
+        `;
+        overlay.onclick = toggleSidebar; // Clicar fora fecha
+        document.body.appendChild(overlay);
+    }
+    
+    // Mostra ou esconde o overlay junto com a sidebar
+    if (sidebar.classList.contains('open')) {
+        overlay.style.display = 'block';
+    } else {
+        overlay.style.display = 'none';
+    }
+};
+
+// Ao clicar em qualquer item do menu no celular, fecha a sidebar automaticamente
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const sidebar = document.querySelector('.sidebar');
+        if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+            toggleSidebar();
+        }
+    });
+});
