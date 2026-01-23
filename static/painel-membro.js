@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Renderização
 // ============================================================
 function renderizarMeusDados() {
-    const container = document.getElementById('form-meus-dados');
+    const container = document.getElementById('lista-meus-dados');
     if (!container || !usuario) return;
 
     let html = '';
@@ -58,33 +58,32 @@ function renderizarMeusDados() {
         
         const label = key.replace(/_/g, ' ').toUpperCase();
         let valor = val || '-';
-        let valorHtml = valor;
-        let isSpecialField = false;
 
-        // Tratamento ESPECIAL SOMENTE para FILHOS e CARGO(S)
-        const upperKey = key.toUpperCase();
-        if (upperKey === 'FILHOS' || upperKey.includes('CARGO')) {
-            isSpecialField = true;
+        // Tratamento especial SOMENTE para FILHOS e CARGO
+        let valorHtml = valor;
+        if (key.toUpperCase() === 'FILHOS' || key.toUpperCase().includes('CARGO')) {
             if (typeof valor === 'string' && valor.includes(',')) {
                 valorHtml = valor.split(',')
                     .map(item => item.trim())
                     .filter(Boolean)
-                    .map(item => `<span>• ${item}</span>`)
+                    .map(item => `• ${item}`)
                     .join('<br>');
             }
         }
 
         html += `
-            <div class="form-group ${isSpecialField ? 'long-field' : ''}">
-                <label>${label}</label>
-                <div class="valor-box ${isSpecialField ? 'special' : ''}">
+            <div class="data-card">
+                <div class="card-header">
+                    <strong>${label}</strong>
+                </div>
+                <div class="card-body">
                     ${valorHtml}
                 </div>
             </div>
         `;
     }
 
-    container.innerHTML = html || '<p style="text-align:center; color:#64748b;">Nenhum dado cadastral disponível.</p>';
+    container.innerHTML = html || '<div class="empty-msg">Nenhum dado cadastral disponível.</div>';
 }
 // ============================================================
 // Navegação e Sidebar
