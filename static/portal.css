@@ -413,3 +413,106 @@ body {
 @media (min-width: 1025px) {
     .dashboard-row { grid-template-columns: repeat(3, 1fr); }
 }
+/* ────────────────────────────────────────────────
+   CORREÇÕES ESPECÍFICAS PARA MOBILE
+───────────────────────────────────────────────── */
+
+/* Botão de menu mobile - mais discreto e não sobrepõe tanto */
+.mobile-menu-btn {
+    top: 12px;
+    left: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.6rem;
+    border-radius: 50%;                /* mais arredondado */
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    z-index: 1200;                     /* fica acima de tudo */
+}
+
+/* Garante que o conteúdo principal tenha espaço suficiente no topo */
+@media (max-width: 768px) {
+    .main-content {
+        padding-top: 70px !important;   /* espaço fixo para o botão menu */
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Faz com que as seções de lista / tabela se comportem como cards empilhados */
+    #sec-membros, #sec-pastor, #sec-perfil {
+        padding: 0 0.5rem;
+    }
+
+    /* Tabelas viram blocos empilhados no mobile (estilo mais próximo da Visão Semanal) */
+    .data-table {
+        border: 0;
+        width: 100%;
+    }
+
+    .data-table thead {
+        display: none;               /* esconde cabeçalho fixo */
+    }
+
+    .data-table tr {
+        display: block;
+        margin-bottom: 1.2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .data-table td {
+        display: block;
+        text-align: right;
+        border: none;
+        padding: 0.9rem 1.1rem;
+        position: relative;
+        border-bottom: 1px solid #eee;
+    }
+
+    .data-table td:last-child {
+        border-bottom: none;
+    }
+
+    .data-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 1.1rem;
+        width: 45%;
+        font-weight: 600;
+        text-align: left;
+        color: #475569;
+    }
+
+    /* Ajuste nas linhas da tabela de membros e agenda */
+    #tabela-membros tr td:nth-child(1):before { content: "Nome"; }
+    #tabela-membros tr td:nth-child(2):before { content: "CPF"; }
+    #tabela-membros tr td:nth-child(3):before { content: "Ações"; text-align: right; }
+
+    #tabela-agenda-pastor tr td:nth-child(1):before { content: "Data"; }
+    #tabela-agenda-pastor tr td:nth-child(2):before { content: "Hora"; }
+    #tabela-agenda-pastor tr td:nth-child(3):before { content: "Evento"; }
+    #tabela-agenda-pastor tr td:nth-child(4):before { content: "Local"; }
+    #tabela-agenda-pastor tr td:nth-child(5):before { content: "Ações"; text-align: right; }
+}
+
+/* Melhor estilização do botão fechar modal */
+.btn-close-modal {
+    font-size: 2rem;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    color: #64748b;
+    background: rgba(226, 232, 240, 0.6);
+}
+
+.btn-close-modal:hover {
+    background: rgba(239, 68, 68, 0.15);   /* leve vermelho ao hover */
+    color: var(--red);
+    transform: rotate(90deg);
+}
