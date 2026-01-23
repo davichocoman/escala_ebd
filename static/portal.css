@@ -203,6 +203,17 @@ body {
     box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
 }
 
+.form-section-title {
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 1.5rem 0 0.5rem 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+}
+
 /* --- 7. BOTÕES --- */
 .btn {
     padding: 0.65rem 1.3rem;
