@@ -401,85 +401,6 @@ body {
    CORREÇÕES ESPECÍFICAS PARA MOBILE - TABELAS COMO CARDS (ajuste final)
 ───────────────────────────────────────────────── */
 
-@media (max-width: 768px) {
-    .main-content {
-        padding-top: 80px !important;
-    }
-
-    /* Tabelas viram cards empilhados - sem estourar */
-    .data-table {
-        border: 0;
-        width: 100%;
-    }
-
-    .data-table thead {
-        display: none;
-    }
-
-    .data-table tr {
-        display: block;
-        margin: 0 auto 1.4rem;
-        width: 100%;
-        max-width: 100%;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-        overflow: hidden;
-    }
-
-    .data-table td {
-        display: block;
-        text-align: left !important;
-        padding: 0.9rem 1.1rem 0.9rem 52% !important; /* espaço maior para label */
-        position: relative;
-        border-bottom: 1px solid #e2e8f0;
-        min-height: 3.2rem;
-        word-break: break-word; /* quebra texto longo */
-    }
-
-    .data-table td:last-child {
-        border-bottom: none;
-    }
-
-    .data-table td:before {
-        content: attr(data-label);
-        position: absolute;
-        left: 1rem;
-        top: 0.9rem;
-        width: 48%;
-        font-weight: 600;
-        text-align: left;
-        color: #334155;
-        white-space: normal;
-    }
-
-    /* Ações sempre à direita e com espaço */
-    .data-table td[data-label="Ações"] {
-        text-align: right !important;
-        padding-left: 1rem !important;
-        padding-right: 1.1rem !important;
-    }
-
-    /* Evita qualquer corte ou overflow */
-    .card {
-        overflow: visible !important;
-        margin: 0 auto;
-        max-width: 100%;
-        padding: 0 !important; /* remove padding extra que causava estourar */
-    }
-
-    /* Ajuste específico para o card da tabela */
-    .card:has(.data-table) {
-        padding: 0;
-        overflow: hidden;
-    }
-
-    /* Padding nas seções */
-    #sec-membros, #sec-pastor, #sec-perfil {
-        padding: 0 0.5rem;
-    }
-}
-
 /* Melhor estilização do botão fechar modal */
 .btn-close-modal {
     font-size: 2rem;
@@ -588,4 +509,45 @@ body {
     padding: 2rem;
     color: var(--text-muted);
     font-style: italic;
+}
+
+@media (max-width: 768px) {
+    /* Campos que podem ter texto longo (filhos, profissão, cargo, observação, etc.) */
+    .form-group input:disabled,
+    .form-group input[readonly],
+    .card-body div {
+        white-space: normal !important;      /* permite quebra de linha */
+        word-break: break-word;              /* quebra palavras longas */
+        overflow-wrap: break-word;
+        line-height: 1.45;
+        padding: 0.8rem 1rem;
+        min-height: 2.8rem;                  /* altura mínima maior */
+        background: #f8fafc !important;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Ajuste específico para campos com múltiplos itens (ex: filhos) */
+    .card-body div strong + span,
+    .card-body div {
+        display: block;
+        margin-top: 0.4rem;
+    }
+
+    /* Cards com mais espaço interno */
+    .member-card, .agenda-card {
+        padding: 1rem 0.8rem;
+    }
+
+    .card-body {
+        padding: 1rem 1.2rem;
+    }
+
+    /* Evita que o badge-perfil quebre o layout */
+    .badge-perfil {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
 }
