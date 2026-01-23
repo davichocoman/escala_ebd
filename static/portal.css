@@ -129,6 +129,7 @@ body {
     border: 1px solid var(--border);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    overflow: hidden; /* evita que conteúdo estoure */
 }
 
 .dashboard-row {
@@ -168,7 +169,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.94rem;
-    min-width: 640px; /* força scroll horizontal em telas maiores */
+    min-width: 640px; /* desktop */
 }
 
 /* --- 6. FORMULÁRIOS E INPUTS --- */
@@ -186,7 +187,7 @@ body {
     font-size: 0.92rem;
 }
 
-.form-input {
+.form-input, select.form-input {
     width: 100%;
     padding: 0.65rem 0.9rem;
     border: 1px solid var(--border);
@@ -196,7 +197,7 @@ body {
     background: #fff;
 }
 
-.form-input:focus {
+.form-input:focus, select.form-input:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
@@ -289,6 +290,11 @@ body {
     justify-content: center;
 }
 
+/* Esconde botão quando sidebar aberta */
+.sidebar.open ~ .mobile-menu-btn {
+    display: none !important;
+}
+
 /* ── Muito pequeno (< 480px) ── */
 @media (max-width: 480px) {
     body { font-size: 14.5px; }
@@ -319,15 +325,6 @@ body {
     .modal-card {
         max-width: 96%;
     }
-    
-    .modal-card form {
-        padding: 1.3rem;
-    }
-    
-    .panel-title {
-        font-size: 1.18rem;
-        padding: 1.2rem 1.4rem;
-    }
 }
 
 /* ── Mobile pequeno / médio (≤ 640px) ── */
@@ -346,7 +343,7 @@ body {
         margin-left: 0 !important;
         width: 100%;
         padding: 1.2rem;
-        padding-top: 80px !important; /* +10px para folga maior */
+        padding-top: 80px !important;
         padding-bottom: 2rem;
     }
     
@@ -390,21 +387,15 @@ body {
 }
 
 /* ────────────────────────────────────────────────
-   CORREÇÕES ESPECÍFICAS PARA MOBILE - TABELAS COMO CARDS
+   CORREÇÕES ESPECÍFICAS PARA MOBILE - TABELAS COMO CARDS (ajuste final)
 ───────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-    /* Espaço superior fixo para evitar sobreposição */
     .main-content {
         padding-top: 80px !important;
     }
 
-    /* Esconde botão menu quando sidebar aberta */
-    .sidebar.open ~ .mobile-menu-btn {
-        display: none !important;
-    }
-
-    /* Tabelas viram cards empilhados */
+    /* Tabelas viram cards empilhados - sem estourar */
     .data-table {
         border: 0;
         width: 100%;
@@ -416,7 +407,9 @@ body {
 
     .data-table tr {
         display: block;
-        margin-bottom: 1.4rem;
+        margin: 0 auto 1.4rem;
+        width: 100%;
+        max-width: 100%;
         background: white;
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.06);
@@ -425,11 +418,12 @@ body {
 
     .data-table td {
         display: block;
-        text-align: left !important;           /* ← Correção principal: esquerda */
-        padding: 0.9rem 1.1rem 0.9rem 55% !important;  /* espaço para label */
+        text-align: left !important;
+        padding: 0.9rem 1.1rem 0.9rem 52% !important; /* espaço maior para label */
         position: relative;
         border-bottom: 1px solid #e2e8f0;
         min-height: 3.2rem;
+        word-break: break-word; /* quebra texto longo */
     }
 
     .data-table td:last-child {
@@ -440,27 +434,36 @@ body {
         content: attr(data-label);
         position: absolute;
         left: 1rem;
-        width: 50%;
+        top: 0.9rem;
+        width: 48%;
         font-weight: 600;
         text-align: left;
         color: #334155;
         white-space: normal;
     }
 
-    /* Ações ficam à direita */
+    /* Ações sempre à direita e com espaço */
     .data-table td[data-label="Ações"] {
         text-align: right !important;
         padding-left: 1rem !important;
+        padding-right: 1.1rem !important;
     }
 
-    /* Evita corte de texto longo */
+    /* Evita qualquer corte ou overflow */
     .card {
         overflow: visible !important;
         margin: 0 auto;
         max-width: 100%;
+        padding: 0 !important; /* remove padding extra que causava estourar */
     }
 
-    /* Padding nas seções específicas */
+    /* Ajuste específico para o card da tabela */
+    .card:has(.data-table) {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* Padding nas seções */
     #sec-membros, #sec-pastor, #sec-perfil {
         padding: 0 0.5rem;
     }
