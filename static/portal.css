@@ -129,7 +129,7 @@ body {
     border: 1px solid var(--border);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    overflow: hidden; /* evita que conteúdo estoure */
+    overflow: hidden;
 }
 
 .dashboard-row {
@@ -169,7 +169,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.94rem;
-    min-width: 640px; /* desktop */
+    min-width: 640px;
 }
 
 /* --- 6. FORMULÁRIOS E INPUTS --- */
@@ -201,17 +201,6 @@ body {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-}
-
-.form-section-title {
-    color: var(--accent);
-    font-size: 0.85rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 1.5rem 0 0.5rem 0;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border);
 }
 
 /* --- 7. BOTÕES --- */
@@ -398,37 +387,60 @@ body {
 }
 
 /* ────────────────────────────────────────────────
-   CORREÇÕES ESPECÍFICAS PARA MOBILE - TABELAS COMO CARDS (ajuste final)
+   ESTILOS ESPECÍFICOS PARA "MEUS DADOS" NO PAINEL DO MEMBRO
 ───────────────────────────────────────────────── */
 
-/* Melhor estilização do botão fechar modal */
-.btn-close-modal {
-    font-size: 2rem;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
-    color: #64748b;
-    background: rgba(226, 232, 240, 0.6);
+.valor-box {
+    padding: 0.65rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 2.2rem;          /* padrão compacto para campos normais */
+    line-height: 1.45;
+    color: #1e293b;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
-.btn-close-modal:hover {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--red);
-    transform: rotate(90deg);
+/* Somente FILHOS e CARGO ganham mais espaço */
+.form-group.long-field .valor-box {
+    min-height: 2.8rem;
+    padding: 0.8rem 1rem;
 }
 
-/* Overlay da sidebar mais confiável */
-#sidebar-overlay {
-    z-index: 995 !important;
+/* Bullets alinhados corretamente */
+.valor-box.special span {
+    display: block;
+    margin: 0.2rem 0;
+    padding-left: 1.4rem;
+    text-indent: -1.4rem;
 }
 
-.sidebar {
-    z-index: 1000 !important;
+/* Mobile: ajuste fino */
+@media (max-width: 768px) {
+    .valor-box {
+        padding: 0.6rem 0.9rem;
+        font-size: 0.93rem;
+        min-height: 2.1rem;
+    }
+
+    .form-group.long-field .valor-box {
+        min-height: 3rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .valor-box.special span {
+        margin: 0.25rem 0;
+        padding-left: 1.6rem;
+        text-indent: -1.6rem;
+    }
 }
+
+/* ────────────────────────────────────────────────
+   OUTROS ESTILOS (mantidos exatamente como estavam)
+───────────────────────────────────────────────── */
 
 /* Cards unificados para membros e agenda (desktop + mobile) */
 .card-list {
@@ -511,157 +523,31 @@ body {
     font-style: italic;
 }
 
-@media (max-width: 768px) {
-    /* Campos que podem ter texto longo (filhos, profissão, cargo, observação, etc.) */
-    .form-group input:disabled,
-    .form-group input[readonly],
-    .card-body div {
-        white-space: normal !important;      /* permite quebra de linha */
-        word-break: break-word;              /* quebra palavras longas */
-        overflow-wrap: break-word;
-        line-height: 1.45;
-        padding: 0.8rem 1rem;
-        min-height: 2.8rem;                  /* altura mínima maior */
-        background: #f8fafc !important;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-    }
-
-    /* Ajuste específico para campos com múltiplos itens (ex: filhos) */
-    .card-body div strong + span,
-    .card-body div {
-        display: block;
-        margin-top: 0.4rem;
-    }
-
-    /* Cards com mais espaço interno */
-    .member-card, .agenda-card {
-        padding: 1rem 0.8rem;
-    }
-
-    .card-body {
-        padding: 1rem 1.2rem;
-    }
-
-    /* Evita que o badge-perfil quebre o layout */
-    .badge-perfil {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
-}
-.valor-long {
-    padding: 0.8rem 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    min-height: 2.8rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.5;
-    color: #1e293b;
+/* Melhor estilização do botão fechar modal */
+.btn-close-modal {
+    font-size: 2rem;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    color: #64748b;
+    background: rgba(226, 232, 240, 0.6);
 }
 
-@media (max-width: 768px) {
-    .valor-long {
-        font-size: 0.95rem;
-        padding: 0.9rem 1.1rem;
-    }
-}
-/* Estilo para campos de "Meus Dados" no painel do membro */
-.form-group {
-    margin-bottom: 1rem;
+.btn-close-modal:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--red);
+    transform: rotate(90deg);
 }
 
-.form-group.long-field {
-    margin-bottom: 1.4rem; /* mais espaço só para campos longos */
+/* Overlay da sidebar mais confiável */
+#sidebar-overlay {
+    z-index: 995 !important;
 }
 
-.valor-box {
-    padding: 0.7rem 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    min-height: 2.4rem;          /* padrão para campos normais */
-    line-height: 1.45;
-    color: #1e293b;
-    font-size: 0.95rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-.form-group.long-field .valor-box {
-    min-height: 3rem;            /* mais espaço só para FILHOS e CARGO */
-    padding: 0.8rem 1rem;
-}
-
-/* Mobile: ajuste fino */
-@media (max-width: 768px) {
-    .valor-box {
-        padding: 0.45rem 0.7rem;
-        font-size: 0.93rem;
-    }
-
-    .form-group.long-field .valor-box {
-        min-height: 3.4rem;
-    }
-
-    /* Alinhamento perfeito dos bullets */
-    .valor-box span {
-        display: block;
-        margin: 0.25rem 0;
-        padding-left: 1.4rem;
-        text-indent: -1.4rem;
-    }
-}
-
-/* Campos de "Meus Dados" - padrão */
-.valor-box {
-    padding: 0.65rem 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    min-height: 2.2rem;          /* compacto para campos normais */
-    line-height: 1.45;
-    color: #1e293b;
-    font-size: 0.95rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-/* Apenas FILHOS e CARGO ganham mais espaço e estilo de lista */
-.form-group.long-field .valor-box {
-    min-height: 2.8rem;          /* um pouco mais alto só nesses campos */
-    padding: 0.8rem 1rem;
-}
-
-/* Estilo dos bullets (somente quando tem <span>• </span>) */
-.valor-box.special span {
-    display: block;
-    margin: 0.2rem 0;
-    padding-left: 1.4rem;
-    text-indent: -1.4rem;
-}
-
-/* Mobile: ajuste fino para não espremer */
-@media (max-width: 768px) {
-    .valor-box {
-        padding: 0.6rem 0.9rem;
-        font-size: 0.93rem;
-        min-height: 2.1rem;
-    }
-
-    .form-group.long-field .valor-box {
-        min-height: 3rem;
-        padding: 0.75rem 1rem;
-    }
-
-    .valor-box.special span {
-        margin: 0.3rem 0;
-        padding-left: 1.6rem;
-        text-indent: -1.6rem;
-    }
+.sidebar {
+    z-index: 1000 !important;
 }
