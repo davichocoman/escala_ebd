@@ -46,23 +46,23 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 // Renderização
 // ============================================================
-function renderizarMeusDados() {
-    const container = document.getElementById('form-meus-dados');
-    if (!container || !usuario) return;
+function renderizarMeusDados(dados) {
+    const container = document.querySelector('.form-grid');
+    container.innerHTML = '';
 
-    let html = '';
-    const ignorar = ['ID', 'SENHA', 'TOKEN', 'token_sistema'];
+    Object.entries(dados).forEach(([key, valor]) => {
 
-    for (const [key, val] of Object.entries(usuario)) {
-        if (ignorar.includes(key.toUpperCase())) continue;
-        
-        const label = key.replace(/_/g, ' ').toUpperCase();
-        let valor = val || '-';
+        // Ignora campos vazios ou nulos
+        if (valor === null || valor === undefined || valor === '') return;
+
         const keyUpper = key.toUpperCase();
+        let sizeClass = 'form-group';
 
-        let sizeClass = 'form-group'; // padrão (curto)
-        
-        // Campos longos
+        /* -----------------------------
+           Definição de tamanho do campo
+        ------------------------------*/
+
+        // Campos longos (linha inteira)
         if (
             keyUpper === 'FILHOS' ||
             keyUpper.includes('CARGO') ||
@@ -71,8 +71,8 @@ function renderizarMeusDados() {
         ) {
             sizeClass += ' long-field';
         }
-        
-        // Campos médios
+
+        // Campos médios (meia linha)
         else if (
             keyUpper === 'PAI' ||
             keyUpper === 'MAE'
@@ -80,17 +80,37 @@ function renderizarMeusDados() {
             sizeClass += ' medium';
         }
 
+        /* -----------------------------
+           Tratamento de valores em lista
+        ------------------------------*/
 
-        // Tratamento de lista SOMENTE para FILHOS e CARGO
-        if (isSpecial && typeof valor === 'string' && valor.includes(',')) {
-            valor = valor.split(',')
+        if (
+            sizeClass.includes('long-field') &&
+            typeof valor === 'string' &&
+            valor.includes(',')
+        ) {
+            valor = valor
+                .split(',')
                 .map(item => item.trim())
                 .filter(Boolean)
                 .map(item => `• ${item}`)
                 .join('<br>');
         }
 
-        html += `
+        /* -----------------------------
+           Label amigável
+        ------------------------------*/
+
+        const label = key
+            .replace(/_/g, ' ')
+            .toLowerCase()
+            .replace(/\b\w/g, l => l.toUpperCase());
+
+        /* -----------------------------
+           Renderização final
+        ------------------------------*/
+
+        container.innerHTML += `
             <div class="${sizeClass}">
                 <label>${label}</label>
                 <div class="valor-box ${sizeClass.includes('long-field') ? 'special' : ''}">
@@ -98,10 +118,7 @@ function renderizarMeusDados() {
                 </div>
             </div>
         `;
-
-    }
-
-    container.innerHTML = html || '<p style="text-align:center; color:#64748b;">Nenhum dado cadastral disponível.</p>';
+    });
 }
 // ============================================================
 // Navegação e Sidebar
