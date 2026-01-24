@@ -181,6 +181,22 @@ body {
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
 .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
 
+/* Campo padrão (curto) */
+.form-group {
+    grid-column: span 4; /* 3 campos por linha */
+}
+
+/* Campo médio */
+.form-group.medium {
+    grid-column: span 6; /* 2 por linha */
+}
+
+/* Campo longo */
+.form-group.long-field {
+    grid-column: span 12; /* linha inteira */
+}
+
+
 .form-group { margin-bottom: 1.2rem; }
 
 .form-group label {
