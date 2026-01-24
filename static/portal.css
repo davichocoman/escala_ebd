@@ -625,3 +625,10 @@ body {
         text-indent: -1.6rem;
     }
 }
+@media (max-width: 768px) {
+    .form-group,
+    .form-group.medium,
+    .form-group.long-field {
+        grid-column: span 12;
+    }
+}
