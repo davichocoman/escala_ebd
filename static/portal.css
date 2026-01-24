@@ -173,7 +173,11 @@ body {
 }
 
 /* --- 6. FORMULÁRIOS E INPUTS --- */
-.form-grid { display: grid; gap: 1.2rem; }
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.2rem;
+}
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
 .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
 
