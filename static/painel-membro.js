@@ -91,13 +91,14 @@ function renderizarMeusDados() {
         }
 
         html += `
-            <div class="form-group ${isSpecial ? 'long-field' : ''}">
+            <div class="${sizeClass}">
                 <label>${label}</label>
-                <div class="valor-box ${isSpecial ? 'special' : ''}">
+                <div class="valor-box ${sizeClass.includes('long-field') ? 'special' : ''}">
                     ${valor}
                 </div>
             </div>
         `;
+
     }
 
     container.innerHTML = html || '<p style="text-align:center; color:#64748b;">Nenhum dado cadastral disponível.</p>';
