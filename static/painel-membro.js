@@ -58,7 +58,28 @@ function renderizarMeusDados() {
         
         const label = key.replace(/_/g, ' ').toUpperCase();
         let valor = val || '-';
-        let isSpecial = key.toUpperCase() === 'FILHOS' || key.toUpperCase().includes('CARGO');
+        const keyUpper = key.toUpperCase();
+
+        let sizeClass = 'form-group'; // padrão (curto)
+        
+        // Campos longos
+        if (
+            keyUpper === 'FILHOS' ||
+            keyUpper.includes('CARGO') ||
+            keyUpper.includes('OBSERVA') ||
+            keyUpper.includes('DESCR')
+        ) {
+            sizeClass += ' long-field';
+        }
+        
+        // Campos médios
+        else if (
+            keyUpper === 'PAI' ||
+            keyUpper === 'MAE'
+        ) {
+            sizeClass += ' medium';
+        }
+
 
         // Tratamento de lista SOMENTE para FILHOS e CARGO
         if (isSpecial && typeof valor === 'string' && valor.includes(',')) {
