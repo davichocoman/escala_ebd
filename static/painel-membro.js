@@ -46,23 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 // Renderização
 // ============================================================
-function renderizarMeusDados(dados) {
+function renderizarMeusDados() {
     const container = document.querySelector('.form-grid');
+    if (!container || !usuario) return;
+
+    const dados = usuario;
     container.innerHTML = '';
 
     Object.entries(dados).forEach(([key, valor]) => {
 
-        // Ignora campos vazios ou nulos
         if (valor === null || valor === undefined || valor === '') return;
 
         const keyUpper = key.toUpperCase();
         let sizeClass = 'form-group';
 
-        /* -----------------------------
-           Definição de tamanho do campo
-        ------------------------------*/
-
-        // Campos longos (linha inteira)
+        // Campos longos
         if (
             keyUpper === 'FILHOS' ||
             keyUpper.includes('CARGO') ||
@@ -72,18 +70,12 @@ function renderizarMeusDados(dados) {
             sizeClass += ' long-field';
         }
 
-        // Campos médios (meia linha)
-        else if (
-            keyUpper === 'PAI' ||
-            keyUpper === 'MAE'
-        ) {
+        // Campos médios
+        else if (keyUpper === 'PAI' || keyUpper === 'MAE') {
             sizeClass += ' medium';
         }
 
-        /* -----------------------------
-           Tratamento de valores em lista
-        ------------------------------*/
-
+        // Tratamento de listas
         if (
             sizeClass.includes('long-field') &&
             typeof valor === 'string' &&
@@ -97,18 +89,10 @@ function renderizarMeusDados(dados) {
                 .join('<br>');
         }
 
-        /* -----------------------------
-           Label amigável
-        ------------------------------*/
-
         const label = key
             .replace(/_/g, ' ')
             .toLowerCase()
             .replace(/\b\w/g, l => l.toUpperCase());
-
-        /* -----------------------------
-           Renderização final
-        ------------------------------*/
 
         container.innerHTML += `
             <div class="${sizeClass}">
@@ -120,6 +104,7 @@ function renderizarMeusDados(dados) {
         `;
     });
 }
+
 // ============================================================
 // Navegação e Sidebar
 // ============================================================
