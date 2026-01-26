@@ -624,56 +624,50 @@ body {
     letter-spacing: 1px;
 }
 
-/* Centraliza os Labels */
-/* Centraliza os Labels */
+/* Centralização dos Títulos dos Campos */
 .form-group label {
     display: block;
-    text-align: center; /* Centraliza o título do campo */
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: var(--text-main);
+    text-align: center;
+    margin-bottom: 0.6rem;
+    font-weight: 700;
+    color: var(--accent); /* Cor de destaque nos labels */
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Centraliza o Conteúdo dos Dados */
+/* Container que segura o dado */
 .valor-box {
     display: flex;
-    align-items: center;
-    justify-content: center; /* Centraliza horizontalmente */
-    text-align: center;      /* Garante centralização se o texto quebrar linha */
-    padding: 0.8rem 1rem;
-    background: #ffffff;
+    flex-direction: column; /* Organiza múltiplos itens um abaixo do outro */
+    align-items: center;    /* Centraliza horizontalmente */
+    justify-content: center; 
+    padding: 0.5rem;
+    background: transparent; /* Deixa o card limpo */
+    min-height: 50px;
+}
+
+/* O "Padrão Filhos" aplicado a todos: a Pill (Pílula) */
+.data-pill {
+    display: inline-block;
+    background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-bottom: 3px solid #cbd5e1;
-    border-radius: 8px;
-    min-height: 45px;
+    padding: 8px 20px;
+    border-radius: 50px; /* Estilo arredondado de pílula */
+    font-weight: 600;
     color: var(--text-main);
-    font-weight: 500;
-}
-
-/* Ajuste para a lista de filhos centralizada */
-.list-bullet {
-    display: block;
-    background: #f1f5f9;
-    margin: 4px auto; /* Centraliza o bullet no container */
-    padding: 6px 12px;
-    border-radius: 4px;
-    width: fit-content; /* Garante que a caixa não ocupe a largura toda */
-    min-width: 200px;   /* Mantém um padrão visual */
+    font-size: 1rem;
     text-align: center;
+    margin: 3px 0;
+    width: fit-content;
+    min-width: 180px; /* Garante um tamanho mínimo elegante */
 }
 
-/* Estilo para listas (como Filhos) */
-.valor-box.list-mode {
-    display: block; /* permite que os spans fiquem um abaixo do outro */
-    padding: 0.8rem;
-}
-
-
-
-.list-bullet:last-child { margin-bottom: 0; }
-
-/* Ajuste Mobile para garantir que as seções não quebrem */
-@media (max-width: 640px) {
-    .section-title-bar { margin-top: 1rem; }
-    .form-group { grid-column: span 12 !important; }
+/* No mobile, garantimos que a pílula não quebre o layout */
+@media (max-width: 480px) {
+    .data-pill {
+        min-width: 100%;
+        font-size: 0.95rem;
+    }
 }
