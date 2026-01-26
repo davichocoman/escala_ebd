@@ -706,12 +706,13 @@ body {
 
 /* Cabeçalho do Mês no Estilo do Desenho */
 .month-header {
-    font-size: 1.4rem;
+    grid-column: 1 / -1; /* Ocupa a largura toda do grid de cards */
+    font-size: 1.5rem;
     font-weight: 800;
-    color: var(--blue);
+    color: var(--accent);
     margin: 2rem 0 1rem 0;
-    padding-bottom: 5px;
-    border-bottom: 3px solid var(--blue);
+    padding-bottom: 8px;
+    border-bottom: 4px solid var(--accent);
     text-transform: uppercase;
     letter-spacing: 2px;
 }
