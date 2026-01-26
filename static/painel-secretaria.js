@@ -227,25 +227,98 @@ function renderizarAgendaPastor() {
     `).join('');
 }
 
+// --- Funções Auxiliares de Formatação para o Perfil ---
+const formatarCPF = (valor) => {
+    const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
+    return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+};
+
+const formatarData = (valor) => {
+    if (!valor) return '';
+    if (valor.includes('/') && valor.split('/').length === 3) return valor;
+    const data = new Date(valor);
+    return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
+};
+
 function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div || !SISTEMA.usuario) return;
 
-    let html = '';
-    const ignorar = ['ID', 'SENHA', 'TOKEN'];
+    // 1. Definição das Seções para manter o padrão visual
+    const secoes = [
+        {
+            titulo: 'Informações Básicas',
+            campos: [
+                { key: 'NOME', label: 'Nome Completo', span: 12 },
+                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
+                { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
+                { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
+                { key: 'PERFIL', label: 'Perfil de Acesso', span: 6 }
+            ]
+        },
+        {
+            titulo: 'Família e Localização',
+            campos: [
+                { key: 'CONJUGE', label: 'Cônjuge', span: 6 },
+                { key: 'FILHOS', label: 'Filhos', span: 6, isList: true },
+                { key: 'ENDERECO', label: 'Endereço Residencial', span: 12 }
+            ]
+        },
+        {
+            titulo: 'Dados Eclesiásticos',
+            campos: [
+                { key: 'CARGO', label: 'Cargo', span: 6 },
+                { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
+            ]
+        }
+    ];
 
-    for (const [key, val] of Object.entries(SISTEMA.usuario)) {
-        if (ignorar.includes(key.toUpperCase())) continue;
-        html += `
-            <div class="form-group">
-                <label>${key.replace(/_/g, ' ')}</label>
-                <input class="form-input" value="${val || ''}" disabled style="background:#f1f5f9;">
-            </div>
-        `;
+    div.innerHTML = '';
+
+    secoes.forEach(secao => {
+        const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
+        if (!temDados) return;
+
+        // Título da Seção
+        div.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
+
+        secao.campos.forEach(campo => {
+            let valor = getVal(SISTEMA.usuario, campo.key);
+            if (!valor) return;
+
+            let htmlConteudo = '';
+
+            // Aplicação das mesmas lógicas de pílulas e máscaras
+            if (campo.isCPF) {
+                htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
+            } 
+            else if (campo.isDate) {
+                htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
+            }
+            else if (campo.isList && valor.toString().includes(',')) {
+                htmlConteudo = valor.split(',')
+                    .map(item => `<span class="data-pill">${item.trim()}</span>`)
+                    .join('');
+            } 
+            else {
+                htmlConteudo = `<span class="data-pill">${valor}</span>`;
+            }
+
+            div.innerHTML += `
+                <div class="form-group" style="grid-column: span ${campo.span}">
+                    <label>${campo.label}</label>
+                    <div class="valor-box">
+                        ${htmlConteudo}
+                    </div>
+                </div>
+            `;
+        });
+    });
+
+    if (div.innerHTML === '') {
+        div.innerHTML = '<p class="empty-msg">Nenhum dado disponível para exibição.</p>';
     }
-    div.innerHTML = html || '<p>Nenhum dado disponível.</p>';
 }
-
 // ============================================================
 // 5. INTERAÇÕES E BOTÕES
 // ============================================================
