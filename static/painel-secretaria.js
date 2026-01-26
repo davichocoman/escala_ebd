@@ -134,6 +134,25 @@ function renderizarDashboard() {
         return d >= hoje && d <= limite;
     };
 
+    // --- NOVA LÓGICA DE ESTATÍSTICAS ---
+    const membros = SISTEMA.dados.membros || [];
+    
+    // Contagem usando reduce para performance
+    const stats = membros.reduce((acc, m) => {
+        const p = getVal(m, 'PERFIL').toUpperCase();
+        if (p === 'CONGREGADO') acc.congregados++;
+        else if (p === 'MEMBRO') acc.membros++;
+        else if (p === 'PASTOR') acc.pastores++;
+        else if (p === 'ADMIN') acc.admins++;
+        return acc;
+    }, { congregados: 0, membros: 0, pastores: 0, admins: 0 });
+
+    // Atualiza os números na tela
+    document.getElementById('count-congregados').innerText = stats.congregados;
+    document.getElementById('count-membros').innerText = stats.membros;
+    document.getElementById('count-pastores').innerText = stats.pastores;
+    document.getElementById('count-admins').innerText = stats.admins;
+
     // Agenda do Pastor com Início e Fim
     const listaPastor = SISTEMA.dados.agendaPastor || [];
     preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', filtroSemana, 'HORARIO', 'HORARIO_FIM');
@@ -227,6 +246,7 @@ function renderizarAgendaPastor() {
             </div>
             <div class="card-body">
                 <div><strong>Hora:</strong> ${getVal(a, 'HORARIO')}</div>
+                <div><strong>Horário de Término:</strong> ${getVal(a, 'HORARIO_FIM')}</div>
                 <div><strong>Local:</strong> ${getVal(a, 'LOCAL')}</div>
                 ${getVal(a, 'OBSERVACAO') ? `<div><strong>Obs:</strong> ${getVal(a, 'OBSERVACAO')}</div>` : ''}
             </div>
