@@ -703,3 +703,34 @@ body {
     font-weight: 800;
     color: var(--primary-dark);
 }
+
+/* Cabeçalho do Mês no Estilo do Desenho */
+.month-header {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--blue);
+    margin: 2rem 0 1rem 0;
+    padding-bottom: 5px;
+    border-bottom: 3px solid var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.agenda-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 5px solid var(--red);
+    transition: 0.2s;
+}
+
+.card-content { display: flex; flex-direction: column; gap: 4px; }
+
+.btn-del {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
