@@ -199,13 +199,6 @@ body {
 
 .form-group { margin-bottom: 1.2rem; }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.45rem;
-    color: var(--text-main);
-    font-weight: 600;
-    font-size: 0.92rem;
-}
 
 .form-input, select.form-input {
     width: 100%;
@@ -572,21 +565,6 @@ body {
     z-index: 1000 !important;
 }
 
-/* Campos de "Meus Dados" - padrão compacto */
-.valor-box {
-    padding: 0.6rem 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    min-height: 2rem;               /* bem compacto para campos normais */
-    line-height: 1.4;
-    color: #1e293b;
-    font-size: 0.95rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
 /* Apenas FILHOS e CARGO ganham mais espaço e estilo de lista */
 .form-group.long-field .valor-box {
     min-height: 2.6rem;             /* altura confortável para listas */
@@ -646,27 +624,36 @@ body {
     letter-spacing: 1px;
 }
 
-/* Redesign do Box de Valor para parecer dado de perfil */
+/* Centraliza os Labels */
+.form-group label {
+    display: block;
+    text-align: center; /* Centraliza o texto do label */
+    margin-bottom: 0.45rem;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+/* Centraliza o Conteúdo dos Boxes */
 .valor-box {
     padding: 0.8rem 1rem;
-    background: #ffffff;      /* Fundo branco puro */
+    background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-bottom: 3px solid #cbd5e1; /* Borda inferior mais grossa dá profundidade */
+    border-bottom: 3px solid #cbd5e1;
     border-radius: 6px;
     color: var(--text-main);
     font-weight: 500;
     font-size: 1rem;
     min-height: 45px;
+    
+    /* Centralização Flexbox */
     display: flex;
     align-items: center;
+    justify-content: center; /* Centraliza horizontalmente */
+    text-align: center;      /* Garante centralização de textos multilinhas */
 }
 
-/* Estilo para listas (como Filhos) */
-.valor-box.list-mode {
-    display: block; /* permite que os spans fiquem um abaixo do outro */
-    padding: 0.8rem;
-}
-
+/* Garante que os itens da lista (Filhos) também fiquem centralizados */
 .list-bullet {
     display: block;
     background: #f1f5f9;
@@ -675,7 +662,16 @@ body {
     border-radius: 4px;
     font-size: 0.9rem;
     color: var(--primary-light);
+    text-align: center; /* Centraliza o texto dentro do bullet */
 }
+
+/* Estilo para listas (como Filhos) */
+.valor-box.list-mode {
+    display: block; /* permite que os spans fiquem um abaixo do outro */
+    padding: 0.8rem;
+}
+
+
 
 .list-bullet:last-child { margin-bottom: 0; }
 
