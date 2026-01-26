@@ -632,3 +632,55 @@ body {
         grid-column: span 12;
     }
 }
+
+/* Título de seção dentro do Meus Dados */
+.section-title-bar {
+    grid-column: span 12;
+    margin-top: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+/* Redesign do Box de Valor para parecer dado de perfil */
+.valor-box {
+    padding: 0.8rem 1rem;
+    background: #ffffff;      /* Fundo branco puro */
+    border: 1px solid #e2e8f0;
+    border-bottom: 3px solid #cbd5e1; /* Borda inferior mais grossa dá profundidade */
+    border-radius: 6px;
+    color: var(--text-main);
+    font-weight: 500;
+    font-size: 1rem;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+}
+
+/* Estilo para listas (como Filhos) */
+.valor-box.list-mode {
+    display: block; /* permite que os spans fiquem um abaixo do outro */
+    padding: 0.8rem;
+}
+
+.list-bullet {
+    display: block;
+    background: #f1f5f9;
+    margin-bottom: 4px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--primary-light);
+}
+
+.list-bullet:last-child { margin-bottom: 0; }
+
+/* Ajuste Mobile para garantir que as seções não quebrem */
+@media (max-width: 640px) {
+    .section-title-bar { margin-top: 1rem; }
+    .form-group { grid-column: span 12 !important; }
+}
