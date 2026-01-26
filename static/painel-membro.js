@@ -46,18 +46,35 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 // Renderização
 // ============================================================
+// --- Funções Auxiliares de Formatação ---
+const formatarCPF = (valor) => {
+    const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
+    return cpf.replace(/(\={3})(\={3})(\={3})(\={2})/, "$1.$2.$3-$4")
+              .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+};
+
+const formatarData = (valor) => {
+    if (!valor) return '';
+    // Se a data já estiver no formato DD/MM/YYYY, apenas retorna
+    if (valor.includes('/') && valor.split('/').length === 3) return valor;
+    
+    // Caso venha do banco como YYYY-MM-DD (padrão ISO)
+    const data = new Date(valor);
+    if (isNaN(data)) return valor;
+    return data.toLocaleDateString('pt-BR');
+};
+
 function renderizarMeusDados() {
     const container = document.getElementById('form-meus-dados');
     if (!container || !usuario) return;
 
-    // 1. Definição das Seções (Mantendo a ordem de divisão proposta)
     const secoes = [
         {
             titulo: 'Informações Básicas',
             campos: [
                 { key: 'NOME', label: 'Nome Completo', span: 12 },
-                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6 },
-                { key: 'CPF', label: 'CPF', span: 6 },
+                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
+                { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
                 { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
                 { key: 'CONTATO', label: 'WhatsApp/Telefone', span: 6 }
             ]
@@ -94,7 +111,6 @@ function renderizarMeusDados() {
         const temDados = secao.campos.some(c => getVal(usuario, c.key));
         if (!temDados) return;
 
-        // Barra de Título da Seção (Centralizada no CSS)
         container.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
 
         secao.campos.forEach(campo => {
@@ -103,18 +119,18 @@ function renderizarMeusDados() {
 
             let htmlConteudo = '';
 
-            // --- TRATAMENTO CPF: 11 dígitos com string ---
-            if (campo.key === 'CPF') {
-                const cpfLimpo = valor.toString().replace(/\D/g, '').padStart(11, '0');
-                htmlConteudo = `<span class="data-pill">${cpfLimpo}</span>`;
+            // --- APLICAÇÃO DAS MÁSCARAS ---
+            if (campo.isCPF) {
+                htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
             } 
-            // --- TRATAMENTO LISTAS (Filhos): Sem o "Vocês •" ---
+            else if (campo.isDate) {
+                htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
+            }
             else if (campo.isList && valor.toString().includes(',')) {
                 htmlConteudo = valor.split(',')
                     .map(item => `<span class="data-pill">${item.trim()}</span>`)
                     .join('');
             } 
-            // --- TRATAMENTO PADRÃO ---
             else {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
