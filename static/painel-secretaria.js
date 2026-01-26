@@ -134,17 +134,20 @@ function renderizarDashboard() {
         return d >= hoje && d <= limite;
     };
 
-    const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
-    preencherListaDash('list-dash-igreja', listaIgreja, 'EVENTO', 'DATA', filtroSemana);
-
+    // Agenda do Pastor com Início e Fim
     const listaPastor = SISTEMA.dados.agendaPastor || [];
-    preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', filtroSemana);
+    preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', filtroSemana, 'HORARIO', 'HORARIO_FIM');
 
+    // Reservas (Já costumam ter início/fim no seu backend)
     const listaReservas = SISTEMA.dados.dashboard.reservas || [];
-    preencherListaDash('list-dash-reservas', listaReservas, 'EVENTO', 'DATA', filtroSemana);
+    preencherListaDash('list-dash-reservas', listaReservas, 'evento', 'data', filtroSemana, 'inicio', 'fim');
+
+    // Igreja (Geralmente tem apenas um horário fixo)
+    const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
+    preencherListaDash('list-dash-igreja', listaIgreja, 'evento', 'data', filtroSemana, 'horario');
 }
 
-function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro) {
+function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
     const ul = document.getElementById(idElemento);
     if (!ul) return;
 
@@ -156,12 +159,20 @@ function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro) {
         return;
     }
 
-    ul.innerHTML = itensFiltrados.map(item => `
-        <li>
-            <strong>${getVal(item, chaveTitulo)}</strong>
-            <span>${getVal(item, chaveData)}</span>
-        </li>
-    `).join('');
+    ul.innerHTML = itensFiltrados.map(item => {
+        const hIni = chaveHoraIni ? getVal(item, chaveHoraIni) : '';
+        const hFim = chaveHoraFim ? getVal(item, chaveHoraFim) : '';
+        
+        // Formata: "26/01 | 19:00 - 21:00" ou apenas "26/01 | 19:00"
+        const tempo = hIni ? ` | ${hIni}${hFim ? ' - ' + hFim : ''}` : '';
+
+        return `
+            <li>
+                <strong>${getVal(item, chaveTitulo)}</strong>
+                <span>${getVal(item, chaveData)}${tempo}</span>
+            </li>
+        `;
+    }).join('');
 }
 
 function renderizarMembros() {
@@ -510,21 +521,18 @@ async function salvarPastor() {
         EVENTO: document.getElementById('p_evento')?.value.trim() || '',
         DATA: dataBr(document.getElementById('p_data')?.value),
         HORARIO: document.getElementById('p_hora')?.value || '',
+        HORARIO_FIM: document.getElementById('p_hora_fim')?.value || '', // CAPTURA O FIM
         LOCAL: document.getElementById('p_local')?.value.trim() || '',
         OBSERVACAO: document.getElementById('p_obs')?.value.trim() || ''
     };
 
-    if (!dados.EVENTO || !dados.DATA) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Campos obrigatórios',
-            text: 'Evento e Data são obrigatórios!'
-        });
+    if (!dados.EVENTO || !dados.DATA || !dados.HORARIO || !dados.HORARIO_FIM ) {
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Evento, Data, Horário e Horário de Término são obrigatórios!' });
         return;
     }
 
     await enviarDados(`${API_BASE}/agenda-pastor`, id, dados);
-    document.getElementById('modalPastor')?.classList.add('hidden');
+    fecharModal('modalPastor');
 }
 
 window.deletarItem = async function(id, endpoint) {
