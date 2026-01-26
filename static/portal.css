@@ -611,17 +611,18 @@ body {
     }
 }
 
-/* Título de seção dentro do Meus Dados */
+/* Barra de Título das Seções */
 .section-title-bar {
     grid-column: span 12;
-    margin-top: 1.5rem;
+    text-align: center;
+    margin-top: 2rem;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--accent);
     color: var(--accent);
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
+    font-size: 0.9rem;
+    letter-spacing: 1.2px;
 }
 
 /* Centralização dos Títulos dos Campos */
@@ -630,7 +631,7 @@ body {
     text-align: center;
     margin-bottom: 0.6rem;
     font-weight: 700;
-    color: var(--accent); /* Cor de destaque nos labels */
+    color: var(--text-main);
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -639,11 +640,11 @@ body {
 /* Container que segura o dado */
 .valor-box {
     display: flex;
-    flex-direction: column; /* Organiza múltiplos itens um abaixo do outro */
+    flex-direction: column; /* Organiza pílulas uma abaixo da outra se houver várias */
     align-items: center;    /* Centraliza horizontalmente */
     justify-content: center; 
     padding: 0.5rem;
-    background: transparent; /* Deixa o card limpo */
+    background: transparent;
     min-height: 50px;
 }
 
@@ -653,19 +654,20 @@ body {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-bottom: 3px solid #cbd5e1;
-    padding: 8px 20px;
-    border-radius: 50px; /* Estilo arredondado de pílula */
+    padding: 8px 25px;
+    border-radius: 50px;
     font-weight: 600;
     color: var(--text-main);
     font-size: 1rem;
     text-align: center;
-    margin: 3px 0;
+    margin: 4px 0;
     width: fit-content;
-    min-width: 180px; /* Garante um tamanho mínimo elegante */
+    min-width: 200px; /* Aumentado levemente para melhor equilíbrio visual */
 }
 
-/* No mobile, garantimos que a pílula não quebre o layout */
-@media (max-width: 480px) {
+/* Responsividade Mobile */
+@media (max-width: 640px) {
+    .form-group { grid-column: span 12 !important; }
     .data-pill {
         min-width: 100%;
         font-size: 0.95rem;
