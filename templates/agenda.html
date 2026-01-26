@@ -59,41 +59,51 @@
             }
         }
 
+        const nomesMeses = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+
         function renderizarAgenda() {
             const container = document.getElementById('listaEventos');
-            const mes = document.getElementById('filtroMes').value;
-            const texto = document.getElementById('busca').value.toLowerCase();
-
-            const filtrados = agendaGlobal.filter(item => {
-                // IMPORTANTE: item.data (minúsculo)
+            const mesFiltro = document.getElementById('filtroMes').value;
+            const busca = document.getElementById('busca').value.toLowerCase();
+        
+            // Filtra e ordena
+            let filtrados = agendaGlobal.filter(item => {
                 const dataObj = converterData(item.data);
                 if(!dataObj) return false;
-                
-                const mesEvento = dataObj.getMonth() + 1;
-                
-                const matchMes = mes === 'todos' || mesEvento == mes;
-                const matchTexto = (item.evento || '').toLowerCase().includes(texto);
-                
-                return matchMes && matchTexto;
+                const matchMes = mesFiltro === 'todos' || (dataObj.getMonth() + 1) == mesFiltro;
+                const matchBusca = (item.evento || '').toLowerCase().includes(busca);
+                return matchMes && matchBusca;
             });
-
-            if(filtrados.length === 0) {
-                container.innerHTML = '<div class="card"><p>Nenhum evento encontrado.</p></div>';
-                return;
-            }
-
-            // Ordena
             filtrados.sort((a,b) => converterData(a.data) - converterData(b.data));
-
-            container.innerHTML = filtrados.map(item => `
-                <div class="card agenda-card">
-                    <div style="font-weight:bold; font-size:1.1rem; color:#1e293b;">${item.evento}</div>
-                    <div style="color:#64748b; margin-top:5px; font-size:0.95rem;">
-                        📅 ${item.data} &nbsp;|&nbsp; 📍 ${item.local || 'Local a definir'}
+        
+            // Agrupamento por Mês
+            let htmlFinal = "";
+            let mesAtual = -1;
+        
+            filtrados.forEach(item => {
+                const d = converterData(item.data);
+                const m = d.getMonth() + 1;
+        
+                if (m !== mesAtual) {
+                    mesAtual = m;
+                    htmlFinal += `<div class="month-header">${nomesMeses[m]}</div>`;
+                }
+        
+                const eAdmin = sessionStorage.getItem('token_sistema'); // Verifica se é secretário
+        
+                htmlFinal += `
+                    <div class="card agenda-card">
+                        <div class="card-content">
+                            <strong>${item.evento}</strong>
+                            <span>📅 ${item.data} | 📍 ${item.local || 'Local a definir'}</span>
+                            <small>Resp: ${item.responsavel || 'Secretaria'}</small>
+                        </div>
+                        ${eAdmin ? `<button class="btn-del" onclick="deletarEvento('${item.id}')">🗑️</button>` : ''}
                     </div>
-                    ${item.responsavel ? `<div style="font-size:0.85rem; color:#94a3b8; margin-top:5px;">Resp: ${item.responsavel}</div>` : ''}
-                </div>
-            `).join('');
+                `;
+            });
+        
+            container.innerHTML = htmlFinal || '<p style="text-align:center;">Nenhum evento para este período.</p>';
         }
 
         function converterData(str) {
