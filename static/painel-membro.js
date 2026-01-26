@@ -50,16 +50,16 @@ function renderizarMeusDados() {
     const container = document.getElementById('form-meus-dados');
     if (!container || !usuario) return;
 
-    // 1. Definição das Seções para organizar o visual
+    // 1. Definição das Seções (Mantendo a ordem de divisão proposta)
     const secoes = [
         {
             titulo: 'Informações Básicas',
             campos: [
-                { key: 'NOME', label: 'Nome Completo', span: 8 },
-                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 4 },
-                { key: 'CPF', label: 'CPF', span: 4 },
-                { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 4 },
-                { key: 'CONTATO', label: 'WhatsApp/Telefone', span: 4 }
+                { key: 'NOME', label: 'Nome Completo', span: 12 },
+                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6 },
+                { key: 'CPF', label: 'CPF', span: 6 },
+                { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
+                { key: 'CONTATO', label: 'WhatsApp/Telefone', span: 6 }
             ]
         },
         {
@@ -91,35 +91,39 @@ function renderizarMeusDados() {
     container.innerHTML = '';
 
     secoes.forEach(secao => {
-        // Verifica se a seção tem algum dado preenchido para não mostrar título vazio
         const temDados = secao.campos.some(c => getVal(usuario, c.key));
         if (!temDados) return;
 
-        // Adiciona Título da Seção
+        // Barra de Título da Seção (Centralizada no CSS)
         container.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
 
         secao.campos.forEach(campo => {
             let valor = getVal(usuario, campo.key);
-            if (!valor) return; 
-        
-            // --- CORREÇÃO CPF: Garante string com 11 dígitos e zeros à esquerda ---
+            if (!valor) return;
+
+            let htmlConteudo = '';
+
+            // --- TRATAMENTO CPF: 11 dígitos com string ---
             if (campo.key === 'CPF') {
-                // Converte para string, remove espaços e completa com zeros até 11 caracteres
-                valor = valor.toString().trim().padStart(11, '0');
-            }
-        
-            // --- CORREÇÃO FILHOS: Remove o "Vocês •" e centraliza ---
-            if (campo.isList && valor.includes(',')) {
-                valor = valor.split(',')
-                    .map(item => `<span class="list-bullet">${item.trim()}</span>`) // Removido o prefixo
+                const cpfLimpo = valor.toString().replace(/\D/g, '').padStart(11, '0');
+                htmlConteudo = `<span class="data-pill">${cpfLimpo}</span>`;
+            } 
+            // --- TRATAMENTO LISTAS (Filhos): Sem o "Vocês •" ---
+            else if (campo.isList && valor.toString().includes(',')) {
+                htmlConteudo = valor.split(',')
+                    .map(item => `<span class="data-pill">${item.trim()}</span>`)
                     .join('');
+            } 
+            // --- TRATAMENTO PADRÃO ---
+            else {
+                htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
-        
+
             container.innerHTML += `
                 <div class="form-group" style="grid-column: span ${campo.span}">
                     <label>${campo.label}</label>
-                    <div class="valor-box ${campo.isList ? 'list-mode' : ''}">
-                        ${valor}
+                    <div class="valor-box">
+                        ${htmlConteudo}
                     </div>
                 </div>
             `;
