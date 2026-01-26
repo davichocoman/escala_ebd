@@ -799,3 +799,43 @@ function renderizarReservasCards() {
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva cadastrada.</p>';
 }
+
+// Funções para Abrir os Modais
+window.abrirModalAgendaGeral = () => { 
+    document.getElementById('formAgendaGeral').reset(); 
+    document.getElementById('modalAgendaGeral').classList.remove('hidden'); 
+};
+
+window.abrirModalReserva = () => { 
+    document.getElementById('formReserva').reset(); 
+    document.getElementById('modalReserva').classList.remove('hidden'); 
+};
+
+// Salvar Agenda Geral (Pode ter vários no mesmo dia)
+async function salvarAgendaGeral(e) {
+    e.preventDefault();
+    const dados = {
+        DATA: dataBr(document.getElementById('ag_data').value),
+        EVENTO: document.getElementById('ag_evento').value.trim(),
+        LOCAL: document.getElementById('ag_local').value.trim() || 'Templo',
+        RESPONSAVEL: document.getElementById('ag_resp').value.trim() || 'Secretaria'
+    };
+    await enviarDados(`${API_BASE}/agenda-geral`, null, dados);
+    fecharModal('modalAgendaGeral');
+}
+
+// Salvar Reserva de Sala (Valida conflito no Backend)
+async function salvarReserva(e) {
+    e.preventDefault();
+    const dados = {
+        DATA: dataBr(document.getElementById('res_data').value),
+        LOCAL: document.getElementById('res_local').value,
+        HORARIO_INICIO: document.getElementById('res_ini').value,
+        HORARIO_FIM: document.getElementById('res_fim').value,
+        ATIVIDADE: document.getElementById('res_ativ').value.trim(),
+        RESPONSAVEL: document.getElementById('res_resp').value.trim()
+    };
+    // O backend retornará erro 400 se houver sobreposição no Templo, Subsolo ou Laje
+    await enviarDados(`${API_BASE}/reservas`, null, dados);
+    fecharModal('modalReserva');
+}
