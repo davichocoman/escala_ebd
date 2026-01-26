@@ -251,8 +251,19 @@ function renderizarMeusDados() {
 // ============================================================
 function configurarBotoes() {
     const buscaEl = document.getElementById('buscaMembro');
-    if (buscaEl) buscaEl.addEventListener('keyup', renderizarMembros);
+    
+    if (buscaEl) {
+        // Criamos uma versão "debounced" da renderização
+        const buscarComDebounce = debounce(() => {
+            console.log("🔍 Filtrando membros...");
+            renderizarMembros();
+        }, 400); // 400ms é o "doce balanço" entre velocidade e economia de CPU
 
+        // Trocamos o renderizarMembros direto pela versão com debounce
+        buscaEl.addEventListener('input', buscarComDebounce); 
+    }
+
+    // Restante dos seus formulários...
     document.querySelectorAll('form').forEach(f => {
         f.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -337,6 +348,8 @@ window.prepararEdicaoMembro = function(id) {
     set('m_conjuge', getVal(m, 'CONJUGE'));
     set('m_filhos', getVal(m, 'FILHOS'));
     set('m_pai', getVal(m, 'PAI'));
+    set('m_endereco', getVal(m, 'ENDERECO'));
+    set('m_contato', getVal(m, 'CONTATO'));
     set('m_mae', getVal(m, 'MAE'));
     set('m_profissao', getVal(m, 'PROFISSAO'));
     set('m_situacao', getVal(m, 'SITUACAO_TRABALHO'));
@@ -359,6 +372,8 @@ async function salvarMembro() {
         FILHOS: document.getElementById('m_filhos')?.value.trim() || '',
         PAI: document.getElementById('m_pai')?.value.trim() || '',
         MAE: document.getElementById('m_mae')?.value.trim() || '',
+        ENDERECO: document.getElementById('m_endereco')?.value.trim() || '',
+        CONTATO: document.getElementById('m_contato')?.value.trim() || '',
         PROFISSAO: document.getElementById('m_profissao')?.value.trim() || '',
         SITUACAO_TRABALHO: document.getElementById('m_situacao')?.value || '',
         CARGO: document.getElementById('m_cargo')?.value.trim() || '',
@@ -367,11 +382,11 @@ async function salvarMembro() {
     };
 
     // Validação básica no front
-    if (!dados.NOME || !dados.CPF) {
+    if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO) {
         Swal.fire({
             icon: 'warning',
             title: 'Campos obrigatórios',
-            text: 'Nome e CPF são obrigatórios!'
+            text: 'Nome, CPF, Data de Nascimento, Endereço e Contato são obrigatórios!'
         });
         return;
     }
@@ -477,6 +492,13 @@ async function enviarDados(urlBase, id, payload) {
     const url = id ? `${urlBase}/${id}` : urlBase;
     const method = id ? 'PUT' : 'POST';
 
+    // Seleciona o botão de submit do formulário ativo para desabilitá-lo
+    const btnSubmit = document.querySelector('form:not(.hidden) button[type="submit"]');
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = 'Processando...';
+    }
+
     try {
         const res = await fetch(url, {
             method,
@@ -487,9 +509,11 @@ async function enviarDados(urlBase, id, payload) {
             body: JSON.stringify(payload)
         });
 
+        const data = await res.json();
+
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || 'Falha na API');
+            // Se o backend retornou erro de CPF já existente (400)
+            throw new Error(data.detail || 'Falha na API');
         }
 
         await carregarTudoDoBanco();
@@ -497,19 +521,23 @@ async function enviarDados(urlBase, id, payload) {
         Swal.fire({
             icon: 'success',
             title: 'Salvo com sucesso!',
-            text: 'Os dados foram atualizados corretamente.',
             timer: 2000,
             showConfirmButton: false
         });
+
     } catch (e) {
         console.error(e);
         Swal.fire({
             icon: 'error',
             title: 'Erro ao salvar',
-            html: `Detalhes: <br><small>${e.message || 'Falha na comunicação com o servidor'}</small>`,
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3b82f6'
+            text: e.message
         });
+    } finally {
+        // REABILITA o botão após terminar o processo (sucesso ou erro)
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = 'Salvar';
+        }
     }
 }
 
@@ -529,6 +557,18 @@ function dataBr(str) {
     if (!str) return '';
     const p = str.split('-');
     return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '';
+}
+
+// --- Utilitário de Debounce ---
+// Retorna uma função que, enquanto continuar sendo invocada, não será executada.
+// A função só será executada após 'wait' milissegundos de inatividade.
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
 }
 
 // ============================================================
