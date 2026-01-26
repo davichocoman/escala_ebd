@@ -387,26 +387,21 @@ function configurarBotoes() {
 }
 
 window.mostrarTela = function(telaId, btn) {
-    ['dashboard', 'membros', 'pastor', 'perfil'].forEach(id => {
+    ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
 
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-
     const alvo = document.getElementById('sec-' + telaId);
     if (alvo) alvo.classList.remove('hidden');
     if (btn) btn.classList.add('active');
 
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar && window.innerWidth < 768) {
-        sidebar.classList.remove('open');
-    }
-
-    // Força re-render
+    // Gatilhos de renderização
+    if (telaId === 'dashboard') renderizarDashboard();
     if (telaId === 'membros') renderizarMembros();
-    if (telaId === 'pastor') renderizarAgendaPastor();
-    if (telaId === 'perfil') renderizarMeusDados();
+    if (telaId === 'agenda-geral') renderizarAgendaGeralCards(); // Nova
+    if (telaId === 'reservas') renderizarReservasCards();        // Nova
 };
 
 window.logout = function() {
@@ -735,43 +730,72 @@ document.addEventListener('keydown', (e) => {
 
 const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
-function renderizarAgendaGeral() {
-    const container = document.getElementById('lista-agenda-geral');
-    if (!container) return;
-
-    const mesFiltro = document.getElementById('filtroMesGeral').value;
-    const busca = document.getElementById('buscaGeral').value.toLowerCase();
+function renderizarAgendaGeralCards() {
+    const container = document.getElementById('lista-agenda-geral-cards');
+    const dados = SISTEMA.dados.dashboard.agenda || [];
     
-    let agenda = SISTEMA.dados.dashboard.agenda || [];
-    
-    // Filtro e Ordenação
-    let filtrados = agenda.filter(item => {
-        const d = dataParaObj(item.data);
-        const mMatch = mesFiltro === 'todos' || (d.getMonth() + 1) == mesFiltro;
-        const bMatch = item.evento.toLowerCase().includes(busca);
-        return mMatch && bMatch;
-    }).sort((a,b) => dataParaObj(a.data) - dataParaObj(b.data));
+    dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
 
     let html = "";
     let mesAtual = -1;
 
-    filtrados.forEach(item => {
-        const m = dataParaObj(item.data).getMonth() + 1;
+    dados.forEach(ev => {
+        const d = dataParaObj(getVal(ev, 'DATA'));
+        const m = d.getMonth() + 1;
+
         if (m !== mesAtual) {
             mesAtual = m;
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
-        
+
         html += `
-            <div class="card agenda-card">
-                <div class="card-content">
-                    <strong>${item.evento}</strong>
-                    <span>📅 ${item.data} | 📍 ${item.local}</span>
+            <div class="member-card">
+                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
+                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-icon delete" onclick="deletarEventoGeral('${item.id}')">🗑️</button>
+                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
                 </div>
             </div>`;
     });
-    container.innerHTML = html || '<p class="empty-msg">Nenhum evento encontrado.</p>';
+    container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
+}
+
+// 3. Função para renderizar Reservas
+function renderizarReservasCards() {
+    const container = document.getElementById('lista-reservas-cards');
+    const dados = SISTEMA.dados.dashboard.reservas || [];
+    
+    dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+
+    let html = "";
+    let mesAtual = -1;
+
+    dados.forEach(res => {
+        const d = dataParaObj(getVal(res, 'DATA'));
+        const m = d.getMonth() + 1;
+
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
+        html += `
+            <div class="member-card" style="border-left: 5px solid var(--green);">
+                <div class="card-header"><strong>${getVal(res, 'ATIVIDADE')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
+                    <div><strong>Horário:</strong> ${getVal(res, 'HORARIO_INICIO')} - ${getVal(res, 'HORARIO_FIM')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'ID')}', 'reservas')">🗑️</button>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva cadastrada.</p>';
 }
