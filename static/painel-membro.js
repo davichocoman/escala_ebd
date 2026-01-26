@@ -100,15 +100,21 @@ function renderizarMeusDados() {
 
         secao.campos.forEach(campo => {
             let valor = getVal(usuario, campo.key);
-            if (!valor) return; // Pula se estiver vazio
-
-            // Tratamento especial para listas (Filhos)
+            if (!valor) return; 
+        
+            // --- CORREÇÃO CPF: Garante string com 11 dígitos e zeros à esquerda ---
+            if (campo.key === 'CPF') {
+                // Converte para string, remove espaços e completa com zeros até 11 caracteres
+                valor = valor.toString().trim().padStart(11, '0');
+            }
+        
+            // --- CORREÇÃO FILHOS: Remove o "Vocês •" e centraliza ---
             if (campo.isList && valor.includes(',')) {
                 valor = valor.split(',')
-                    .map(item => `<span class="list-bullet">Vocês • ${item.trim()}</span>`)
+                    .map(item => `<span class="list-bullet">${item.trim()}</span>`) // Removido o prefixo
                     .join('');
             }
-
+        
             container.innerHTML += `
                 <div class="form-group" style="grid-column: span ${campo.span}">
                     <label>${campo.label}</label>
