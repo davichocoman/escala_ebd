@@ -47,64 +47,79 @@ document.addEventListener('DOMContentLoaded', () => {
 // Renderização
 // ============================================================
 function renderizarMeusDados() {
-    const container = document.querySelector('.form-grid');
+    const container = document.getElementById('form-meus-dados');
     if (!container || !usuario) return;
 
-    const dados = usuario;
+    // 1. Definição das Seções para organizar o visual
+    const secoes = [
+        {
+            titulo: 'Informações Básicas',
+            campos: [
+                { key: 'NOME', label: 'Nome Completo', span: 8 },
+                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 4 },
+                { key: 'CPF', label: 'CPF', span: 4 },
+                { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 4 },
+                { key: 'CONTATO', label: 'WhatsApp/Telefone', span: 4 }
+            ]
+        },
+        {
+            titulo: 'Família e Filiação',
+            campos: [
+                { key: 'PAI', label: 'Nome do Pai', span: 6 },
+                { key: 'MAE', label: 'Nome da Mãe', span: 6 },
+                { key: 'CONJUGE', label: 'Cônjuge', span: 6 },
+                { key: 'FILHOS', label: 'Filhos', span: 6, isList: true }
+            ]
+        },
+        {
+            titulo: 'Endereço e Profissão',
+            campos: [
+                { key: 'ENDERECO', label: 'Endereço Residencial', span: 12 },
+                { key: 'PROFISSAO', label: 'Profissão', span: 6 },
+                { key: 'SITUACAO_TRABALHO', label: 'Situação Atual', span: 6 }
+            ]
+        },
+        {
+            titulo: 'Dados Eclesiásticos',
+            campos: [
+                { key: 'CARGO', label: 'Cargo Atual', span: 6 },
+                { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
+            ]
+        }
+    ];
+
     container.innerHTML = '';
 
-    Object.entries(dados).forEach(([key, valor]) => {
+    secoes.forEach(secao => {
+        // Verifica se a seção tem algum dado preenchido para não mostrar título vazio
+        const temDados = secao.campos.some(c => getVal(usuario, c.key));
+        if (!temDados) return;
 
-        if (valor === null || valor === undefined || valor === '') return;
+        // Adiciona Título da Seção
+        container.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
 
-        const keyUpper = key.toUpperCase();
-        let sizeClass = 'form-group';
+        secao.campos.forEach(campo => {
+            let valor = getVal(usuario, campo.key);
+            if (!valor) return; // Pula se estiver vazio
 
-        // Campos longos
-        if (
-            keyUpper === 'FILHOS' ||
-            keyUpper.includes('CARGO') ||
-            keyUpper.includes('OBSERVA') ||
-            keyUpper.includes('DESCR')
-        ) {
-            sizeClass += ' long-field';
-        }
+            // Tratamento especial para listas (Filhos)
+            if (campo.isList && valor.includes(',')) {
+                valor = valor.split(',')
+                    .map(item => `<span class="list-bullet">Vocês • ${item.trim()}</span>`)
+                    .join('');
+            }
 
-        // Campos médios
-        else if (keyUpper === 'PAI' || keyUpper === 'MAE') {
-            sizeClass += ' medium';
-        }
-
-        // Tratamento de listas
-        if (
-            sizeClass.includes('long-field') &&
-            typeof valor === 'string' &&
-            valor.includes(',')
-        ) {
-            valor = valor
-                .split(',')
-                .map(item => item.trim())
-                .filter(Boolean)
-                .map(item => `• ${item}`)
-                .join('<br>');
-        }
-
-        const label = key
-            .replace(/_/g, ' ')
-            .toLowerCase()
-            .replace(/\b\w/g, l => l.toUpperCase());
-
-        container.innerHTML += `
-            <div class="${sizeClass}">
-                <label>${label}</label>
-                <div class="valor-box ${sizeClass.includes('long-field') ? 'special' : ''}">
-                    ${valor}
+            container.innerHTML += `
+                <div class="form-group" style="grid-column: span ${campo.span}">
+                    <label>${campo.label}</label>
+                    <div class="valor-box ${campo.isList ? 'list-mode' : ''}">
+                        ${valor}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        });
     });
 }
-
 // ============================================================
 // Navegação e Sidebar
 // ============================================================
