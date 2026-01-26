@@ -732,3 +732,46 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+
+function renderizarAgendaGeral() {
+    const container = document.getElementById('lista-agenda-geral');
+    if (!container) return;
+
+    const mesFiltro = document.getElementById('filtroMesGeral').value;
+    const busca = document.getElementById('buscaGeral').value.toLowerCase();
+    
+    let agenda = SISTEMA.dados.dashboard.agenda || [];
+    
+    // Filtro e Ordenação
+    let filtrados = agenda.filter(item => {
+        const d = dataParaObj(item.data);
+        const mMatch = mesFiltro === 'todos' || (d.getMonth() + 1) == mesFiltro;
+        const bMatch = item.evento.toLowerCase().includes(busca);
+        return mMatch && bMatch;
+    }).sort((a,b) => dataParaObj(a.data) - dataParaObj(b.data));
+
+    let html = "";
+    let mesAtual = -1;
+
+    filtrados.forEach(item => {
+        const m = dataParaObj(item.data).getMonth() + 1;
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+        
+        html += `
+            <div class="card agenda-card">
+                <div class="card-content">
+                    <strong>${item.evento}</strong>
+                    <span>📅 ${item.data} | 📍 ${item.local}</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon delete" onclick="deletarEventoGeral('${item.id}')">🗑️</button>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html || '<p class="empty-msg">Nenhum evento encontrado.</p>';
+}
