@@ -784,15 +784,18 @@ function renderizarReservasCards() {
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
 
+        // Ajuste nas chaves para bater com o backend (data, inicio, fim, evento, local)
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
-                <div class="card-header"><strong>${getVal(res, 'ATIVIDADE')}</strong></div>
+                <div class="card-header"><strong>${getVal(res, 'ATIVIDADE') || getVal(res, 'evento')}</strong></div>
                 <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
                     <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
-                    <div><strong>Horário:</strong> ${getVal(res, 'HORARIO_INICIO')} - ${getVal(res, 'HORARIO_FIM')}</div>
+                    <div><strong>Horário:</strong> ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} - ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}</div>
                     <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
                 </div>
                 <div class="card-actions">
+                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'ID')}')">✏️</button>
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'ID')}', 'reservas')">🗑️</button>
                 </div>
             </div>`;
@@ -814,28 +817,58 @@ window.abrirModalReserva = () => {
 // Salvar Agenda Geral (Pode ter vários no mesmo dia)
 async function salvarAgendaGeral(e) {
     e.preventDefault();
+    const id = document.getElementById('ag_id').value; // PEGA O ID SE FOR EDIÇÃO
     const dados = {
         DATA: dataBr(document.getElementById('ag_data').value),
-        EVENTO: document.getElementById('ag_evento').value.trim(),
-        LOCAL: document.getElementById('ag_local').value.trim() || 'Templo',
-        RESPONSAVEL: document.getElementById('ag_resp').value.trim() || 'Secretaria'
+        EVENTO: document.getElementById('ag_evento').value,
+        LOCAL: document.getElementById('ag_local').value,
+        RESPONSAVEL: document.getElementById('ag_resp').value
     };
-    await enviarDados(`${API_BASE}/agenda-geral`, null, dados);
+    await enviarDados(`${API_BASE}/agenda-geral`, id, dados);
     fecharModal('modalAgendaGeral');
 }
 
-// Salvar Reserva de Sala (Valida conflito no Backend)
 async function salvarReserva(e) {
     e.preventDefault();
+    const id = document.getElementById('res_id').value; // PEGA O ID SE FOR EDIÇÃO
     const dados = {
         DATA: dataBr(document.getElementById('res_data').value),
         LOCAL: document.getElementById('res_local').value,
         HORARIO_INICIO: document.getElementById('res_ini').value,
         HORARIO_FIM: document.getElementById('res_fim').value,
-        ATIVIDADE: document.getElementById('res_ativ').value.trim(),
-        RESPONSAVEL: document.getElementById('res_resp').value.trim()
+        ATIVIDADE: document.getElementById('res_ativ').value,
+        RESPONSAVEL: document.getElementById('res_resp').value
     };
-    // O backend retornará erro 400 se houver sobreposição no Templo, Subsolo ou Laje
-    await enviarDados(`${API_BASE}/reservas`, null, dados);
+    await enviarDados(`${API_BASE}/reservas`, id, dados);
     fecharModal('modalReserva');
 }
+
+// --- Edição Agenda Geral ---
+window.prepararEdicaoGeral = function(id) {
+    const ev = SISTEMA.dados.dashboard.agenda.find(x => getVal(x, 'ID') == id);
+    if (!ev) return;
+
+    document.getElementById('ag_id').value = getVal(ev, 'ID');
+    document.getElementById('ag_data').value = dataIso(getVal(ev, 'DATA'));
+    document.getElementById('ag_evento').value = getVal(ev, 'EVENTO');
+    document.getElementById('ag_local').value = getVal(ev, 'LOCAL');
+    document.getElementById('ag_resp').value = getVal(ev, 'RESPONSAVEL');
+
+    document.getElementById('modalAgendaGeral').classList.remove('hidden');
+};
+
+// --- Edição Reservas ---
+window.prepararEdicaoReserva = function(id) {
+    const res = SISTEMA.dados.dashboard.reservas.find(x => getVal(x, 'ID') == id);
+    if (!res) return;
+
+    document.getElementById('res_id').value = getVal(res, 'ID');
+    document.getElementById('res_data').value = dataIso(getVal(res, 'DATA'));
+    document.getElementById('res_local').value = getVal(res, 'LOCAL');
+    document.getElementById('res_ini').value = getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio');
+    document.getElementById('res_fim').value = getVal(res, 'HORARIO_FIM') || getVal(res, 'fim');
+    document.getElementById('res_ativ').value = getVal(res, 'ATIVIDADE') || getVal(res, 'evento');
+    document.getElementById('res_resp').value = getVal(res, 'RESPONSAVEL');
+
+    document.getElementById('modalReserva').classList.remove('hidden');
+};
