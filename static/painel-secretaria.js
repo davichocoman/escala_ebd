@@ -253,21 +253,30 @@ function renderizarMeusDados() {
                 { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
                 { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
                 { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
-                { key: 'PERFIL', label: 'Perfil de Acesso', span: 6 }
+                { key: 'CONTATO', label: 'WhatsApp/Telefone', span: 6 }
             ]
         },
         {
-            titulo: 'Família e Localização',
+            titulo: 'Família e Filiação',
             campos: [
+                { key: 'PAI', label: 'Nome do Pai', span: 6 },
+                { key: 'MAE', label: 'Nome da Mãe', span: 6 },
                 { key: 'CONJUGE', label: 'Cônjuge', span: 6 },
-                { key: 'FILHOS', label: 'Filhos', span: 6, isList: true },
-                { key: 'ENDERECO', label: 'Endereço Residencial', span: 12 }
+                { key: 'FILHOS', label: 'Filhos', span: 6, isList: true }
+            ]
+        },
+        {
+            titulo: 'Endereço e Profissão',
+            campos: [
+                { key: 'ENDERECO', label: 'Endereço Residencial', span: 12 },
+                { key: 'PROFISSAO', label: 'Profissão', span: 6 },
+                { key: 'SITUACAO_TRABALHO', label: 'Situação Atual', span: 6 }
             ]
         },
         {
             titulo: 'Dados Eclesiásticos',
             campos: [
-                { key: 'CARGO', label: 'Cargo', span: 6 },
+                { key: 'CARGO', label: 'Cargo Atual', span: 6 },
                 { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
             ]
         }
