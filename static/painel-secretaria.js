@@ -806,23 +806,26 @@ function renderizarReservasCards() {
 // Funções para Abrir os Modais
 window.abrirModalAgendaGeral = () => { 
     document.getElementById('formAgendaGeral').reset(); 
+    document.getElementById('ag_id').value = ''; // GARANTE QUE ESTÁ VAZIO
     document.getElementById('modalAgendaGeral').classList.remove('hidden'); 
 };
 
 window.abrirModalReserva = () => { 
     document.getElementById('formReserva').reset(); 
+    document.getElementById('res_id').value = ''; // GARANTE QUE ESTÁ VAZIO
     document.getElementById('modalReserva').classList.remove('hidden'); 
 };
 
 // Salvar Agenda Geral (Pode ter vários no mesmo dia)
 async function salvarAgendaGeral(e) {
     e.preventDefault();
-    const id = document.getElementById('ag_id').value; // PEGA O ID SE FOR EDIÇÃO
+    const id = document.getElementById('ag_id').value;
     const dados = {
         DATA: dataBr(document.getElementById('ag_data').value),
         EVENTO: document.getElementById('ag_evento').value,
         LOCAL: document.getElementById('ag_local').value,
-        RESPONSAVEL: document.getElementById('ag_resp').value
+        RESPONSAVEL: document.getElementById('ag_resp').value,
+        OBSERVACAO: "" // Se você quiser adicionar um campo de obs no HTML da agenda geral futuramente
     };
     await enviarDados(`${API_BASE}/agenda-geral`, id, dados);
     fecharModal('modalAgendaGeral');
