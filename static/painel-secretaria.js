@@ -34,6 +34,17 @@ function getVal(obj, key) {
     }
     return '';
 }
+//função única para decidir se um item deve aparecer
+function eventoValido(item, chaveEvento, chaveData) {
+    const nome = getVal(item, chaveEvento);
+    if (!nome || nome.toLowerCase() === 'null') return false;
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    const data = dataParaObj(getVal(item, chaveData));
+    return data >= hoje;
+}
 
 // ============================================================
 // 2. INICIALIZAÇÃO
@@ -163,7 +174,7 @@ function renderizarDashboard() {
 
     // Igreja (Geralmente tem apenas um horário fixo)
     const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
-    preencherListaDash('list-dash-igreja', listaIgreja, 'evento', 'data', filtroSemana, 'horario');
+    preencherListaDash('list-dash-igreja', listaIgreja, 'EVENTO', 'DATA', filtroSemana, 'HORARIO');
 }
 
 function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
@@ -755,30 +766,33 @@ function renderizarAgendaGeralCards() {
     let html = "";
     let mesAtual = -1;
 
-    dados.forEach(ev => {
-        const d = dataParaObj(getVal(ev, 'DATA'));
-        const m = d.getMonth() + 1;
+    dados
+      .filter(ev => eventoValido(ev, 'EVENTO', 'DATA'))
+      .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
+      .forEach(ev => {
+          const d = dataParaObj(getVal(ev, 'DATA'));
+          const m = d.getMonth() + 1;
+    
+          if (m !== mesAtual) {
+              mesAtual = m;
+              html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+          }
 
-        if (m !== mesAtual) {
-            mesAtual = m;
-            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
-        }
 
-        if (getVal(ev, 'EVENTO') !== null){
-            html += `
-                <div class="member-card">
-                    <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
-                    <div class="card-body">
-                        <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
-                        <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
-                        <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
-                        <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
-                    </div>
-                </div>`;
-        }
+        html += `
+            <div class="member-card">
+                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
+                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
+                </div>
+            </div>`;
+        
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
 }
@@ -792,31 +806,34 @@ function renderizarReservasCards() {
     let html = "";
     let mesAtual = -1;
 
-    dados.forEach(res => {
-        const d = dataParaObj(getVal(res, 'DATA'));
-        const m = d.getMonth() + 1;
-        if (m !== mesAtual) {
-            mesAtual = m;
-            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
-        }
+    dados
+      .filter(res => eventoValido(res, 'ATIVIDADE', 'DATA'))
+      .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
+      .forEach(res => {
+          const d = dataParaObj(getVal(res, 'DATA'));
+          const m = d.getMonth() + 1;
+    
+          if (m !== mesAtual) {
+              mesAtual = m;
+              html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+          }
 
         // Note o uso de getVal(res, 'id') minúsculo para bater com o backend
-        if (getVal(res, 'EVENTO') !== null){
-            html += `
-                <div class="member-card" style="border-left: 5px solid var(--green);">
-                    <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
-                    <div class="card-body">
-                        <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
-                        <div><strong>Horário:</strong> ${getVal(res, 'INICIO')} - ${getVal(res, 'FIM')}</div>
-                        <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
-                        <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'id')}')">✏️</button>
-                        <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
-                    </div>
-                </div>`;
-        }
+        html += `
+            <div class="member-card" style="border-left: 5px solid var(--green);">
+                <div class="card-header"><strong>${getVal(res, 'ATIVIDADE')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
+                    <div><strong>Horário:</strong> ${getVal(res, 'INICIO')} - ${getVal(res, 'FIM')}</div>
+                    <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'id')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
+                </div>
+            </div>`;
+
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
 }
