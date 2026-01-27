@@ -744,12 +744,12 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-const NOMES_MESES = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
     const dados = SISTEMA.dados.dashboard.agenda || [];
-    
+
     dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
 
     let html = "";
@@ -772,7 +772,11 @@ function renderizarAgendaGeralCards() {
                     <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
                 </div>
-                </div>`;
+                <div class="card-actions">
+                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
+                </div>
+            </div>`;
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
 }
