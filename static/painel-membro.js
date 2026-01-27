@@ -1,24 +1,23 @@
 const API_BASE = 'https://api-escala.onrender.com/api';
+const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
-// Estado global
-let usuario = null;
-
-// Função auxiliar para acessar chaves ignorando case
-function getVal(obj, key) {
-    if (!obj || typeof obj !== 'object') return '';
-    const upperKey = key.toUpperCase();
-    for (const k in obj) {
-        if (k.toUpperCase() === upperKey) {
-            return obj[k] || '';
-        }
+// Estado global unificado
+const SISTEMA = {
+    usuario: null,
+    token: null,
+    dados: {
+        dashboard: { agenda: [], reservas: [] } // Para guardar os dados baixados
     }
-    return '';
-}
+};
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Recupera usuário da sessão
+// ============================================================
+// 1. INICIALIZAÇÃO
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Verifica Login
     const userStr = sessionStorage.getItem('usuario_sistema');
+    SISTEMA.token = sessionStorage.getItem('token_sistema');
+
     if (!userStr) {
         Swal.fire({
             icon: 'warning',
@@ -26,48 +25,66 @@ document.addEventListener('DOMContentLoaded', () => {
             text: 'Por favor, faça login novamente.',
             timer: 3000,
             showConfirmButton: false
-        }).then(() => {
-            window.location.href = '/login';
-        });
+        }).then(() => window.location.href = '/login');
         return;
     }
 
-    usuario = JSON.parse(userStr);
+    SISTEMA.usuario = JSON.parse(userStr);
 
-    // 2. Mostra nome no header da sidebar
-    const nome = getVal(usuario, 'NOME') ? getVal(usuario, 'NOME').split(' ')[0] : 'Membro';
+    // 2. Mostra nome
+    const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Membro';
     const display = document.getElementById('userDisplay');
     if (display) display.innerHTML = `Olá, <strong>${nome}</strong><br><small>Membro</small>`;
 
-    // 3. Renderiza os dados imediatamente (única tela)
+    // 3. Renderiza Meus Dados
     renderizarMeusDados();
+
+    // 4. Busca dados da Agenda/Reservas em background
+    await carregarDadosGerais();
 });
 
 // ============================================================
-// Renderização
+// 2. CARREGAMENTO DE DADOS (Agenda e Reservas)
 // ============================================================
-// --- Funções Auxiliares de Formatação ---
-const formatarCPF = (valor) => {
-    const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
-    return cpf.replace(/(\={3})(\={3})(\={3})(\={2})/, "$1.$2.$3-$4")
-              .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-};
-
-const formatarData = (valor) => {
-    if (!valor) return '';
-    // Se a data já estiver no formato DD/MM/YYYY, apenas retorna
-    if (valor.includes('/') && valor.split('/').length === 3) return valor;
+async function carregarDadosGerais() {
+    console.log("🔄 Baixando agenda e reservas...");
     
-    // Caso venha do banco como YYYY-MM-DD (padrão ISO)
-    const data = new Date(valor);
-    if (isNaN(data)) return valor;
-    return data.toLocaleDateString('pt-BR');
-};
+    // Feedback visual simples
+    document.getElementById('lista-agenda-geral-cards').innerHTML = '<p style="padding:10px">Carregando agenda...</p>';
+    document.getElementById('lista-reservas-cards').innerHTML = '<p style="padding:10px">Carregando reservas...</p>';
 
+    try {
+        const res = await fetch(`${API_BASE}/patrimonio/dados`, {
+            headers: { 
+                'Content-Type': 'application/json',
+                // Alguns endpoints podem pedir token, mesmo que não validem permissão de admin estrita
+                'x-admin-token': SISTEMA.token 
+            }
+        });
+
+        if (res.ok) {
+            SISTEMA.dados.dashboard = await res.json();
+            console.log("✅ Dados carregados!", SISTEMA.dados.dashboard);
+            renderizarAgendaGeralCards();
+            renderizarReservasCards();
+        }
+    } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        document.getElementById('lista-agenda-geral-cards').innerHTML = '<p class="empty-msg">Erro ao carregar agenda.</p>';
+        document.getElementById('lista-reservas-cards').innerHTML = '<p class="empty-msg">Erro ao carregar reservas.</p>';
+    }
+}
+
+// ============================================================
+// 3. RENDERIZAÇÃO (Somente Leitura)
+// ============================================================
+
+// --- Meus Dados ---
 function renderizarMeusDados() {
     const container = document.getElementById('form-meus-dados');
-    if (!container || !usuario) return;
+    if (!container || !SISTEMA.usuario) return;
 
+    // ... (Mantém a mesma estrutura de seções que você já tinha) ...
     const secoes = [
         {
             titulo: 'Informações Básicas',
@@ -108,82 +125,196 @@ function renderizarMeusDados() {
     container.innerHTML = '';
 
     secoes.forEach(secao => {
-        const temDados = secao.campos.some(c => getVal(usuario, c.key));
+        const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
         if (!temDados) return;
 
         container.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
 
         secao.campos.forEach(campo => {
-            let valor = getVal(usuario, campo.key);
+            let valor = getVal(SISTEMA.usuario, campo.key);
             if (!valor) return;
 
             let htmlConteudo = '';
-
-            // --- APLICAÇÃO DAS MÁSCARAS ---
-            if (campo.isCPF) {
-                htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
-            } 
-            else if (campo.isDate) {
-                htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
-            }
+            if (campo.isCPF) htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
+            else if (campo.isDate) htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
             else if (campo.isList && valor.toString().includes(',')) {
-                htmlConteudo = valor.split(',')
-                    .map(item => `<span class="data-pill">${item.trim()}</span>`)
-                    .join('');
-            } 
-            else {
+                htmlConteudo = valor.split(',').map(item => `<span class="data-pill">${item.trim()}</span>`).join('');
+            } else {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
 
             container.innerHTML += `
                 <div class="form-group" style="grid-column: span ${campo.span}">
                     <label>${campo.label}</label>
-                    <div class="valor-box">
-                        ${htmlConteudo}
-                    </div>
-                </div>
-            `;
+                    <div class="valor-box">${htmlConteudo}</div>
+                </div>`;
         });
     });
 }
+
+// --- Agenda Geral (Visualização) ---
+function renderizarAgendaGeralCards() {
+    const container = document.getElementById('lista-agenda-geral-cards');
+    const dados = SISTEMA.dados.dashboard.agenda || [];
+    
+    // Filtra e Ordena
+    const validos = dados
+        .filter(ev => eventoValido(ev, 'EVENTO', 'DATA'))
+        .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+
+    if (validos.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhum evento na agenda.</p>';
+        return;
+    }
+
+    let html = "";
+    let mesAtual = -1;
+
+    validos.forEach(ev => {
+        const d = dataParaObj(getVal(ev, 'DATA'));
+        const m = d.getMonth() + 1;
+
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
+        html += `
+            <div class="member-card">
+                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
+                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
+                </div>
+                </div>`;
+    });
+    container.innerHTML = html;
+}
+
+// --- Reservas (Visualização) ---
+function renderizarReservasCards() {
+    const container = document.getElementById('lista-reservas-cards');
+    const dados = SISTEMA.dados.dashboard.reservas || [];
+    
+    const validos = dados
+        .filter(res => eventoValido(res, 'EVENTO', 'DATA')) // Usa 'EVENTO' conforme corrigimos antes
+        .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+
+    if (validos.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
+        return;
+    }
+
+    let html = "";
+    let mesAtual = -1;
+
+    validos.forEach(res => {
+        const d = dataParaObj(getVal(res, 'DATA'));
+        const m = d.getMonth() + 1;
+
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
+        html += `
+            <div class="member-card" style="border-left: 5px solid var(--green, #22c55e);">
+                <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
+                    <div>
+                        <strong>Horário:</strong> 
+                        ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} - 
+                        ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}
+                    </div>
+                    <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
+                </div>
+                </div>`;
+    });
+    container.innerHTML = html;
+}
+
 // ============================================================
-// Navegação e Sidebar
+// 4. UTILITÁRIOS E NAVEGAÇÃO
 // ============================================================
-window.mostrarTela = function(telaId, btn) {
-    // Como só tem uma tela visível, não precisa esconder outras
-    // Mas mantemos o padrão para futura expansão
+
+function mostrarTela(telaId, btn) {
+    // 1. Esconde todas as seções
+    ['meus-dados', 'agenda-geral', 'reservas'].forEach(id => {
+        const el = document.getElementById('sec-' + id);
+        if (el) el.classList.add('hidden');
+    });
+
+    // 2. Remove ativo do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+
+    // 3. Mostra a selecionada
+    const alvo = document.getElementById('sec-' + telaId);
+    if (alvo) alvo.classList.remove('hidden');
+    
+    // 4. Ativa botão
     if (btn) btn.classList.add('active');
 
-    // Fecha sidebar no mobile
+    // 5. Fecha sidebar mobile
     const sidebar = document.querySelector('.sidebar');
     if (sidebar && window.innerWidth < 768) {
-        sidebar.classList.remove('open');
+        toggleSidebar();
     }
+}
+
+// Validação de evento (igual ao painel-secretaria)
+function eventoValido(item, chaveEvento, chaveData) {
+    const nome = String(getVal(item, chaveEvento) || '').trim();
+    if (!nome || nome.toLowerCase() === 'null') return false;
+
+    const dataStr = getVal(item, chaveData)?.trim();
+    if (!dataStr) return false;
+
+    const data = dataParaObj(dataStr);
+    if (isNaN(data.getTime())) return false;
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    return data >= hoje;
+}
+
+// Helpers
+function getVal(obj, key) {
+    if (!obj || typeof obj !== 'object') return '';
+    const upperKey = key.toUpperCase();
+    for (const k in obj) {
+        if (k.toUpperCase() === upperKey) return obj[k] || '';
+    }
+    return '';
+}
+
+function dataParaObj(str) {
+    if (!str || typeof str !== 'string') return new Date(0);
+    const p = str.split('/');
+    return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);
+}
+
+// Formatação
+const formatarCPF = (valor) => {
+    const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
+    return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
 };
 
-// Toggle sidebar + overlay
+const formatarData = (valor) => {
+    if (!valor) return '';
+    if (valor.includes('/') && valor.split('/').length === 3) return valor;
+    const data = new Date(valor);
+    return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
+};
+
+// Sidebar Toggle
 window.toggleSidebar = function() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
     const isOpen = sidebar.classList.toggle('open');
-
     let overlay = document.getElementById('sidebar-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'sidebar-overlay';
-        overlay.style.cssText = `
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 990;
-            display: none;
-            transition: opacity 0.28s ease;
-            opacity: 0;
-        `;
-        document.body.appendChild(overlay);
-        overlay.addEventListener('click', toggleSidebar);
-    }
-
     if (isOpen) {
         overlay.style.display = 'block';
         setTimeout(() => { overlay.style.opacity = '1'; }, 10);
@@ -193,30 +324,6 @@ window.toggleSidebar = function() {
     }
 };
 
-// Fecha sidebar ao clicar em item no mobile
-document.addEventListener('click', function(e) {
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-    if (e.target.closest('.menu-item') &&
-        sidebar.classList.contains('open') &&
-        window.innerWidth < 768) {
-        toggleSidebar();
-    }
-});
-
-// Fecha com ESC
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar && sidebar.classList.contains('open')) {
-            toggleSidebar();
-        }
-    }
-});
-
-// ============================================================
-// Logout com confirmação
-// ============================================================
 window.logout = function() {
     Swal.fire({
         title: 'Deseja sair?',
