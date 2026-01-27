@@ -37,14 +37,24 @@ function getVal(obj, key) {
 //função única para decidir se um item deve aparecer
 function eventoValido(item, chaveEvento, chaveData) {
     const nome = getVal(item, chaveEvento);
-    if (!nome || nome.toLowerCase() === 'null') return false;
+
+    // Nome inválido
+    if (!nome || nome === 'null' || nome === 'NULL') return false;
+
+    const dataStr = getVal(item, chaveData);
+
+    // Data inválida
+    if (!dataStr || dataStr === 'null' || dataStr === 'NULL') return false;
+
+    const data = dataParaObj(dataStr);
+    if (isNaN(data.getTime())) return false;
 
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
 
-    const data = dataParaObj(getVal(item, chaveData));
     return data >= hoje;
 }
+
 
 // ============================================================
 // 2. INICIALIZAÇÃO
@@ -140,9 +150,8 @@ function renderizarDashboard() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const limite = new Date(); limite.setDate(hoje.getDate() + 7);
 
-    const filtroSemana = (item, chaveData) => {
-        const d = dataParaObj(getVal(item, chaveData));
-        return d >= hoje && d <= limite;
+    const filtroSemana = (item, chaveEvento, chaveData) => {
+        return eventoValido(item, chaveEvento, chaveData);
     };
 
     // --- NOVA LÓGICA DE ESTATÍSTICAS ---
@@ -170,11 +179,26 @@ function renderizarDashboard() {
 
     // Reservas (Já costumam ter início/fim no seu backend)
     const listaReservas = SISTEMA.dados.dashboard.reservas || [];
-    preencherListaDash('list-dash-reservas', listaReservas, 'evento', 'data', filtroSemana, 'inicio', 'fim');
+    preencherListaDash(
+      'list-dash-reservas',
+      listaReservas,
+      'ATIVIDADE',
+      'DATA',
+      (item, dataKey) => eventoValido(item, 'ATIVIDADE', dataKey),
+      'HORARIO_INICIO',
+      'HORARIO_FIM'
+    );
 
     // Igreja (Geralmente tem apenas um horário fixo)
     const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
-    preencherListaDash('list-dash-igreja', listaIgreja, 'EVENTO', 'DATA', filtroSemana, 'HORARIO');
+    preencherListaDash(
+      'list-dash-igreja',
+      listaIgreja,
+      'EVENTO',
+      'DATA',
+      (item, dataKey) => eventoValido(item, 'EVENTO', dataKey),
+      'HORARIO'
+    );
 }
 
 function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
@@ -824,7 +848,12 @@ function renderizarReservasCards() {
                 <div class="card-header"><strong>${getVal(res, 'ATIVIDADE')}</strong></div>
                 <div class="card-body">
                     <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
-                    <div><strong>Horário:</strong> ${getVal(res, 'INICIO')} - ${getVal(res, 'FIM')}</div>
+                    <div>
+                      <strong>Horário:</strong>
+                      ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')}
+                      -
+                      ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}
+                    </div>
                     <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
                 </div>
