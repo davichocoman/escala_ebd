@@ -141,12 +141,8 @@ function renderizarDashboard() {
     limite.setDate(hoje.getDate() + 7);
     limite.setHours(23,59,59,999);
 
-    // Função de filtro específica para o Dashboard (Valido + Dentro do prazo)
     const filtroSemana = (item, chaveEvento, chaveData) => {
-        // Primeiro checa se tem nome e é futuro
         if (!eventoValido(item, chaveEvento, chaveData)) return false;
-        
-        // Depois checa se está dentro dos próximos 7 dias
         const d = dataParaObj(getVal(item, chaveData));
         return d <= limite;
     };
@@ -167,9 +163,9 @@ function renderizarDashboard() {
     document.getElementById('count-pastores').innerText = stats.pastores;
     document.getElementById('count-admins').innerText = stats.admins;
 
-    // --- PREENCHIMENTO DAS LISTAS COM FILTRO DE SEMANA ---
+    // --- PREENCHIMENTO DAS LISTAS ---
 
-    // Agenda do Pastor
+    // 1. Agenda do Pastor
     const listaPastor = SISTEMA.dados.agendaPastor || [];
     preencherListaDash(
         'list-dash-pastor', 
@@ -181,19 +177,19 @@ function renderizarDashboard() {
         'HORARIO_FIM'
     );
 
-    // Reservas
+    // 2. Reservas (CORRIGIDO AQUI)
     const listaReservas = SISTEMA.dados.dashboard.reservas || [];
     preencherListaDash(
       'list-dash-reservas',
       listaReservas,
-      'EVENTO',
-      'DATA',
-      (item, chaveData) => filtroSemana(item, 'ATIVIDADE', chaveData), // Note que aqui usa ATIVIDADE
-      'HORARIO_INICIO',
-      'HORARIO_FIM'
+      'evento',   // Mudou de ATIVIDADE para evento
+      'data',
+      (item, chaveData) => filtroSemana(item, 'evento', chaveData), // Mudou de ATIVIDADE para evento
+      'inicio',   // Mudou de HORARIO_INICIO para inicio
+      'fim'       // Mudou de HORARIO_FIM para fim
     );
 
-    // Igreja (Agenda Geral)
+    // 3. Igreja (Agenda Geral)
     const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
     preencherListaDash(
       'list-dash-igreja',
@@ -204,6 +200,7 @@ function renderizarDashboard() {
       'HORARIO'
     );
 }
+
 function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
     const ul = document.getElementById(idElemento);
     if (!ul) return;
