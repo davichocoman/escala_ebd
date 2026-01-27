@@ -31,20 +31,25 @@ function getVal(obj, key) {
     return '';
 }
 //função única para decidir se um item deve aparecer
+// Substitua a função eventoValido inteira por esta:
 function eventoValido(item, chaveEvento, chaveData) {
-    const nome = getVal(item, chaveEvento)?.trim();
-    // Aceita vazio ou null como nome → mostra mesmo assim (para depuração)
-    // if (!nome || nome.toLowerCase() === 'null') return false;
+    // 1. Validação de Nome (Impede cards vazios/fantasmas)
+    // O getVal retorna '' se for null. O String() garante que seja texto.
+    const nome = String(getVal(item, chaveEvento) || '').trim();
+    
+    // Se não tiver nome, ou for a string "null", retorna falso (não mostra)
+    if (!nome || nome.toLowerCase() === 'null') return false;
 
+    // 2. Validação de Data
     const dataStr = getVal(item, chaveData)?.trim();
     if (!dataStr) return false;
 
     const data = dataParaObj(dataStr);
     if (isNaN(data.getTime())) {
-        console.warn("Data inválida:", dataStr, item);
         return false;
     }
 
+    // Filtra apenas eventos futuros ou de hoje (remove passados)
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
     return data >= hoje;
@@ -127,12 +132,27 @@ async function carregarTudoDoBanco() {
 // ============================================================
 // 4. RENDERIZAÇÃO (mantidas como cards)
 // ============================================================
+// Substitua a função renderizarDashboard inteira por esta:
 function renderizarDashboard() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
-    // --- NOVA LÓGICA DE ESTATÍSTICAS ---
+    
+    // CRIAR O LIMITE DE 7 DIAS
+    const limite = new Date(); 
+    limite.setDate(hoje.getDate() + 7);
+    limite.setHours(23,59,59,999);
+
+    // Função de filtro específica para o Dashboard (Valido + Dentro do prazo)
+    const filtroSemana = (item, chaveEvento, chaveData) => {
+        // Primeiro checa se tem nome e é futuro
+        if (!eventoValido(item, chaveEvento, chaveData)) return false;
+        
+        // Depois checa se está dentro dos próximos 7 dias
+        const d = dataParaObj(getVal(item, chaveData));
+        return d <= limite;
+    };
+
+    // --- ESTATÍSTICAS ---
     const membros = SISTEMA.dados.membros || [];
-   
-    // Contagem usando reduce para performance
     const stats = membros.reduce((acc, m) => {
         const p = getVal(m, 'PERFIL').toUpperCase();
         if (p === 'CONGREGADO') acc.congregados++;
@@ -141,33 +161,46 @@ function renderizarDashboard() {
         else if (p === 'ADMIN') acc.admins++;
         return acc;
     }, { congregados: 0, membros: 0, pastores: 0, admins: 0 });
-    // Atualiza os números na tela
+
     document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-membros').innerText = stats.membros;
     document.getElementById('count-pastores').innerText = stats.pastores;
     document.getElementById('count-admins').innerText = stats.admins;
-    // Agenda do Pastor com Início e Fim
+
+    // --- PREENCHIMENTO DAS LISTAS COM FILTRO DE SEMANA ---
+
+    // Agenda do Pastor
     const listaPastor = SISTEMA.dados.agendaPastor || [];
-    preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', (item, chaveData) => eventoValido(item, 'EVENTO', chaveData), 'HORARIO', 'HORARIO_FIM');
-    // Reservas (Já costumam ter início/fim no seu backend)
+    preencherListaDash(
+        'list-dash-pastor', 
+        listaPastor, 
+        'EVENTO', 
+        'DATA', 
+        (item, chaveData) => filtroSemana(item, 'EVENTO', chaveData), 
+        'HORARIO', 
+        'HORARIO_FIM'
+    );
+
+    // Reservas
     const listaReservas = SISTEMA.dados.dashboard.reservas || [];
     preencherListaDash(
       'list-dash-reservas',
       listaReservas,
       'EVENTO',
       'DATA',
-      (item, chaveData) => eventoValido(item, 'ATIVIDADE', chaveData),
+      (item, chaveData) => filtroSemana(item, 'ATIVIDADE', chaveData), // Note que aqui usa ATIVIDADE
       'HORARIO_INICIO',
       'HORARIO_FIM'
     );
-    // Igreja (Geralmente tem apenas um horário fixo)
+
+    // Igreja (Agenda Geral)
     const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
     preencherListaDash(
       'list-dash-igreja',
       listaIgreja,
       'EVENTO',
       'DATA',
-      (item, chaveData) => eventoValido(item, 'EVENTO', chaveData),
+      (item, chaveData) => filtroSemana(item, 'EVENTO', chaveData),
       'HORARIO'
     );
 }
