@@ -140,6 +140,26 @@ function renderizarDashboard() {
         .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')));
 
     renderizarListaSimples('dash-lista-geral', geralSemana, 'EVENTO', 'DATA', '#b91c1c');
+
+    // 5. Aniversariantes da Semana
+    const aniversariantes = getAniversariantesProximos(SISTEMA.dados.membros);
+    const elNiver = document.getElementById('dash-lista-niver');
+    
+    if (elNiver) {
+        if (aniversariantes.length === 0) {
+            elNiver.innerHTML = '<p class="empty-msg">Nenhum aniversariante nesta semana.</p>';
+        } else {
+            elNiver.innerHTML = aniversariantes.map(m => `
+                <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
+                        <div style="font-size:0.85rem; color:#64748b">Dia ${m.diaAniversario}</div>
+                    </div>
+                    <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
+                </div>
+            `).join('');
+        }
+    }
 }
 
 // Helper para listas do dashboard
@@ -250,6 +270,8 @@ function renderizarMembros() {
         const contato = getVal(m, 'CONTATO');
         const linkZap = gerarLinkZap(contato);
         const endereco = getVal(m, 'ENDERECO');
+        // Cria link do Google Maps
+        const linkMaps = endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}` : '#';
 
         return `
         <div class="member-card">
@@ -263,22 +285,9 @@ function renderizarMembros() {
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span class="material-icons" style="font-size:1.2rem; color:#64748b;">smartphone</span>
                     <span style="flex:1;">${contato || 'Sem contato'}</span>
-                    
                     ${contato ? `
                         <a href="${linkZap}" target="_blank" style="text-decoration:none;" title="Chamar no WhatsApp">
-                            <button style="
-                                background: #25D366; 
-                                border: none; 
-                                border-radius: 50%; 
-                                width: 32px; 
-                                height: 32px; 
-                                display: flex; 
-                                align-items: center; 
-                                justify-content: center; 
-                                cursor: pointer;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                transition: transform 0.2s;
-                            " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <button style="background:#25D366; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                                 <span class="material-icons" style="color:white; font-size:18px;">send</span>
                             </button>
                         </a>
@@ -290,20 +299,16 @@ function renderizarMembros() {
                     <span style="flex:1; line-height:1.4;">${endereco || 'Endereço não informado'}</span>
                     
                     ${endereco ? `
-                        <button onclick="copiarEndereco('${endereco.replace(/'/g, "\\'")}')" title="Copiar Endereço" style="
-                            background: #e2e8f0; 
-                            border: none; 
-                            border-radius: 50%; 
-                            width: 32px; 
-                            height: 32px; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            cursor: pointer;
-                            transition: background 0.2s;
-                        " onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">
-                            <span class="material-icons" style="color:#475569; font-size:18px;">content_copy</span>
-                        </button>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="copiarEndereco('${endereco.replace(/'/g, "\\'")}')" title="Copiar Texto" style="background:#e2e8f0; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <span class="material-icons" style="color:#475569; font-size:16px;">content_copy</span>
+                            </button>
+                            <a href="${linkMaps}" target="_blank" title="Abrir no GPS">
+                                <button style="background:#3b82f6; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                    <span class="material-icons" style="color:white; font-size:16px;">map</span>
+                                </button>
+                            </a>
+                        </div>
                     ` : ''}
                 </div>
 
@@ -384,6 +389,54 @@ function dataParaObj(s) { if(!s) return new Date(0); const p=s.split('/'); retur
 function debounce(f,w) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>f.apply(this,a),w); }; }
 function toggleSidebar(){ const s=document.querySelector('.sidebar'); if(s) s.classList.toggle('open'); }
 function logout(){ sessionStorage.clear(); window.location.href='/login'; }
+
+function getAniversariantesProximos(listaMembros) {
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    
+    const limite = new Date();
+    limite.setDate(hoje.getDate() + 7); // Próximos 7 dias
+    
+    return listaMembros.filter(m => {
+        const nascRaw = getVal(m, 'NASCIMENTO');
+        if (!nascRaw) return false;
+        
+        // Assume formato YYYY-MM-DD ou converte
+        // Se seu banco salva DD/MM/YYYY, precisa tratar:
+        let dia, mes;
+        if (nascRaw.includes('/')) {
+            [dia, mes] = nascRaw.split('/');
+        } else if (nascRaw.includes('-')) {
+            const parts = nascRaw.split('-');
+            dia = parts[2];
+            mes = parts[1];
+        } else {
+            return false;
+        }
+
+        // Cria data de aniversário neste ano
+        const niverEsteAno = new Date(hoje.getFullYear(), parseInt(mes)-1, parseInt(dia));
+        
+        // Se já passou este ano, tenta ano que vem (para casos de fim de dezembro/começo de janeiro)
+        if (niverEsteAno < hoje) {
+            niverEsteAno.setFullYear(hoje.getFullYear() + 1);
+        }
+
+        // Verifica se está dentro do intervalo
+        const estaNaSemana = niverEsteAno >= hoje && niverEsteAno <= limite;
+        
+        if (estaNaSemana) {
+            m.diaAniversario = `${dia}/${mes}`; // Guarda pra exibir fácil
+        }
+        
+        return estaNaSemana;
+    }).sort((a,b) => {
+        // Ordena por dia
+        const da = a.diaAniversario.split('/').reverse().join('');
+        const db = b.diaAniversario.split('/').reverse().join('');
+        return da.localeCompare(db);
+    });
+}
 
 // Função para copiar texto para a área de transferência
 window.copiarEndereco = function(endereco) {
