@@ -2,14 +2,11 @@
 const swalScript = document.createElement('script');
 swalScript.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
 document.head.appendChild(swalScript);
-
 // Aguarda o SweetAlert carregar (opcional, mas garante que Swal esteja disponível)
 swalScript.onload = () => {
     console.log('SweetAlert2 carregado com sucesso');
 };
-
 const API_BASE = 'https://api-escala.onrender.com/api';
-
 // ============================================================
 // 1. ESTADO GLOBAL
 // ============================================================
@@ -22,7 +19,6 @@ const SISTEMA = {
         dashboard: { agenda: [], reservas: [] }
     }
 };
-
 // Função auxiliar para acessar chaves ignorando case
 function getVal(obj, key) {
     if (!obj || typeof obj !== 'object') return '';
@@ -37,25 +33,17 @@ function getVal(obj, key) {
 //função única para decidir se um item deve aparecer
 function eventoValido(item, chaveEvento, chaveData) {
     const nome = getVal(item, chaveEvento);
-
     // Nome inválido
     if (!nome || nome === 'null' || nome === 'NULL') return false;
-
     const dataStr = getVal(item, chaveData);
-
     // Data inválida
     if (!dataStr || dataStr === 'null' || dataStr === 'NULL') return false;
-
     const data = dataParaObj(dataStr);
     if (isNaN(data.getTime())) return false;
-
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
-
     return data >= hoje;
 }
-
-
 // ============================================================
 // 2. INICIALIZAÇÃO
 // ============================================================
@@ -76,53 +64,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     SISTEMA.usuario = JSON.parse(userStr);
-
     // 2. Mostra nome no topo
     const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
     const display = document.getElementById('userDisplay');
     if (display) display.innerHTML = `Olá, <strong>${nome}</strong>`;
-
     // 3. Configura botões e eventos
     configurarBotoes();
-
     // 4. Carrega todos os dados
     await carregarTudoDoBanco();
 });
-
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
 // ============================================================
 async function carregarTudoDoBanco() {
     console.log("🔄 Baixando todos os dados da API...");
-
     // Feedback visual
     const igrejaEl = document.getElementById('list-dash-igreja');
     const membrosEl = document.getElementById('lista-membros'); // atualizado para card-list
     const pastorEl = document.getElementById('lista-agenda-pastor');
-
     if (igrejaEl) igrejaEl.innerHTML = '<li>Carregando...</li>';
     if (membrosEl) membrosEl.innerHTML = '<div class="empty-msg">Atualizando...</div>';
     if (pastorEl) pastorEl.innerHTML = '<div class="empty-msg">Atualizando...</div>';
-
     const headers = {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
         'x-admin-token': SISTEMA.token
     };
-
     try {
         const [resMembros, resPastor, resDash] = await Promise.all([
             fetch(`${API_BASE}/membros`, { headers }),
             fetch(`${API_BASE}/agenda-pastor`, { headers }),
             fetch(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
-
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
-
         console.log("✅ Dados carregados!", SISTEMA.dados);
-
         renderizarMembros();
         renderizarAgendaPastor();
         renderizarDashboard();
@@ -142,21 +119,14 @@ async function carregarTudoDoBanco() {
         });
     }
 }
-
 // ============================================================
 // 4. RENDERIZAÇÃO (mantidas como cards)
 // ============================================================
 function renderizarDashboard() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const limite = new Date(); limite.setDate(hoje.getDate() + 7);
-
-    const filtroSemana = (item, chaveEvento, chaveData) => {
-        return eventoValido(item, chaveEvento, chaveData);
-    };
-
     // --- NOVA LÓGICA DE ESTATÍSTICAS ---
     const membros = SISTEMA.dados.membros || [];
-    
+   
     // Contagem usando reduce para performance
     const stats = membros.reduce((acc, m) => {
         const p = getVal(m, 'PERFIL').toUpperCase();
@@ -166,17 +136,14 @@ function renderizarDashboard() {
         else if (p === 'ADMIN') acc.admins++;
         return acc;
     }, { congregados: 0, membros: 0, pastores: 0, admins: 0 });
-
     // Atualiza os números na tela
     document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-membros').innerText = stats.membros;
     document.getElementById('count-pastores').innerText = stats.pastores;
     document.getElementById('count-admins').innerText = stats.admins;
-
     // Agenda do Pastor com Início e Fim
     const listaPastor = SISTEMA.dados.agendaPastor || [];
-    preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', filtroSemana, 'HORARIO', 'HORARIO_FIM');
-
+    preencherListaDash('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', (item, chaveData) => eventoValido(item, 'EVENTO', chaveData), 'HORARIO', 'HORARIO_FIM');
     // Reservas (Já costumam ter início/fim no seu backend)
     const listaReservas = SISTEMA.dados.dashboard.reservas || [];
     preencherListaDash(
@@ -184,11 +151,10 @@ function renderizarDashboard() {
       listaReservas,
       'ATIVIDADE',
       'DATA',
-      (item, dataKey) => eventoValido(item, 'ATIVIDADE', dataKey),
+      (item, chaveData) => eventoValido(item, 'ATIVIDADE', chaveData),
       'HORARIO_INICIO',
       'HORARIO_FIM'
     );
-
     // Igreja (Geralmente tem apenas um horário fixo)
     const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
     preencherListaDash(
@@ -196,30 +162,25 @@ function renderizarDashboard() {
       listaIgreja,
       'EVENTO',
       'DATA',
-      (item, dataKey) => eventoValido(item, 'EVENTO', dataKey),
+      (item, chaveData) => eventoValido(item, 'EVENTO', chaveData),
       'HORARIO'
     );
 }
-
 function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
     const ul = document.getElementById(idElemento);
     if (!ul) return;
-
     const itensFiltrados = lista.filter(item => filtro(item, chaveData));
     itensFiltrados.sort((a,b) => dataParaObj(getVal(a, chaveData)) - dataParaObj(getVal(b, chaveData)));
-
     if (itensFiltrados.length === 0) {
-        ul.innerHTML = '<li class="empty-msg">Nada para esta semana.</li>';
+        ul.innerHTML = '<li class="empty-msg">Nada agendado.</li>';
         return;
     }
-
     ul.innerHTML = itensFiltrados.map(item => {
         const hIni = chaveHoraIni ? getVal(item, chaveHoraIni) : '';
         const hFim = chaveHoraFim ? getVal(item, chaveHoraFim) : '';
-        
+       
         // Formata: "26/01 | 19:00 - 21:00" ou apenas "26/01 | 19:00"
         const tempo = hIni ? ` | ${hIni}${hFim ? ' - ' + hFim : ''}` : '';
-
         return `
             <li>
                 <strong>${getVal(item, chaveTitulo)}</strong>
@@ -228,22 +189,18 @@ function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, c
         `;
     }).join('');
 }
-
 function renderizarMembros() {
     const busca = (document.getElementById('buscaMembro')?.value || '').toLowerCase();
     const container = document.getElementById('lista-membros');
     if (!container) return;
-
     const filtrados = SISTEMA.dados.membros.filter(m =>
         getVal(m, 'NOME').toLowerCase().includes(busca) ||
         getVal(m, 'CPF').includes(busca)
     );
-
     if (filtrados.length === 0) {
         container.innerHTML = '<div class="empty-msg">Nenhum membro encontrado.</div>';
         return;
     }
-
     container.innerHTML = filtrados.map(m => `
         <div class="member-card">
             <div class="card-header">
@@ -260,32 +217,27 @@ function renderizarMembros() {
         </div>
     `).join('');
 }
-
 function renderizarAgendaPastor() {
     const container = document.getElementById('lista-agenda-pastor');
     if (!container) return;
-
     const lista = SISTEMA.dados.agendaPastor || [];
-    lista.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
-
-    if (lista.length === 0) {
+    const filtered = lista.filter(a => eventoValido(a, 'EVENTO', 'DATA'));
+    filtered.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+    if (filtered.length === 0) {
         container.innerHTML = '<div class="empty-msg">Agenda vazia.</div>';
         return;
     }
-
     let html = "";
     // Adicionei cabeçalho de mês igual na agenda geral/reservas para ficar bonito
     let mesAtual = -1;
-
-    lista.forEach(a => {
+    filtered.forEach(a => {
         const d = dataParaObj(getVal(a, 'DATA'));
         const m = d.getMonth() + 1;
-        
+       
         if (m !== mesAtual) {
             mesAtual = m;
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
-
         // MUDANÇA AQUI: Usando 'member-card' e estrutura igual a de Reservas
         // Cor azul (#3b82f6) para diferenciar do verde das reservas
         html += `
@@ -305,27 +257,22 @@ function renderizarAgendaPastor() {
             </div>
         </div>`;
     });
-
     container.innerHTML = html;
 }
-
 // --- Funções Auxiliares de Formatação para o Perfil ---
 const formatarCPF = (valor) => {
     const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
     return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
 };
-
 const formatarData = (valor) => {
     if (!valor) return '';
     if (valor.includes('/') && valor.split('/').length === 3) return valor;
     const data = new Date(valor);
     return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
 };
-
 function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div || !SISTEMA.usuario) return;
-
     // 1. Definição das Seções para manter o padrão visual
     const secoes = [
         {
@@ -363,26 +310,20 @@ function renderizarMeusDados() {
             ]
         }
     ];
-
     div.innerHTML = '';
-
     secoes.forEach(secao => {
         const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
         if (!temDados) return;
-
         // Título da Seção
         div.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
-
         secao.campos.forEach(campo => {
             let valor = getVal(SISTEMA.usuario, campo.key);
             if (!valor) return;
-
             let htmlConteudo = '';
-
             // Aplicação das mesmas lógicas de pílulas e máscaras
             if (campo.isCPF) {
                 htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
-            } 
+            }
             else if (campo.isDate) {
                 htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
             }
@@ -390,11 +331,10 @@ function renderizarMeusDados() {
                 htmlConteudo = valor.split(',')
                     .map(item => `<span class="data-pill">${item.trim()}</span>`)
                     .join('');
-            } 
+            }
             else {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
-
             div.innerHTML += `
                 <div class="form-group" style="grid-column: span ${campo.span}">
                     <label>${campo.label}</label>
@@ -405,7 +345,6 @@ function renderizarMeusDados() {
             `;
         });
     });
-
     if (div.innerHTML === '') {
         div.innerHTML = '<p class="empty-msg">Nenhum dado disponível para exibição.</p>';
     }
@@ -415,18 +354,16 @@ function renderizarMeusDados() {
 // ============================================================
 function configurarBotoes() {
     const buscaEl = document.getElementById('buscaMembro');
-    
+   
     if (buscaEl) {
         // Criamos uma versão "debounced" da renderização
         const buscarComDebounce = debounce(() => {
             console.log("🔍 Filtrando membros...");
             renderizarMembros();
         }, 400); // 400ms é o "doce balanço" entre velocidade e economia de CPU
-
         // Trocamos o renderizarMembros direto pela versão com debounce
-        buscaEl.addEventListener('input', buscarComDebounce); 
+        buscaEl.addEventListener('input', buscarComDebounce);
     }
-
     // Restante dos seus formulários...
     document.querySelectorAll('form').forEach(f => {
         f.addEventListener('submit', async (e) => {
@@ -436,25 +373,21 @@ function configurarBotoes() {
         });
     });
 }
-
 window.mostrarTela = function(telaId, btn) {
     ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
-
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     const alvo = document.getElementById('sec-' + telaId);
     if (alvo) alvo.classList.remove('hidden');
     if (btn) btn.classList.add('active');
-
     // Gatilhos de renderização
     if (telaId === 'dashboard') renderizarDashboard();
     if (telaId === 'membros') renderizarMembros();
     if (telaId === 'agenda-geral') renderizarAgendaGeralCards(); // Nova
-    if (telaId === 'reservas') renderizarReservasCards();        // Nova
+    if (telaId === 'reservas') renderizarReservasCards(); // Nova
 };
-
 window.logout = function() {
     Swal.fire({
         icon: 'question',
@@ -472,7 +405,6 @@ window.logout = function() {
         }
     });
 };
-
 // ============================================================
 // 6. CRUD
 // ============================================================
@@ -481,7 +413,6 @@ window.abrirModalMembro = function() {
     document.getElementById('m_id').value = '';
     document.getElementById('modalMembro')?.classList.remove('hidden');
 };
-
 window.prepararEdicaoMembro = function(id) {
     const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
     if (!m) {
@@ -492,12 +423,10 @@ window.prepararEdicaoMembro = function(id) {
         });
         return;
     }
-
     const set = (eid, val) => {
         const el = document.getElementById(eid);
         if (el) el.value = val || '';
     };
-
     set('m_id', getVal(m, 'ID'));
     set('m_nome', getVal(m, 'NOME'));
     set('m_nasc', dataIso(getVal(m, 'NASCIMENTO')));
@@ -515,10 +444,8 @@ window.prepararEdicaoMembro = function(id) {
     set('m_cargo', getVal(m, 'CARGO'));
     set('m_departamento', getVal(m, 'DEPARTAMENTO'));
     set('m_perfil', getVal(m, 'PERFIL'));
-
     document.getElementById('modalMembro')?.classList.remove('hidden');
 };
-
 async function salvarMembro() {
     const id = document.getElementById('m_id')?.value;
     const dados = {
@@ -539,7 +466,6 @@ async function salvarMembro() {
         DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
         PERFIL: document.getElementById('m_perfil')?.value || ''
     };
-
     // Validação básica no front
     if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO) {
         Swal.fire({
@@ -549,17 +475,14 @@ async function salvarMembro() {
         });
         return;
     }
-
     await enviarDados(`${API_BASE}/membros`, id, dados);
     document.getElementById('modalMembro')?.classList.add('hidden');
 }
-
 window.abrirModalEventoPastor = function() {
     document.getElementById('formPastor')?.reset();
     document.getElementById('p_id').value = '';
     document.getElementById('modalPastor')?.classList.remove('hidden');
 };
-
 window.prepararEdicaoPastor = function(id) {
     const a = SISTEMA.dados.agendaPastor.find(x => getVal(x, 'ID') == id);
     if (!a) {
@@ -570,17 +493,14 @@ window.prepararEdicaoPastor = function(id) {
         });
         return;
     }
-
     document.getElementById('p_id').value = getVal(a, 'ID');
     document.getElementById('p_evento').value = getVal(a, 'EVENTO');
     document.getElementById('p_data').value = dataIso(getVal(a, 'DATA'));
     document.getElementById('p_hora').value = getVal(a, 'HORARIO');
     document.getElementById('p_local').value = getVal(a, 'LOCAL');
     document.getElementById('p_obs').value = getVal(a, 'OBSERVACAO');
-
     document.getElementById('modalPastor')?.classList.remove('hidden');
 };
-
 async function salvarPastor() {
     const id = document.getElementById('p_id')?.value;
     const dados = {
@@ -591,16 +511,13 @@ async function salvarPastor() {
         LOCAL: document.getElementById('p_local')?.value.trim() || '',
         OBSERVACAO: document.getElementById('p_obs')?.value.trim() || ''
     };
-
     if (!dados.EVENTO || !dados.DATA || !dados.HORARIO || !dados.HORARIO_FIM ) {
         Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Evento, Data, Horário e Horário de Término são obrigatórios!' });
         return;
     }
-
     await enviarDados(`${API_BASE}/agenda-pastor`, id, dados);
     fecharModal('modalPastor');
 }
-
 window.deletarItem = async function(id, endpoint) {
     Swal.fire({
         title: 'Tem certeza?',
@@ -636,25 +553,21 @@ window.deletarItem = async function(id, endpoint) {
         }
     });
 };
-
 window.fecharModal = function(id) {
     document.getElementById(id)?.classList.add('hidden');
 };
-
 // ============================================================
 // 7. UTILITÁRIOS
 // ============================================================
 async function enviarDados(urlBase, id, payload) {
     const url = id ? `${urlBase}/${id}` : urlBase;
     const method = id ? 'PUT' : 'POST';
-
     // Seleciona o botão de submit do formulário ativo para desabilitá-lo
     const btnSubmit = document.querySelector('form:not(.hidden) button[type="submit"]');
     if (btnSubmit) {
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = 'Processando...';
     }
-
     try {
         const res = await fetch(url, {
             method,
@@ -664,23 +577,18 @@ async function enviarDados(urlBase, id, payload) {
             },
             body: JSON.stringify(payload)
         });
-
         const data = await res.json();
-
         if (!res.ok) {
             // Se o backend retornou erro de CPF já existente (400)
             throw new Error(data.detail || 'Falha na API');
         }
-
         await carregarTudoDoBanco();
-
         Swal.fire({
             icon: 'success',
             title: 'Salvo com sucesso!',
             timer: 2000,
             showConfirmButton: false
         });
-
     } catch (e) {
         console.error(e);
         Swal.fire({
@@ -696,25 +604,21 @@ async function enviarDados(urlBase, id, payload) {
         }
     }
 }
-
 function dataParaObj(str) {
     if (!str || typeof str !== 'string') return new Date(0);
     const p = str.split('/');
     return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);
 }
-
 function dataIso(str) {
     if (!str) return '';
     const p = str.split('/');
     return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : '';
 }
-
 function dataBr(str) {
     if (!str) return '';
     const p = str.split('-');
     return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '';
 }
-
 // --- Utilitário de Debounce ---
 // Retorna uma função que, enquanto continuar sendo invocada, não será executada.
 // A função só será executada após 'wait' milissegundos de inatividade.
@@ -726,7 +630,6 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(context, args), wait);
     };
 }
-
 // ============================================================
 // 8. SIDEBAR
 // ============================================================
@@ -734,7 +637,6 @@ window.toggleSidebar = function() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
     const isOpen = sidebar.classList.toggle('open');
-
     let overlay = document.getElementById('sidebar-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -750,7 +652,6 @@ window.toggleSidebar = function() {
         document.body.appendChild(overlay);
         overlay.addEventListener('click', toggleSidebar);
     }
-
     if (isOpen) {
         overlay.style.display = 'block';
         setTimeout(() => { overlay.style.opacity = '1'; }, 10);
@@ -759,7 +660,6 @@ window.toggleSidebar = function() {
         setTimeout(() => { overlay.style.display = 'none'; }, 280);
     }
 };
-
 document.addEventListener('click', function(e) {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
@@ -769,7 +669,6 @@ document.addEventListener('click', function(e) {
         toggleSidebar();
     }
 });
-
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         const sidebar = document.querySelector('.sidebar');
@@ -778,31 +677,24 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
-
 const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
-
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
     const dados = SISTEMA.dados.dashboard.agenda || [];
-
     dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
-
     let html = "";
     let mesAtual = -1;
-
     dados
       .filter(ev => eventoValido(ev, 'EVENTO', 'DATA'))
       .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
       .forEach(ev => {
           const d = dataParaObj(getVal(ev, 'DATA'));
           const m = d.getMonth() + 1;
-    
+   
           if (m !== mesAtual) {
               mesAtual = m;
               html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
           }
-
-
         html += `
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
@@ -816,7 +708,7 @@ function renderizarAgendaGeralCards() {
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
                 </div>
             </div>`;
-        
+       
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
 }
@@ -824,24 +716,21 @@ function renderizarAgendaGeralCards() {
 function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
     const dados = SISTEMA.dados.dashboard.reservas || [];
-    
+   
     dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
-
     let html = "";
     let mesAtual = -1;
-
     dados
       .filter(res => eventoValido(res, 'ATIVIDADE', 'DATA'))
       .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
       .forEach(res => {
           const d = dataParaObj(getVal(res, 'DATA'));
           const m = d.getMonth() + 1;
-    
+   
           if (m !== mesAtual) {
               mesAtual = m;
               html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
           }
-
         // Note o uso de getVal(res, 'id') minúsculo para bater com o backend
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
@@ -862,24 +751,20 @@ function renderizarReservasCards() {
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
                 </div>
             </div>`;
-
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
 }
-
 // Funções para Abrir os Modais
-window.abrirModalAgendaGeral = () => { 
-    document.getElementById('formAgendaGeral').reset(); 
+window.abrirModalAgendaGeral = () => {
+    document.getElementById('formAgendaGeral').reset();
     document.getElementById('ag_id').value = ''; // GARANTE QUE ESTÁ VAZIO
-    document.getElementById('modalAgendaGeral').classList.remove('hidden'); 
+    document.getElementById('modalAgendaGeral').classList.remove('hidden');
 };
-
-window.abrirModalReserva = () => { 
-    document.getElementById('formReserva').reset(); 
+window.abrirModalReserva = () => {
+    document.getElementById('formReserva').reset();
     document.getElementById('res_id').value = ''; // GARANTE QUE ESTÁ VAZIO
-    document.getElementById('modalReserva').classList.remove('hidden'); 
+    document.getElementById('modalReserva').classList.remove('hidden');
 };
-
 // Salvar Agenda Geral (Pode ter vários no mesmo dia)
 async function salvarAgendaGeral(e) {
     e.preventDefault();
@@ -894,7 +779,6 @@ async function salvarAgendaGeral(e) {
     await enviarDados(`${API_BASE}/agenda-geral`, id, dados);
     fecharModal('modalAgendaGeral');
 }
-
 async function salvarReserva(e) {
     e.preventDefault();
     const id = document.getElementById('res_id').value; // PEGA O ID SE FOR EDIÇÃO
@@ -909,26 +793,21 @@ async function salvarReserva(e) {
     await enviarDados(`${API_BASE}/reservas`, id, dados);
     fecharModal('modalReserva');
 }
-
 // --- Edição Agenda Geral ---
 window.prepararEdicaoGeral = function(id) {
     const ev = SISTEMA.dados.dashboard.agenda.find(x => getVal(x, 'ID') == id);
     if (!ev) return;
-
     document.getElementById('ag_id').value = getVal(ev, 'ID');
     document.getElementById('ag_data').value = dataIso(getVal(ev, 'DATA'));
     document.getElementById('ag_evento').value = getVal(ev, 'EVENTO');
     document.getElementById('ag_local').value = getVal(ev, 'LOCAL');
     document.getElementById('ag_resp').value = getVal(ev, 'RESPONSAVEL');
-
     document.getElementById('modalAgendaGeral').classList.remove('hidden');
 };
-
 // --- Edição Reservas ---
 window.prepararEdicaoReserva = function(id) {
     const res = SISTEMA.dados.dashboard.reservas.find(x => getVal(x, 'ID') == id);
     if (!res) return;
-
     document.getElementById('res_id').value = getVal(res, 'ID');
     document.getElementById('res_data').value = dataIso(getVal(res, 'DATA'));
     document.getElementById('res_local').value = getVal(res, 'LOCAL');
@@ -936,6 +815,5 @@ window.prepararEdicaoReserva = function(id) {
     document.getElementById('res_fim').value = getVal(res, 'HORARIO_FIM') || getVal(res, 'fim');
     document.getElementById('res_ativ').value = getVal(res, 'ATIVIDADE') || getVal(res, 'evento');
     document.getElementById('res_resp').value = getVal(res, 'RESPONSAVEL');
-
     document.getElementById('modalReserva').classList.remove('hidden');
 };
