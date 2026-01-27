@@ -31,10 +31,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     SISTEMA.usuario = JSON.parse(userStr);
 
-    // 2. Mostra nome
+    // 2. Sidebar e Inicialização
     const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Membro';
+    const perfil = getVal(SISTEMA.usuario, 'PERFIL') ? getVal(SISTEMA.usuario, 'PERFIL').split(' ')[0] : 'Membro';
     const display = document.getElementById('userDisplay');
-    if (display) display.innerHTML = `Olá, <strong>${nome}</strong><br><small>Membro</small>`;
+    if (display) display.innerHTML = `Olá, <strong>${nome}</strong><br><small>${perfil}</small>`;
+
+    // CONFIGURAR A PESQUISA (NOVO)
+    const inputBusca = document.getElementById('buscaAgenda');
+    if (inputBusca) {
+        inputBusca.addEventListener('input', debounce(() => {
+            renderizarAgendaGeralCards();
+        }, 300));
+    }
 
     // 3. Renderiza Meus Dados
     renderizarMeusDados();
@@ -64,7 +73,9 @@ async function carregarDadosGerais() {
 
         if (res.ok) {
             SISTEMA.dados.dashboard = await res.json();
+            
             console.log("✅ Dados carregados!", SISTEMA.dados.dashboard);
+            renderizarDashboard();
             renderizarAgendaGeralCards();
             renderizarReservasCards();
         }
@@ -78,6 +89,65 @@ async function carregarDadosGerais() {
 // ============================================================
 // 3. RENDERIZAÇÃO (Somente Leitura)
 // ============================================================
+
+// 1. DASHBOARD (Visão 7 Dias)
+function renderizarDashboard() {
+    const containerAgenda = document.getElementById('dash-lista-agenda');
+    const containerReservas = document.getElementById('dash-lista-reservas');
+    
+    if (!containerAgenda || !containerReservas) return;
+
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const limite = new Date(); limite.setDate(hoje.getDate() + 7); limite.setHours(23,59,59,999);
+
+    // Filtro auxiliar
+    const filtroSemana = (item, chaveEvento, chaveData) => {
+        if (!eventoValido(item, chaveEvento, chaveData)) return false;
+        const d = dataParaObj(getVal(item, chaveData));
+        return d >= hoje && d <= limite;
+    };
+
+    // --- Agenda Geral (Próximos 7 dias) ---
+    const agendaSemana = (SISTEMA.dados.dashboard.agenda || [])
+        .filter(ev => filtroSemana(ev, 'EVENTO', 'DATA'))
+        .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+
+    document.getElementById('count-eventos-semana').innerText = agendaSemana.length;
+
+    if (agendaSemana.length === 0) {
+        containerAgenda.innerHTML = '<p class="empty-msg">Nenhum evento esta semana.</p>';
+    } else {
+        containerAgenda.innerHTML = agendaSemana.map(ev => `
+            <div class="member-card" style="padding: 10px; border-left: 4px solid #ef4444;">
+                <div style="font-weight:bold; color:#b91c1c">${getVal(ev, 'EVENTO')}</div>
+                <div style="font-size:0.85rem; color:#666">
+                    ${getVal(ev, 'DATA')} - ${getVal(ev, 'LOCAL')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- Reservas (Próximos 7 dias) ---
+    const reservasSemana = (SISTEMA.dados.dashboard.reservas || [])
+        .filter(res => filtroSemana(res, 'EVENTO', 'DATA'))
+        .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+
+    document.getElementById('count-reservas-semana').innerText = reservasSemana.length;
+
+    if (reservasSemana.length === 0) {
+        containerReservas.innerHTML = '<p class="empty-msg">Nenhuma reserva esta semana.</p>';
+    } else {
+        containerReservas.innerHTML = reservasSemana.map(res => `
+            <div class="member-card" style="padding: 10px; border-left: 4px solid #22c55e;">
+                <div style="font-weight:bold; color:#15803d">${getVal(res, 'EVENTO')}</div>
+                <div style="font-size:0.85rem; color:#666">
+                    ${getVal(res, 'DATA')} | ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')}
+                </div>
+                <div style="font-size:0.8rem; color:#888">${getVal(res, 'LOCAL')}</div>
+            </div>
+        `).join('');
+    }
+}
 
 // --- Meus Dados ---
 function renderizarMeusDados() {
@@ -157,13 +227,27 @@ function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
     const dados = SISTEMA.dados.dashboard.agenda || [];
     
-    // Filtra e Ordena
-    const validos = dados
-        .filter(ev => eventoValido(ev, 'EVENTO', 'DATA'))
-        .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+    // Captura termo de busca
+    const termo = (document.getElementById('buscaAgenda')?.value || '').toLowerCase();
+
+    // Filtra (Data Valida + Termo de Busca)
+    const validos = dados.filter(ev => {
+        const isValido = eventoValido(ev, 'EVENTO', 'DATA');
+        if (!isValido) return false;
+
+        // Lógica da Pesquisa: Nome do Evento OU Responsável OU Local
+        const nome = getVal(ev, 'EVENTO').toLowerCase();
+        const resp = getVal(ev, 'RESPONSAVEL').toLowerCase();
+        const local = getVal(ev, 'LOCAL').toLowerCase();
+        
+        return nome.includes(termo) || resp.includes(termo) || local.includes(termo);
+    });
+
+    // Ordena
+    validos.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
 
     if (validos.length === 0) {
-        container.innerHTML = '<p class="empty-msg">Nenhum evento na agenda.</p>';
+        container.innerHTML = '<p class="empty-msg">Nenhum evento encontrado.</p>';
         return;
     }
 
@@ -187,7 +271,7 @@ function renderizarAgendaGeralCards() {
                     <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
                 </div>
-                </div>`;
+            </div>`;
     });
     container.innerHTML = html;
 }
@@ -240,29 +324,35 @@ function renderizarReservasCards() {
 // 4. UTILITÁRIOS E NAVEGAÇÃO
 // ============================================================
 
-function mostrarTela(telaId, btn) {
-    // 1. Esconde todas as seções
-    ['meus-dados', 'agenda-geral', 'reservas'].forEach(id => {
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+// Atualizar função mostrarTela para incluir o dashboard
+window.mostrarTela = function(telaId, btn) {
+    ['dashboard', 'meus-dados', 'agenda-geral', 'reservas'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
 
-    // 2. Remove ativo do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-
-    // 3. Mostra a selecionada
-    const alvo = document.getElementById('sec-' + telaId);
-    if (alvo) alvo.classList.remove('hidden');
-    
-    // 4. Ativa botão
     if (btn) btn.classList.add('active');
 
-    // 5. Fecha sidebar mobile
+    const alvo = document.getElementById('sec-' + telaId);
+    if (alvo) alvo.classList.remove('hidden');
+
+    // Se for mobile, fecha sidebar
     const sidebar = document.querySelector('.sidebar');
     if (sidebar && window.innerWidth < 768) {
-        toggleSidebar();
+        sidebar.classList.remove('open');
+        document.getElementById('sidebar-overlay').style.display = 'none';
     }
-}
+};
 
 // Validação de evento (igual ao painel-secretaria)
 function eventoValido(item, chaveEvento, chaveData) {
