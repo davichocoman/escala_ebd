@@ -6,19 +6,24 @@
     <title>Área do Membro - AD Rodovia A</title>
     <link rel="stylesheet" href="../static/portal.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* CSS Básico para garantir funcionamento caso o portal.css falhe em algo */
+        .hidden { display: none !important; }
+        .member-card { background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #ccc; }
+        .month-header { margin: 20px 0 10px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+        .card-header { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #1e293b; }
+        .card-body { color: #475569; font-size: 0.95rem; display: grid; gap: 0.3rem; }
+    </style>
 </head>
 <body>
-    <!-- Botão hambúrguer para mobile -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
 
     <div class="app-container">
-        <!-- Sidebar -->
         <nav class="sidebar">
             <div class="sidebar-header">
                 Área do Membro<br>
-                <span id="userDisplay">Carregando...</span>
+                <span id="userDisplay" style="font-size: 0.8rem; font-weight: normal; color: #cbd5e1;">Carregando...</span>
             </div>
 
             <div class="sidebar-menu">
@@ -28,12 +33,12 @@
                 
                 <hr style="border:0; border-top:1px solid #334155; margin:10px 0;">
                 
-                <a href="/agenda" class="menu-item">
+                <div class="menu-item" onclick="mostrarTela('agenda-geral', this)">
                     <span class="material-icons menu-icon">calendar_month</span> Agenda Geral
-                </a>
-                <a href="/reservas" class="menu-item">
+                </div>
+                <div class="menu-item" onclick="mostrarTela('reservas', this)">
                     <span class="material-icons menu-icon">vpn_key</span> Reservas
-                </a>
+                </div>
             </div>
 
             <div style="padding:20px;">
@@ -41,25 +46,33 @@
             </div>
         </nav>
 
-        <!-- Conteúdo principal -->
         <main class="main-content">
-            <!-- Meus Dados -->
             <div id="sec-meus-dados">
                 <div class="page-header">
                     <h2>Meus Dados Cadastrais</h2>
                 </div>
                 <div class="card">
-                    <div id="form-meus-dados" class="form-grid">
-                        <!-- Campos serão gerados via JS -->
-                    </div>
+                    <div id="form-meus-dados" class="form-grid"></div>
                 </div>
+            </div>
+
+            <div id="sec-agenda-geral" class="hidden">
+                <div class="page-header">
+                    <h2>Agenda Geral da Igreja</h2>
+                </div>
+                <div id="lista-agenda-geral-cards"></div>
+            </div>
+
+            <div id="sec-reservas" class="hidden">
+                <div class="page-header">
+                    <h2>Reservas de Salas (Templo, Subsolo, Laje)</h2>
+                </div>
+                <div id="lista-reservas-cards"></div>
             </div>
         </main>
     </div>
 
-    <!-- Overlay para fechar sidebar no mobile -->
     <div id="sidebar-overlay"></div>
-
     <script src="../static/painel-membro.js"></script>
 </body>
 </html>
