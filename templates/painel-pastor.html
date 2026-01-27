@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Pastoral - AD Rodovia A</title>
+    <link rel="stylesheet" href="../static/portal.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .hidden { display: none !important; }
+        /* Estilos específicos para visualização limpa */
+        .member-card { background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #ccc; }
+        .month-header { margin: 20px 0 10px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+        .badge-perfil { background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; color: #475569; }
+    </style>
+</head>
+<body>
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                Área Pastoral<br>
+                <span id="userDisplay" style="font-size:0.8rem; color:#cbd5e1; font-weight:normal">Carregando...</span>
+            </div>
+
+            <div class="sidebar-menu">
+                <div class="menu-item active" onclick="mostrarTela('dashboard', this)">
+                    <span class="material-icons menu-icon">dashboard</span> Visão Semanal
+                </div>
+                <div class="menu-item" onclick="mostrarTela('minha-agenda', this)">
+                    <span class="material-icons menu-icon">event_note</span> Minha Agenda
+                </div>
+                <div class="menu-item" onclick="mostrarTela('agenda-geral', this)">
+                    <span class="material-icons menu-icon">calendar_month</span> Agenda Geral
+                </div>
+                <div class="menu-item" onclick="mostrarTela('reservas', this)">
+                    <span class="material-icons menu-icon">meeting_room</span> Reservas
+                </div>
+                <div class="menu-item" onclick="mostrarTela('membros', this)">
+                    <span class="material-icons menu-icon">people</span> Membros
+                </div>
+                
+                <hr style="border:0; border-top:1px solid #334155; margin:10px 0;">
+                
+                <div class="menu-item" onclick="mostrarTela('meus-dados', this)">
+                    <span class="material-icons menu-icon">account_circle</span> Meus Dados
+                </div>
+            </div>
+
+            <div style="padding:20px;">
+                <button onclick="logout()" class="btn btn-primary" style="width:100%; background:#334155;">Sair</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            
+            <div id="sec-dashboard">
+                <div class="page-header"><h2>Visão Geral da Semana</h2></div>
+                
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                    <div class="member-card" style="flex: 1; min-width: 150px; text-align: center; border-left: 5px solid #3b82f6;">
+                        <span style="font-size: 2rem; font-weight: bold; color: #1e293b;" id="count-membros">0</span><br>
+                        <span style="color: #64748b;">Membros</span>
+                    </div>
+                    <div class="member-card" style="flex: 1; min-width: 150px; text-align: center; border-left: 5px solid #64748b;">
+                        <span style="font-size: 2rem; font-weight: bold; color: #1e293b;" id="count-congregados">0</span><br>
+                        <span style="color: #64748b;">Congregados</span>
+                    </div>
+                    <div class="member-card" style="flex: 1; min-width: 150px; text-align: center; border-left: 5px solid #f59e0b;">
+                        <span style="font-size: 2rem; font-weight: bold; color: #1e293b;" id="count-admins">0</span><br>
+                        <span style="color: #64748b;">Liderança/Admins</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h3 style="color:#1d4ed8; margin-bottom: 10px;">
+                            <span class="material-icons" style="vertical-align: bottom;">event_note</span> Meus Compromissos (7 Dias)
+                        </h3>
+                        <div id="dash-lista-pastor" class="card-list"></div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color:#b91c1c; margin-bottom: 10px;">
+                            <span class="material-icons" style="vertical-align: bottom;">church</span> Eventos da Igreja (7 Dias)
+                        </h3>
+                        <div id="dash-lista-geral" class="card-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-minha-agenda" class="hidden">
+                <div class="page-header"><h2>Minha Agenda Completa</h2></div>
+                <div id="lista-minha-agenda"></div>
+            </div>
+
+            <div id="sec-agenda-geral" class="hidden">
+                <div class="page-header"><h2>Agenda Geral da Igreja</h2></div>
+                <input type="text" id="buscaAgendaGeral" class="form-input" placeholder="Pesquisar evento, local..." style="margin-bottom: 1.5rem;">
+                <div id="lista-agenda-geral"></div>
+            </div>
+
+            <div id="sec-reservas" class="hidden">
+                <div class="page-header"><h2>Reservas de Salas</h2></div>
+                <div id="lista-reservas"></div>
+            </div>
+
+            <div id="sec-membros" class="hidden">
+                <div class="page-header"><h2>Lista de Membros</h2></div>
+                <input type="text" id="buscaMembro" class="form-input" placeholder="Pesquisar por nome..." style="margin-bottom: 1.5rem;">
+                <div id="lista-membros"></div>
+            </div>
+
+            <div id="sec-meus-dados" class="hidden">
+                <div class="page-header"><h2>Meus Dados Pessoais</h2></div>
+                <div class="card"><div id="form-meus-dados" class="form-grid"></div></div>
+            </div>
+
+        </main>
+    </div>
+
+    <div id="sidebar-overlay"></div>
+    <script src="../static/painel-pastor.js"></script>
+</body>
+</html>
