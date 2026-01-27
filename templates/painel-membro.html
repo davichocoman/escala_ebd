@@ -47,7 +47,35 @@
         </nav>
 
         <main class="main-content">
-            <div id="sec-meus-dados">
+            
+            <div id="sec-dashboard">
+                <div class="page-header">
+                    <span class="material-icons">dashboard</span> Eventos esta semana
+                </div>
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                    <div class="member-card" style="flex: 1; min-width: 200px; text-align: center; border-left: 5px solid #3b82f6;">
+                        <h3 style="margin:0; font-size: 2rem; color: #1e293b;" id="count-eventos-semana">0</h3>
+                        <span style="color: #64748b;">Eventos esta semana</span>
+                    </div>
+                    <div class="member-card" style="flex: 1; min-width: 200px; text-align: center; border-left: 5px solid #22c55e;">
+                        <h3 style="margin:0; font-size: 2rem; color: #1e293b;" id="count-reservas-semana">0</h3>
+                        <span style="color: #64748b;">Reservas esta semana</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h3 style="color:#b91c1c; margin-bottom: 10px;"><span class="material-icons" style="vertical-align: bottom;">church</span> Eventos Próximos</h3>
+                        <div id="dash-lista-agenda" class="card-list"></div>
+                    </div>
+                    <div>
+                        <h3 style="color:#15803d; margin-bottom: 10px;"><span class="material-icons" style="vertical-align: bottom;">meeting_room</span> Reservas Próximas</h3>
+                        <div id="dash-lista-reservas" class="card-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-meus-dados" class="hidden">
                 <div class="page-header">
                     <h2>Meus Dados Cadastrais</h2>
                 </div>
@@ -60,15 +88,18 @@
                 <div class="page-header">
                     <h2>Agenda Geral da Igreja</h2>
                 </div>
+                <input type="text" id="buscaAgenda" class="form-input" placeholder="Pesquisar por evento, local ou responsável..." style="margin-bottom: 1.5rem;">
+                
                 <div id="lista-agenda-geral-cards"></div>
             </div>
 
             <div id="sec-reservas" class="hidden">
                 <div class="page-header">
-                    <h2>Reservas de Salas (Templo, Subsolo, Laje)</h2>
+                    <h2>Reservas de Salas</h2>
                 </div>
                 <div id="lista-reservas-cards"></div>
             </div>
+        </main>
         </main>
     </div>
 
