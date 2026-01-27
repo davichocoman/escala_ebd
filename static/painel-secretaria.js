@@ -764,19 +764,21 @@ function renderizarAgendaGeralCards() {
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
 
-        html += `
-            <div class="member-card">
-                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
-                <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
-                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
-                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
-                </div>
-            </div>`;
+        if (getVal(ev, 'EVENTO') !== null){
+            html += `
+                <div class="member-card">
+                    <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
+                    <div class="card-body">
+                        <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
+                        <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
+                        <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
+                        <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
+                    </div>
+                </div>`;
+        }
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
 }
@@ -799,20 +801,22 @@ function renderizarReservasCards() {
         }
 
         // Note o uso de getVal(res, 'id') minúsculo para bater com o backend
-        html += `
-            <div class="member-card" style="border-left: 5px solid var(--green);">
-                <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
-                <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
-                    <div><strong>Horário:</strong> ${getVal(res, 'INICIO')} - ${getVal(res, 'FIM')}</div>
-                    <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
-                    <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'id')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
-                </div>
-            </div>`;
+        if (getVal(res, 'EVENTO') !== null){
+            html += `
+                <div class="member-card" style="border-left: 5px solid var(--green);">
+                    <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
+                    <div class="card-body">
+                        <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
+                        <div><strong>Horário:</strong> ${getVal(res, 'INICIO')} - ${getVal(res, 'FIM')}</div>
+                        <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
+                        <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'id')}')">✏️</button>
+                        <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
+                    </div>
+                </div>`;
+        }
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
 }
