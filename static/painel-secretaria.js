@@ -154,7 +154,7 @@ function renderizarDashboard() {
     preencherListaDash(
       'list-dash-reservas',
       listaReservas,
-      'ATIVIDADE',
+      'EVENTO',
       'DATA',
       (item, chaveData) => eventoValido(item, 'ATIVIDADE', chaveData),
       'HORARIO_INICIO',
@@ -739,7 +739,7 @@ function renderizarReservasCards() {
         // Note o uso de getVal(res, 'id') minúsculo para bater com o backend
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
-                <div class="card-header"><strong>${getVal(res, 'ATIVIDADE')}</strong></div>
+                <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
                     <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
                     <div>
