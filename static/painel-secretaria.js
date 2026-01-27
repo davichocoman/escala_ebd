@@ -238,15 +238,29 @@ function renderizarAgendaPastor() {
         return;
     }
 
-    container.innerHTML = lista.map(a => `
-        <div class="agenda-card">
+    let html = "";
+    // Adicionei cabeçalho de mês igual na agenda geral/reservas para ficar bonito
+    let mesAtual = -1;
+
+    lista.forEach(a => {
+        const d = dataParaObj(getVal(a, 'DATA'));
+        const m = d.getMonth() + 1;
+        
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
+        // MUDANÇA AQUI: Usando 'member-card' e estrutura igual a de Reservas
+        // Cor azul (#3b82f6) para diferenciar do verde das reservas
+        html += `
+        <div class="member-card" style="border-left: 5px solid #3b82f6;">
             <div class="card-header">
                 <strong>${getVal(a, 'EVENTO')}</strong>
-                <span>${getVal(a, 'DATA')}</span>
             </div>
             <div class="card-body">
-                <div><strong>Hora:</strong> ${getVal(a, 'HORARIO')}</div>
-                <div><strong>Horário de Término:</strong> ${getVal(a, 'HORARIO_FIM')}</div>
+                <div><strong>Data:</strong> ${getVal(a, 'DATA')}</div>
+                <div><strong>Horário:</strong> ${getVal(a, 'HORARIO')} ${getVal(a, 'HORARIO_FIM') ? '- ' + getVal(a, 'HORARIO_FIM') : ''}</div>
                 <div><strong>Local:</strong> ${getVal(a, 'LOCAL')}</div>
                 ${getVal(a, 'OBSERVACAO') ? `<div><strong>Obs:</strong> ${getVal(a, 'OBSERVACAO')}</div>` : ''}
             </div>
@@ -254,8 +268,10 @@ function renderizarAgendaPastor() {
                 <button class="btn-icon edit" onclick="prepararEdicaoPastor('${getVal(a, 'ID')}')">✏️</button>
                 <button class="btn-icon delete" onclick="deletarItem('${getVal(a, 'ID')}', 'agenda-pastor')">🗑️</button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    });
+
+    container.innerHTML = html;
 }
 
 // --- Funções Auxiliares de Formatação para o Perfil ---
@@ -728,7 +744,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+const NOMES_MESES = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
@@ -756,15 +772,10 @@ function renderizarAgendaGeralCards() {
                     <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
                 </div>
-                <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
-                </div>
-            </div>`;
+                </div>`;
     });
     container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
 }
-
 // 3. Função para renderizar Reservas
 function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
