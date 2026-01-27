@@ -778,29 +778,28 @@ function renderizarReservasCards() {
     dados.forEach(res => {
         const d = dataParaObj(getVal(res, 'DATA'));
         const m = d.getMonth() + 1;
-
         if (m !== mesAtual) {
             mesAtual = m;
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
 
-        // Ajuste nas chaves para bater com o backend (data, inicio, fim, evento, local)
+        // Note o uso de getVal(res, 'id') minúsculo para bater com o backend
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
-                <div class="card-header"><strong>${getVal(res, 'ATIVIDADE') || getVal(res, 'evento')}</strong></div>
+                <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
                     <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
+                    <div><strong>Horário:</strong> ${getVal(res, 'INICIO')} - ${getVal(res, 'FIM')}</div>
                     <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
-                    <div><strong>Horário:</strong> ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} - ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}</div>
                     <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'ID')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'ID')}', 'reservas')">🗑️</button>
+                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'id')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
                 </div>
             </div>`;
     });
-    container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva cadastrada.</p>';
+    container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
 }
 
 // Funções para Abrir os Modais
