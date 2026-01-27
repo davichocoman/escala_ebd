@@ -32,14 +32,19 @@ function getVal(obj, key) {
 }
 //função única para decidir se um item deve aparecer
 function eventoValido(item, chaveEvento, chaveData) {
-    const nome = getVal(item, chaveEvento);
-    // Nome inválido
-    if (!nome || nome === 'null' || nome === 'NULL') return false;
-    const dataStr = getVal(item, chaveData);
-    // Data inválida
-    if (!dataStr || dataStr === 'null' || dataStr === 'NULL') return false;
+    const nome = getVal(item, chaveEvento)?.trim();
+    // Aceita vazio ou null como nome → mostra mesmo assim (para depuração)
+    // if (!nome || nome.toLowerCase() === 'null') return false;
+
+    const dataStr = getVal(item, chaveData)?.trim();
+    if (!dataStr) return false;
+
     const data = dataParaObj(dataStr);
-    if (isNaN(data.getTime())) return false;
+    if (isNaN(data.getTime())) {
+        console.warn("Data inválida:", dataStr, item);
+        return false;
+    }
+
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
     return data >= hoje;
