@@ -751,12 +751,16 @@ function renderizarAgendaGeralCards() {
 function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
     const dados = SISTEMA.dados.dashboard.reservas || [];
-   
+    
+    // Ordenação inicial
     dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+
     let html = "";
     let mesAtual = -1;
+
     dados
-      .filter(res => eventoValido(res, 'ATIVIDADE', 'DATA'))
+      // CORREÇÃO AQUI: Mudamos de 'ATIVIDADE' para 'EVENTO' para bater com o JSON
+      .filter(res => eventoValido(res, 'EVENTO', 'DATA')) 
       .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
       .forEach(res => {
           const d = dataParaObj(getVal(res, 'DATA'));
@@ -766,16 +770,17 @@ function renderizarReservasCards() {
               mesAtual = m;
               html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
           }
-        // Note o uso de getVal(res, 'id') minúsculo para bater com o backend
+
+        // Note que mantive os fallbacks (|| getVal(res, 'inicio')) para garantir
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
                 <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
                     <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
                     <div>
-                      <strong>Horário:</strong>
-                      ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')}
-                      -
+                      <strong>Horário:</strong> 
+                      ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} 
+                      - 
                       ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}
                     </div>
                     <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
