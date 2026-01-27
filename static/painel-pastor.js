@@ -85,6 +85,18 @@ async function carregarTudo() {
     }
 }
 
+// Remove tudo que não é número para criar o link
+function gerarLinkZap(numero) {
+    if (!numero) return '';
+    // Remove ( ) - e espaços
+    const limpo = numero.toString().replace(/\D/g, '');
+    
+    // Adiciona o código do país (55) se não tiver
+    // Verifica se tem DDD (assumindo números com 10 ou 11 dígitos)
+    const numeroFinal = limpo.length <= 11 ? `55${limpo}` : limpo;
+    
+    return `https://wa.me/${numeroFinal}`;
+}
 // ============================================================
 // 3. RENDERIZAÇÃO
 // ============================================================
@@ -234,18 +246,70 @@ function renderizarMembros() {
         return;
     }
 
-    container.innerHTML = filtrados.map(m => `
+    container.innerHTML = filtrados.map(m => {
+        const contato = getVal(m, 'CONTATO');
+        const linkZap = gerarLinkZap(contato);
+        const endereco = getVal(m, 'ENDERECO');
+
+        return `
         <div class="member-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <strong style="font-size:1.1rem">${getVal(m, 'NOME')}</strong>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <strong style="font-size:1.1rem; color:#1e293b;">${getVal(m, 'NOME')}</strong>
                 <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
             </div>
-            <div style="color:#64748b; font-size:0.9rem;">
-                <div>📞 ${getVal(m, 'CONTATO')}</div>
-                <div>📍 ${getVal(m, 'ENDERECO')}</div>
+            
+            <div style="color:#64748b; font-size:0.95rem; display:flex; flex-direction:column; gap:8px;">
+                
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="material-icons" style="font-size:1.2rem; color:#64748b;">smartphone</span>
+                    <span style="flex:1;">${contato || 'Sem contato'}</span>
+                    
+                    ${contato ? `
+                        <a href="${linkZap}" target="_blank" style="text-decoration:none;" title="Chamar no WhatsApp">
+                            <button style="
+                                background: #25D366; 
+                                border: none; 
+                                border-radius: 50%; 
+                                width: 32px; 
+                                height: 32px; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center; 
+                                cursor: pointer;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                transition: transform 0.2s;
+                            " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                <span class="material-icons" style="color:white; font-size:18px;">send</span>
+                            </button>
+                        </a>
+                    ` : ''}
+                </div>
+
+                <div style="display:flex; align-items:start; gap:8px;">
+                    <span class="material-icons" style="font-size:1.2rem; color:#64748b; margin-top:2px;">location_on</span>
+                    <span style="flex:1; line-height:1.4;">${endereco || 'Endereço não informado'}</span>
+                    
+                    ${endereco ? `
+                        <button onclick="copiarEndereco('${endereco.replace(/'/g, "\\'")}')" title="Copiar Endereço" style="
+                            background: #e2e8f0; 
+                            border: none; 
+                            border-radius: 50%; 
+                            width: 32px; 
+                            height: 32px; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        " onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">
+                            <span class="material-icons" style="color:#475569; font-size:18px;">content_copy</span>
+                        </button>
+                    ` : ''}
+                </div>
+
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function renderizarMeusDados() {
@@ -320,3 +384,30 @@ function dataParaObj(s) { if(!s) return new Date(0); const p=s.split('/'); retur
 function debounce(f,w) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>f.apply(this,a),w); }; }
 function toggleSidebar(){ const s=document.querySelector('.sidebar'); if(s) s.classList.toggle('open'); }
 function logout(){ sessionStorage.clear(); window.location.href='/login'; }
+
+// Função para copiar texto para a área de transferência
+window.copiarEndereco = function(endereco) {
+    if (!endereco || endereco === 'undefined') return;
+    
+    navigator.clipboard.writeText(endereco).then(() => {
+        // Feedback visual tipo "Toast" (notificação rápida)
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: false,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        Toast.fire({
+            icon: 'success',
+            title: 'Endereço copiado!'
+        });
+    }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+    });
+};
