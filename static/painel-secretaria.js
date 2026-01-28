@@ -502,11 +502,11 @@ async function salvarMembro() {
         PERFIL: document.getElementById('m_perfil')?.value || ''
     };
     // Validação básica no front
-    if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO) {
+    if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO || !dados.ESTADO_CIVIL || !dados.PROFISSAO || !dados.SITUACAO_TRABALHO || !dados.DEPARTAMENTO || !dados.PERFIL ) {
         Swal.fire({
             icon: 'warning',
             title: 'Campos obrigatórios',
-            text: 'Nome, CPF, Data de Nascimento, Endereço e Contato são obrigatórios!'
+            text: 'Nome, CPF, Data de Nascimento, Endereço, Contato, Estado Civil, Profissão, Situação de Trabalho, Departamento e Perfil são obrigatórios!'
         });
         return;
     }
