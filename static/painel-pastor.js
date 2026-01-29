@@ -318,28 +318,84 @@ function renderizarMembros() {
 }
 
 function renderizarMeusDados() {
-    // Reutiliza a lógica do painel de membro, pois é apenas visualização
-    const container = document.getElementById('form-meus-dados');
-    if(!container || !SISTEMA.usuario) return;
-    
-    // ... (Código idêntico ao painel-membro.js para renderizar campos readonly) ...
-    // Para economizar espaço aqui, vou resumir. 
-    // Você pode copiar a função renderizarMeusDados() do painel-membro.js 
-    // e colar aqui, pois a estrutura HTML é a mesma.
-    
-    // Vou colocar uma versão simplificada funcional:
-    const user = SISTEMA.usuario;
-    const campos = [
-        {k:'NOME', l:'Nome'}, {k:'CPF', l:'CPF'}, {k:'NASCIMENTO', l:'Nascimento'},
-        {k:'CONTATO', l:'Contato'}, {k:'ENDERECO', l:'Endereço'}, {k:'CARGO', l:'Cargo'}
+    const div = document.getElementById('form-meus-dados');
+    if (!div || !SISTEMA.usuario) return;
+    // 1. Definição das Seções para manter o padrão visual
+    const secoes = [
+        {
+            titulo: 'Informações Básicas',
+            campos: [
+                { key: 'NOME', label: 'Nome Completo', span: 12 },
+                { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
+                { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
+                { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
+                { key: 'CONTATO', label: 'WhatsApp/Telefone', span: 6 }
+            ]
+        },
+        {
+            titulo: 'Família e Filiação',
+            campos: [
+                { key: 'PAI', label: 'Nome do Pai', span: 6 },
+                { key: 'MAE', label: 'Nome da Mãe', span: 6 },
+                { key: 'CONJUGE', label: 'Cônjuge', span: 6 },
+                { key: 'FILHOS', label: 'Filhos', span: 6, isList: true }
+            ]
+        },
+        {
+            titulo: 'Endereço e Profissão',
+            campos: [
+                { key: 'ENDERECO', label: 'Endereço Residencial', span: 12 },
+                { key: 'PROFISSAO', label: 'Profissão', span: 6 },
+                { key: 'SITUACAO_TRABALHO', label: 'Situação Atual', span: 6 }
+            ]
+        },
+        {
+            titulo: 'Dados Eclesiásticos',
+            campos: [
+                { key: 'BATISMO', label: 'Data de Batismo', span: 6, isDate: true },
+                { key: 'CARGO', label: 'Cargo Atual', span: 6, isList: true },
+                { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
+            ]
+        }
     ];
-    
-    container.innerHTML = campos.map(c => `
-        <div style="margin-bottom:10px;">
-            <label style="font-size:0.8rem; color:#666; font-weight:bold">${c.l}</label>
-            <div style="background:#f1f5f9; padding:8px; border-radius:4px;">${getVal(user, c.k)}</div>
-        </div>
-    `).join('');
+    div.innerHTML = '';
+    secoes.forEach(secao => {
+        const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
+        if (!temDados) return;
+        // Título da Seção
+        div.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
+        secao.campos.forEach(campo => {
+            let valor = getVal(SISTEMA.usuario, campo.key);
+            if (!valor) return;
+            let htmlConteudo = '';
+            // Aplicação das mesmas lógicas de pílulas e máscaras
+            if (campo.isCPF) {
+                htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
+            }
+            else if (campo.isDate) {
+                htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
+            }
+            else if (campo.isList && valor.toString().includes(',')) {
+                htmlConteudo = valor.split(',')
+                    .map(item => `<span class="data-pill">${item.trim()}</span>`)
+                    .join('');
+            }
+            else {
+                htmlConteudo = `<span class="data-pill">${valor}</span>`;
+            }
+            div.innerHTML += `
+                <div class="form-group" style="grid-column: span ${campo.span}">
+                    <label>${campo.label}</label>
+                    <div class="valor-box">
+                        ${htmlConteudo}
+                    </div>
+                </div>
+            `;
+        });
+    });
+    if (div.innerHTML === '') {
+        div.innerHTML = '<p class="empty-msg">Nenhum dado disponível para exibição.</p>';
+    }
 }
 
 // ============================================================
