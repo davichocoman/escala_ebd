@@ -478,7 +478,7 @@ window.prepararEdicaoMembro = function(id) {
     set('m_situacao', getVal(m, 'SITUACAO_TRABALHO'));
     set('m_cargo', getVal(m, 'CARGO'));
     set('m_departamento', getVal(m, 'DEPARTAMENTO'));
-    set('m_batismo', getVal(m, 'BATISMO'));
+    set('m_batismo', dataIso(getVal(m, 'BATISMO')));
     set('m_perfil', getVal(m, 'PERFIL'));
     document.getElementById('modalMembro')?.classList.remove('hidden');
 };
