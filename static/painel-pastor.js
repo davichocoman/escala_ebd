@@ -520,3 +520,32 @@ window.copiarEndereco = function(endereco) {
         console.error('Erro ao copiar: ', err);
     });
 };
+
+
+function getVal(obj, key) {
+    if (!obj || typeof obj !== 'object') return '';
+    const upperKey = key.toUpperCase();
+    for (const k in obj) {
+        if (k.toUpperCase() === upperKey) return obj[k] || '';
+    }
+    return '';
+}
+
+function dataParaObj(str) {
+    if (!str || typeof str !== 'string') return new Date(0);
+    const p = str.split('/');
+    return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);
+}
+
+// Formatação
+const formatarCPF = (valor) => {
+    const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
+    return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+};
+
+const formatarData = (valor) => {
+    if (!valor) return '';
+    if (valor.includes('/') && valor.split('/').length === 3) return valor;
+    const data = new Date(valor);
+    return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
+};
