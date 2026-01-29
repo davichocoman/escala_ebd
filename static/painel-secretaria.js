@@ -478,6 +478,7 @@ window.prepararEdicaoMembro = function(id) {
     set('m_situacao', getVal(m, 'SITUACAO_TRABALHO'));
     set('m_cargo', getVal(m, 'CARGO'));
     set('m_departamento', getVal(m, 'DEPARTAMENTO'));
+    set('m_batismo', getVal(m, 'BATISMO'));
     set('m_perfil', getVal(m, 'PERFIL'));
     document.getElementById('modalMembro')?.classList.remove('hidden');
 };
@@ -498,6 +499,7 @@ async function salvarMembro() {
         PROFISSAO: document.getElementById('m_profissao')?.value.trim() || '',
         SITUACAO_TRABALHO: document.getElementById('m_situacao')?.value || '',
         CARGO: document.getElementById('m_cargo')?.value.trim() || '',
+        BATISMO: document.getElementById('m_batismo')?.value.trim() || '',
         DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
         PERFIL: document.getElementById('m_perfil')?.value || ''
     };
