@@ -499,7 +499,7 @@ async function salvarMembro() {
         PROFISSAO: document.getElementById('m_profissao')?.value.trim() || '',
         SITUACAO_TRABALHO: document.getElementById('m_situacao')?.value || '',
         CARGO: document.getElementById('m_cargo')?.value.trim() || '',
-        BATISMO: document.getElementById('m_batismo')?.value.trim() || '',
+        BATISMO: dataBr(document.getElementById('m_batismo')?.value.trim() || ''),
         DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
         PERFIL: document.getElementById('m_perfil')?.value || ''
     };
