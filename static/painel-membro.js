@@ -186,7 +186,7 @@ function renderizarMeusDados() {
         {
             titulo: 'Dados Eclesiásticos',
             campos: [
-                { key: 'CARGO', label: 'Cargo Atual', span: 6 },
+                { key: 'CARGO', label: 'Cargo Atual', span: 6, isList: true },
                 { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
             ]
         }
