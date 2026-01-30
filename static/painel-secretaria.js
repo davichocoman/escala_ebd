@@ -305,6 +305,53 @@ function renderizarAgendaPastor() {
     });
     container.innerHTML = html;
 }
+function renderizarAgendaGeralCards() {
+    const container = document.getElementById('lista-agenda-geral-cards');
+    const dados = SISTEMA.dados.dashboard.agenda || [];
+    
+    // 1. Filtra primeiro (Data válida + Nome válido)
+    const validos = dados.filter(ev => eventoValido(ev, 'EVENTO', 'DATA'));
+    
+    // 2. Ordena por Data e Hora
+    // (Assume que o campo de hora na agenda geral é 'HORARIO')
+    ordenarPorDataEHora(validos, 'DATA', 'HORARIO');
+
+    if (validos.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhum evento cadastrado.</p>';
+        return;
+    }
+
+    let html = "";
+    let mesAtual = -1;
+
+    // 3. Loop na lista CORRETA (validos)
+    validos.forEach(ev => {
+        const d = dataParaObj(getVal(ev, 'DATA'));
+        const m = d.getMonth() + 1;
+
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
+        html += `
+            <div class="member-card">
+                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
+                <div class="card-body">
+                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
+                    ${getVal(ev, 'HORARIO') ? `<div><strong>Horário:</strong> ${getVal(ev, 'HORARIO')}</div>` : ''}
+                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
+                </div>
+            </div>`;
+    });
+    
+    container.innerHTML = html;
+}
 // --- Funções Auxiliares de Formatação para o Perfil ---
 const formatarCPF = (valor) => {
     const cpf = valor.toString().replace(/\D/g, '').padStart(11, '0');
@@ -432,7 +479,7 @@ window.mostrarTela = function(telaId, btn) {
     // Gatilhos de renderização
     if (telaId === 'dashboard') renderizarDashboard();
     if (telaId === 'membros') renderizarMembros();
-    if (telaId === 'agenda-geral') renderizarAgendaGeralCards(); // Nova
+    if (telaId === 'agenda-geral') (); // Nova
     if (telaId === 'reservas') renderizarReservasCards(); // Nova
 };
 window.logout = function() {
@@ -784,7 +831,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
-function renderizarAgendaGeralCards() {
+function () {
     const container = document.getElementById('lista-agenda-geral-cards');
     const dados = SISTEMA.dados.dashboard.agenda || [];
     
@@ -839,6 +886,8 @@ function renderizarReservasCards() {
     const dados = SISTEMA.dados.dashboard.reservas || [];
     
     // 1. Filtra
+    // O backend envia "evento" (minúsculo) na rota /patrimonio/dados
+    // A função eventoValido e getVal lidam com maiúsculas/minúsculas, então 'EVENTO' funciona
     const validos = dados.filter(res => eventoValido(res, 'EVENTO', 'DATA'));
     
     // 2. Descobre qual o nome do campo de hora ('inicio' ou 'HORARIO_INICIO')
@@ -859,7 +908,7 @@ function renderizarReservasCards() {
     let html = "";
     let mesAtual = -1;
 
-    // 4. Loop na lista correta
+    // 4. Loop na lista CORRETA (validos)
     validos.forEach(res => {
         const d = dataParaObj(getVal(res, 'DATA'));
         const m = d.getMonth() + 1;
@@ -1026,10 +1075,8 @@ function ordenarPorDataEHora(lista, chaveData, chaveHora) {
     lista.sort((a, b) => {
         const d1 = dataParaObj(getVal(a, chaveData));
         const d2 = dataParaObj(getVal(b, chaveData));
-        
         if (d1 < d2) return -1;
         if (d1 > d2) return 1;
-
         const h1 = timeParaMinutos(getVal(a, chaveHora));
         const h2 = timeParaMinutos(getVal(b, chaveHora));
         return h1 - h2;
