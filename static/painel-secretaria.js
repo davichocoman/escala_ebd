@@ -788,29 +788,39 @@ function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
     const dados = SISTEMA.dados.dashboard.agenda || [];
     
-    // Filtra primeiro
+    // 1. Filtra primeiro
     const validos = dados.filter(ev => eventoValido(ev, 'EVENTO', 'DATA'));
     
-    // USAR A NOVA ORDENAÇÃO (Tenta ordenar por HORARIO se existir, senão só DATA)
+    // 2. Ordena por Data e Hora
+    // (Assume que o campo de hora na agenda geral é 'HORARIO')
     ordenarPorDataEHora(validos, 'DATA', 'HORARIO');
+
+    if (validos.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhum evento cadastrado.</p>';
+        return;
+    }
+
     let html = "";
     let mesAtual = -1;
-    dados
-      .filter(ev => eventoValido(ev, 'EVENTO', 'DATA'))
-      .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
-      .forEach(ev => {
-          const d = dataParaObj(getVal(ev, 'DATA'));
-          const m = d.getMonth() + 1;
-   
-          if (m !== mesAtual) {
-              mesAtual = m;
-              html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
-          }
+
+    // 3. Usa a lista 'validos' que já está filtrada e ordenada
+    validos.forEach(ev => {
+        const d = dataParaObj(getVal(ev, 'DATA'));
+        const m = d.getMonth() + 1;
+
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
         html += `
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
                 <div class="card-body">
                     <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
+                    
+                    ${getVal(ev, 'HORARIO') ? `<div><strong>Horário:</strong> ${getVal(ev, 'HORARIO')}</div>` : ''}
+                    
                     <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
                 </div>
@@ -819,52 +829,56 @@ function renderizarAgendaGeralCards() {
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
                 </div>
             </div>`;
-       
     });
-    container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
+    
+    container.innerHTML = html;
 }
 // 3. Função para renderizar Reservas
 function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
     const dados = SISTEMA.dados.dashboard.reservas || [];
     
-    // Filtra
+    // 1. Filtra
     const validos = dados.filter(res => eventoValido(res, 'EVENTO', 'DATA'));
     
-    // USAR A NOVA ORDENAÇÃO (Usa 'HORARIO_INICIO' ou 'inicio')
-    // Verifica qual chave de hora usar baseada no primeiro item ou padrão 'HORARIO_INICIO'
+    // 2. Descobre qual o nome do campo de hora ('inicio' ou 'HORARIO_INICIO')
     let keyHora = 'HORARIO_INICIO';
-    if(validos.length > 0 && validos[0].inicio) keyHora = 'inicio';
+    if(validos.length > 0) {
+        if(validos[0].hasOwnProperty('inicio')) keyHora = 'inicio';
+        else if(validos[0].hasOwnProperty('INICIO')) keyHora = 'INICIO';
+    }
 
+    // 3. Ordena
     ordenarPorDataEHora(validos, 'DATA', keyHora);
+
+    if (validos.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
+        return;
+    }
 
     let html = "";
     let mesAtual = -1;
 
-    dados
-      // CORREÇÃO AQUI: Mudamos de 'ATIVIDADE' para 'EVENTO' para bater com o JSON
-      .filter(res => eventoValido(res, 'EVENTO', 'DATA')) 
-      .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')))
-      .forEach(res => {
-          const d = dataParaObj(getVal(res, 'DATA'));
-          const m = d.getMonth() + 1;
-   
-          if (m !== mesAtual) {
-              mesAtual = m;
-              html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
-          }
+    // 4. Loop na lista correta
+    validos.forEach(res => {
+        const d = dataParaObj(getVal(res, 'DATA'));
+        const m = d.getMonth() + 1;
 
-        // Note que mantive os fallbacks (|| getVal(res, 'inicio')) para garantir
+        if (m !== mesAtual) {
+            mesAtual = m;
+            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
+        }
+
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
                 <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
                     <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
                     <div>
-                      <strong>Horário:</strong> 
-                      ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} 
-                      - 
-                      ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}
+                        <strong>Horário:</strong> 
+                        ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} 
+                        - 
+                        ${getVal(res, 'HORARIO_FIM') || getVal(res, 'fim')}
                     </div>
                     <div><strong>Local:</strong> ${getVal(res, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
@@ -875,7 +889,8 @@ function renderizarReservasCards() {
                 </div>
             </div>`;
     });
-    container.innerHTML = html || '<p class="empty-msg">Nenhuma reserva encontrada.</p>';
+    
+    container.innerHTML = html;
 }
 // Funções para Abrir os Modais
 window.abrirModalAgendaGeral = () => {
