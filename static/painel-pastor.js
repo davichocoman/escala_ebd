@@ -120,15 +120,24 @@ function renderizarDashboard() {
     const limite = new Date(); limite.setDate(hoje.getDate() + 7); limite.setHours(23,59,59);
 
     const filtroSemana = (item, chaveData) => {
-        if (!eventoValido(item, 'ignore', chaveData)) return false; // Valida data apenas
+        if (!eventoValido(item, 'ignore', chaveData)) return false; 
         const d = dataParaObj(getVal(item, chaveData));
         return d >= hoje && d <= limite;
     };
 
-    // 3. Minha Agenda (Resumida)
+    // --- MUDANÇA AQUI: Filtrar pelo nome do Pastor Logado ---
+    const nomeLogado = getVal(SISTEMA.usuario, 'NOME'); // Pega o nome exato do perfil
+
+    // 3. Minha Agenda (Resumida + Filtrada)
     const minhaLista = SISTEMA.dados.agendaPastor || [];
     const minhaSemana = minhaLista
-        .filter(i => filtroSemana(i, 'DATA'))
+        .filter(i => {
+            // 1. Filtra pela data (próximos 7 dias)
+            const naSemana = filtroSemana(i, 'DATA');
+            // 2. Filtra pelo nome (se eu estou na lista de pastores desse evento)
+            const souEu = getVal(i, 'PASTOR').includes(nomeLogado); 
+            return naSemana && souEu;
+        })
         .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')));
     
     renderizarListaSimples('dash-lista-pastor', minhaSemana, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
@@ -186,7 +195,13 @@ function renderizarListaSimples(elementId, lista, keyTitulo, keyData, color, key
 // --- Telas Completas ---
 
 function renderizarMinhaAgenda() {
-    renderizarListaCompleta('lista-minha-agenda', SISTEMA.dados.agendaPastor, 'EVENTO', 'DATA', '#3b82f6', true);
+    const nomeLogado = getVal(SISTEMA.usuario, 'NOME');
+    const listaCompleta = SISTEMA.dados.agendaPastor || [];
+    
+    // Filtra apenas eventos onde este pastor está escalado
+    const meusEventos = listaCompleta.filter(i => getVal(i, 'PASTOR').includes(nomeLogado));
+
+    renderizarListaCompleta('lista-minha-agenda', meusEventos, 'EVENTO', 'DATA', '#3b82f6', true);
 }
 
 function renderizarAgendaGeral() {
@@ -230,13 +245,16 @@ function renderizarListaCompleta(elementId, dados, keyTitulo, keyData, corBorda,
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
 
-        // Tenta pegar horário de diferentes campos possíveis
         let horarioHtml = '';
         if (mostrarHora) {
             const ini = getVal(item, 'HORARIO') || getVal(item, 'HORARIO_INICIO') || getVal(item, 'inicio');
             const fim = getVal(item, 'HORARIO_FIM') || getVal(item, 'fim');
             if (ini) horarioHtml = `<div><strong>Horário:</strong> ${ini} ${fim ? '- ' + fim : ''}</div>`;
         }
+
+        // Tenta pegar o campo PASTOR ou RESPONSAVEL
+        const pastores = getVal(item, 'PASTOR');
+        const responsavel = getVal(item, 'RESPONSAVEL');
 
         html += `
             <div class="member-card" style="border-left: 5px solid ${corBorda};">
@@ -245,7 +263,10 @@ function renderizarListaCompleta(elementId, dados, keyTitulo, keyData, corBorda,
                     <div><strong>Data:</strong> ${getVal(item, keyData)}</div>
                     ${horarioHtml}
                     <div><strong>Local:</strong> ${getVal(item, 'LOCAL')}</div>
-                    ${getVal(item, 'RESPONSAVEL') ? `<div><strong>Resp:</strong> ${getVal(item, 'RESPONSAVEL')}</div>` : ''}
+                    
+                    ${pastores ? `<div style="color:#2563eb;"><strong>Dirigente(s):</strong> ${pastores}</div>` : ''}
+                    ${responsavel ? `<div><strong>Resp:</strong> ${responsavel}</div>` : ''}
+                    
                     ${getVal(item, 'OBSERVACAO') ? `<div><strong>Obs:</strong> ${getVal(item, 'OBSERVACAO')}</div>` : ''}
                 </div>
             </div>`;
