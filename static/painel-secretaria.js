@@ -213,49 +213,39 @@ function renderizarDashboard() {
     // --- PREENCHIMENTO DAS LISTAS ---
 
     // 1. Agenda do Pastor (Chaves: EVENTO, DATA, HORARIO)
-    const listaPastor = (SISTEMA.dados.agendaPastor || [])
-        .filter(i => filtroValido(i, 'EVENTO', 'DATA'));
+    const listaPastor = (SISTEMA.dados.agendaPastor || []).filter(i => filtroSemana(i, 'DATA'));
     ordenarPorDataEHora(listaPastor, 'DATA', 'HORARIO');
     preencherListaDashSimples('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
 
-    // 2. Reservas (Chaves: evento, data, inicio)
-    const listaRes = (SISTEMA.dados.dashboard.reservas || [])
-        .filter(i => filtroValido(i, 'evento', 'data'));
+    // 2. Reservas (Usa Minúsculas do Python: evento, data, inicio)
+    const listaRes = (SISTEMA.dados.dashboard.reservas || []).filter(i => filtroSemana(i, 'data'));
     ordenarPorDataEHora(listaRes, 'data', 'inicio');
     preencherListaDashSimples('list-dash-reservas', listaRes, 'evento', 'data', '#22c55e', 'inicio');
 
-    // 3. Agenda Geral (Chaves: evento, data | Sem Horário)
-    const listaGeral = (SISTEMA.dados.dashboard.agenda || [])
-        .filter(i => filtroValido(i, 'evento', 'data'));
-    ordenarPorDataEHora(listaGeral, 'data', ''); 
+    // 3. Agenda Geral (Usa Minúsculas do Python: evento, data | SEM HORÁRIO)
+    const listaGeral = (SISTEMA.dados.dashboard.agenda || []).filter(i => filtroSemana(i, 'data'));
+    ordenarPorDataEHora(listaGeral, 'data', ''); // Sem chave de hora
     preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
 }
 
-// 1. Função de preenchimento atualizada para usar a nova ordenação
-function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
-    const ul = document.getElementById(idElemento);
-    if (!ul) return;
-
-    // Filtra os itens
-    const itensFiltrados = lista.filter(item => filtro(item, chaveData));
-
-    // --- ORDENAÇÃO POR DATA E HORA ---
-    ordenarPorDataEHora(itensFiltrados, chaveData, chaveHoraIni, chaveHoraFim);
-
-    if (itensFiltrados.length === 0) {
-        ul.innerHTML = '<li class="empty-msg">Nada para os próximos 7 dias.</li>';
+// Helper para o Dashboard (Estilo que você gostou)
+function preencherListaDashSimples(elementId, lista, keyTitulo, keyData, color, keyHora = '') {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    
+    if (lista.length === 0) {
+        el.innerHTML = '<li class="empty-msg">Nada para os próximos dias.</li>';
         return;
     }
 
-    ul.innerHTML = itensFiltrados.map(item => {
-        const hIni = getVal(item, chaveHoraIni);
-        const hFim = getVal(item, chaveHoraFim);
-        const tempo = hIni ? ` | ${hIni}${hFim ? ' - ' + hFim : ''}` : '';
-
+    el.innerHTML = lista.map(item => {
+        const hora = keyHora ? getVal(item, keyHora) : '';
         return `
-            <li>
-                <strong>${getVal(item, chaveTitulo)}</strong>
-                <span>${getVal(item, chaveData)}${tempo}</span>
+            <li style="border-left: 4px solid ${color}; padding-left: 10px; margin-bottom: 8px; list-style: none;">
+                <strong style="display:block; color:#1e293b;">${getVal(item, keyTitulo)}</strong>
+                <span style="font-size:0.85rem; color:#64748b;">
+                    ${getVal(item, keyData)} ${hora ? '| ' + hora : ''}
+                </span>
             </li>
         `;
     }).join('');
