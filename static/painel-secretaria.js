@@ -30,6 +30,25 @@ function getVal(obj, key) {
     }
     return '';
 }
+// Função auxiliar para ordenar por Data e depois por Horário
+function ordenarPorDataEHora(lista, chaveData, chaveHora) {
+    lista.sort((a, b) => {
+        const d1 = dataParaObj(getVal(a, chaveData));
+        const d2 = dataParaObj(getVal(b, chaveData));
+        if (d1 < d2) return -1;
+        if (d1 > d2) return 1;
+        const h1 = timeParaMinutos(getVal(a, chaveHora));
+        const h2 = timeParaMinutos(getVal(b, chaveHora));
+        return h1 - h2;
+    });
+}
+
+function timeParaMinutos(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return 9999;
+    const partes = timeStr.split(':');
+    if (partes.length < 2) return 9999;
+    return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
+}
 //função única para decidir se um item deve aparecer
 // Substitua a função eventoValido inteira por esta:
 function eventoValido(item, chaveEvento, chaveData) {
@@ -479,7 +498,7 @@ window.mostrarTela = function(telaId, btn) {
     // Gatilhos de renderização
     if (telaId === 'dashboard') renderizarDashboard();
     if (telaId === 'membros') renderizarMembros();
-    if (telaId === 'agenda-geral') (); // Nova
+    if (telaId === 'agenda-geral') renderizarAgendaGeralCards(); // Nova
     if (telaId === 'reservas') renderizarReservasCards(); // Nova
 };
 window.logout = function() {
@@ -760,7 +779,7 @@ async function enviarDados(urlBase, id, payload, formId = null) {
 function dataParaObj(str) {
     if (!str || typeof str !== 'string') return new Date(0);
     const p = str.split('/');
-    return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);
+    return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(NaN);
 }
 function dataIso(str) {
     if (!str) return '';
@@ -831,55 +850,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
-function () {
-    const container = document.getElementById('lista-agenda-geral-cards');
-    const dados = SISTEMA.dados.dashboard.agenda || [];
-    
-    // 1. Filtra primeiro
-    const validos = dados.filter(ev => eventoValido(ev, 'EVENTO', 'DATA'));
-    
-    // 2. Ordena por Data e Hora
-    // (Assume que o campo de hora na agenda geral é 'HORARIO')
-    ordenarPorDataEHora(validos, 'DATA', 'HORARIO');
-
-    if (validos.length === 0) {
-        container.innerHTML = '<p class="empty-msg">Nenhum evento cadastrado.</p>';
-        return;
-    }
-
-    let html = "";
-    let mesAtual = -1;
-
-    // 3. Usa a lista 'validos' que já está filtrada e ordenada
-    validos.forEach(ev => {
-        const d = dataParaObj(getVal(ev, 'DATA'));
-        const m = d.getMonth() + 1;
-
-        if (m !== mesAtual) {
-            mesAtual = m;
-            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
-        }
-
-        html += `
-            <div class="member-card">
-                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
-                <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
-                    
-                    ${getVal(ev, 'HORARIO') ? `<div><strong>Horário:</strong> ${getVal(ev, 'HORARIO')}</div>` : ''}
-                    
-                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
-                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
-                </div>
-            </div>`;
-    });
-    
-    container.innerHTML = html;
-}
 // 3. Função para renderizar Reservas
 function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
@@ -933,8 +903,8 @@ function renderizarReservasCards() {
                     <div><strong>Responsável:</strong> ${getVal(res, 'RESPONSAVEL')}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'id')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'id')}', 'reservas')">🗑️</button>
+                    <button class="btn-icon edit" onclick="prepararEdicaoReserva('${getVal(res, 'ID')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(res, 'ID')}', 'reservas')">🗑️</button>
                 </div>
             </div>`;
     });
@@ -1070,22 +1040,4 @@ function renderizarCheckboxesPastores() {
     });
 }
 
-// Função auxiliar para ordenar por Data e depois por Horário
-function ordenarPorDataEHora(lista, chaveData, chaveHora) {
-    lista.sort((a, b) => {
-        const d1 = dataParaObj(getVal(a, chaveData));
-        const d2 = dataParaObj(getVal(b, chaveData));
-        if (d1 < d2) return -1;
-        if (d1 > d2) return 1;
-        const h1 = timeParaMinutos(getVal(a, chaveHora));
-        const h2 = timeParaMinutos(getVal(b, chaveHora));
-        return h1 - h2;
-    });
-}
 
-function timeParaMinutos(timeStr) {
-    if (!timeStr || typeof timeStr !== 'string') return 9999;
-    const partes = timeStr.split(':');
-    if (partes.length < 2) return 9999;
-    return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
-}
