@@ -185,12 +185,14 @@ function renderizarDashboard() {
         if (p === 'CONGREGADO') acc.congregados++;
         else if (p === 'MEMBRO') acc.membros++;
         else if (['ADMIN', 'SECRETARIA', 'PASTOR'].includes(p)) acc.admins++;
+        else if (p == 'PASTOR']) acc.pastores++;
         acc.total++; // Incrementa o total
         return acc;
-    }, { total: 0, congregados: 0, membros: 0, admins: 0 });
+    }, { total: 0, congregados: 0, membros: 0, admins: 0, pastores: 0});
 
     // Atualiza os elementos (Garanta que o ID 'count-total' exista no seu HTML)
     if(document.getElementById('count-total')) document.getElementById('count-total').innerText = stats.total;
+    document.getElementById('count-pastores').innerText = stats.pastores;
     document.getElementById('count-membros').innerText = stats.membros;
     document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-admins').innerText = stats.admins;
