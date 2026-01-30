@@ -125,23 +125,32 @@ function renderizarDashboard() {
         return d >= hoje && d <= limite;
     };
 
-    // --- MUDANÇA AQUI: Filtrar pelo nome do Pastor Logado ---
-    const nomeLogado = getVal(SISTEMA.usuario, 'NOME'); // Pega o nome exato do perfil
+    const nomeLogado = getVal(SISTEMA.usuario, 'NOME');
 
-    // 3. Minha Agenda (Resumida + Filtrada)
+    // 3. Minha Agenda (Resumida + Filtrada + Ordenada)
     const minhaLista = SISTEMA.dados.agendaPastor || [];
     const minhaSemana = minhaLista
         .filter(i => {
-            // 1. Filtra pela data (próximos 7 dias)
             const naSemana = filtroSemana(i, 'DATA');
-            // 2. Filtra pelo nome (se eu estou na lista de pastores desse evento)
             const souEu = getVal(i, 'PASTOR').includes(nomeLogado); 
             return naSemana && souEu;
-        })
-        .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')));
+        });
+    
+    // APLICA ORDENAÇÃO (DATA + HORA)
+    ordenarPorDataEHora(minhaSemana, 'DATA', 'HORARIO');
     
     renderizarListaSimples('dash-lista-pastor', minhaSemana, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
 
+    // 4. Agenda Geral (Resumida + Ordenada)
+    const geralLista = SISTEMA.dados.dashboard.agenda || [];
+    const geralSemana = geralLista
+        .filter(i => filtroSemana(i, 'DATA') && getVal(i, 'EVENTO'));
+
+    // Agenda Geral geralmente não tem campo HORARIO padrão no seu JSON antigo, 
+    // mas se tiver, passa ele. Se não, ordena só por data.
+    ordenarPorDataEHora(geralSemana, 'DATA', 'HORARIO'); // Tenta ordenar por hora se existir
+
+    renderizarListaSimples('dash-lista-geral', geralSemana, 'EVENTO', 'DATA', '#b91c1c'); // Corrigido ID
     // 4. Agenda Geral (Resumida)
     const geralLista = SISTEMA.dados.dashboard.agenda || [];
     const geralSemana = geralLista
@@ -198,8 +207,24 @@ function renderizarMinhaAgenda() {
     const nomeLogado = getVal(SISTEMA.usuario, 'NOME');
     const listaCompleta = SISTEMA.dados.agendaPastor || [];
     
-    // Filtra apenas eventos onde este pastor está escalado
-    const meusEventos = listaCompleta.filter(i => getVal(i, 'PASTOR').includes(nomeLogado));
+    // Data de corte (Hoje 00:00:00)
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    // Filtra: (Sou o pastor) E (Data é Hoje ou Futuro)
+    const meusEventos = listaCompleta.filter(i => {
+        const souEu = getVal(i, 'PASTOR').includes(nomeLogado);
+        
+        // Verifica se é data válida e futura
+        const dataStr = getVal(i, 'DATA');
+        if (!dataStr) return false;
+        const dataEvento = dataParaObj(dataStr);
+        
+        return souEu && (dataEvento >= hoje);
+    });
+
+    // Usa a nova ordenação (Dia + Hora)
+    ordenarPorDataEHora(meusEventos, 'DATA', 'HORARIO');
 
     renderizarListaCompleta('lista-minha-agenda', meusEventos, 'EVENTO', 'DATA', '#3b82f6', true);
 }
@@ -226,7 +251,12 @@ function renderizarListaCompleta(elementId, dados, keyTitulo, keyData, corBorda,
     const container = document.getElementById(elementId);
     if (!container) return;
 
-    dados.sort((a,b) => dataParaObj(getVal(a, keyData)) - dataParaObj(getVal(b, keyData)));
+    let keyHora = 'HORARIO'; 
+    if (dados.length > 0 && (dados[0].hasOwnProperty('inicio') || dados[0].hasOwnProperty('HORARIO_INICIO'))) {
+        keyHora = dados[0].hasOwnProperty('inicio') ? 'inicio' : 'HORARIO_INICIO';
+    }
+
+    ordenarPorDataEHora(dados, keyData, keyHora);
 
     if (dados.length === 0) {
         container.innerHTML = '<p class="empty-msg">Nenhum registro encontrado.</p>';
@@ -570,3 +600,31 @@ const formatarData = (valor) => {
     const data = new Date(valor);
     return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
 };
+
+// Função auxiliar para ordenar por Data e depois por Horário
+function ordenarPorDataEHora(lista, chaveData, chaveHora) {
+    lista.sort((a, b) => {
+        // 1. Compara Datas
+        const d1 = dataParaObj(getVal(a, chaveData));
+        const d2 = dataParaObj(getVal(b, chaveData));
+        
+        if (d1 < d2) return -1;
+        if (d1 > d2) return 1;
+
+        // 2. Se as datas forem iguais, compara Horários
+        // Converte "19:30" para minutos (19*60 + 30 = 1170) para comparar
+        const h1 = timeParaMinutos(getVal(a, chaveHora));
+        const h2 = timeParaMinutos(getVal(b, chaveHora));
+
+        return h1 - h2;
+    });
+}
+
+// Converte "HH:MM" para inteiros (minutos do dia) para facilitar a ordenação
+function timeParaMinutos(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return 9999; // Joga pro final se não tiver hora
+    const partes = timeStr.split(':');
+    if (partes.length < 2) return 9999;
+    
+    return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
+}
