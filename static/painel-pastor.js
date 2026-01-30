@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Renderiza Tela Inicial
     renderizarMeusDados(); // Já deixa pronto
-    ();
+    renderizarDashboard();
 });
 
 // ============================================================
