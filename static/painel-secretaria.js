@@ -31,14 +31,18 @@ function getVal(obj, key) {
     return '';
 }
 // Função auxiliar para ordenar por Data e depois por Horário
-function ordenarPorDataEHora(lista, chaveData, chaveHora) {
+function ordenarPorDataEHora(lista, chaveData, chaveHoraIni, chaveHoraFim = '') {
     lista.sort((a, b) => {
         const d1 = dataParaObj(getVal(a, chaveData));
         const d2 = dataParaObj(getVal(b, chaveData));
-        if (d1 < d2) return -1;
-        if (d1 > d2) return 1;
-        const h1 = timeParaMinutos(getVal(a, chaveHora));
-        const h2 = timeParaMinutos(getVal(b, chaveHora));
+        if (d1 - d2 !== 0) return d1 - d2;
+
+        const h1 = timeParaMinutos(
+            getVal(a, chaveHoraIni) || getVal(a, chaveHoraFim)
+        );
+        const h2 = timeParaMinutos(
+            getVal(b, chaveHoraIni) || getVal(b, chaveHoraFim)
+        );
         return h1 - h2;
     });
 }
@@ -151,6 +155,24 @@ async function carregarTudoDoBanco() {
         });
     }
 }
+
+function renderizarReservas() {
+    const lista = SISTEMA.dados.dashboard.reservas || [];
+
+    const validas = lista.filter(r =>
+        eventoValido(r, 'ATIVIDADE', 'data')
+    );
+
+    renderizarListaCompleta(
+        'lista-reservas',
+        validas,
+        'ATIVIDADE',
+        'data',
+        '#22c55e',
+        true
+    );
+}
+
 // ============================================================
 // 4. RENDERIZAÇÃO (mantidas como cards)
 // ============================================================
