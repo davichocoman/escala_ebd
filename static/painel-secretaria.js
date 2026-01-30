@@ -178,18 +178,19 @@ function renderizarReservas() {
 // ============================================================
 // 2. Renderizador do Dashboard sincronizado com o Backend
 function renderizarDashboard() {
-    // 1. Estatísticas (Mantido)
+    // 1. Estatísticas
     const membros = SISTEMA.dados.membros || [];
     const stats = membros.reduce((acc, m) => {
         const p = getVal(m, 'PERFIL').toUpperCase();
         if (p === 'CONGREGADO') acc.congregados++;
         else if (p === 'MEMBRO') acc.membros++;
         else if (['ADMIN', 'SECRETARIA', 'PASTOR'].includes(p)) acc.admins++;
-        acc.total++;
+        acc.total++; // Incrementa o total
         return acc;
     }, { total: 0, congregados: 0, membros: 0, admins: 0 });
 
-    document.getElementById('count-total').innerText = stats.total;
+    // Atualiza os elementos (Garanta que o ID 'count-total' exista no seu HTML)
+    if(document.getElementById('count-total')) document.getElementById('count-total').innerText = stats.total;
     document.getElementById('count-membros').innerText = stats.membros;
     document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-admins').innerText = stats.admins;
@@ -198,17 +199,39 @@ function renderizarDashboard() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const limite = new Date(); limite.setDate(hoje.getDate() + 7); limite.setHours(23,59,59);
 
-    // --- FILTRO INTELIGENTE: Valida Data E Título ---
-    const filtroValido = (item, keyTitulo, keyData) => {
+    // --- FILTRO INTELIGENTE (O seu Escudo) ---
+    const filtrarItem = (item, keyTitulo, keyData) => {
         const titulo = getVal(item, keyTitulo).trim();
         const dataStr = getVal(item, keyData).trim();
         
-        // Se não tiver título ou for a string "null", ignora o card
+        // Se não tiver título ou data, ignora o card
         if (!titulo || titulo.toLowerCase() === 'null' || !dataStr) return false;
 
         const d = dataParaObj(dataStr);
+        // Retorna apenas se estiver entre hoje e o limite de 7 dias
         return d >= hoje && d <= limite;
     };
+
+    // --- PREENCHIMENTO DAS LISTAS (Usando o nome correto da função agora) ---
+
+    // 1. Agenda do Pastor (Chaves MAIÚSCULAS)
+    const listaPastor = (SISTEMA.dados.agendaPastor || [])
+        .filter(i => filtrarItem(i, 'EVENTO', 'DATA')); // <--- CORRIGIDO
+    ordenarPorDataEHora(listaPastor, 'DATA', 'HORARIO');
+    preencherListaDashSimples('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
+
+    // 2. Reservas (Chaves minúsculas do seu Backend)
+    const listaRes = (SISTEMA.dados.dashboard.reservas || [])
+        .filter(i => filtrarItem(i, 'evento', 'data')); // <--- CORRIGIDO
+    ordenarPorDataEHora(listaRes, 'data', 'inicio');
+    preencherListaDashSimples('list-dash-reservas', listaRes, 'evento', 'data', '#22c55e', 'inicio');
+
+    // 3. Agenda Geral (Chaves minúsculas do seu Backend)
+    const listaGeral = (SISTEMA.dados.dashboard.agenda || [])
+        .filter(i => filtrarItem(i, 'evento', 'data')); // <--- CORRIGIDO
+    ordenarPorDataEHora(listaGeral, 'data', ''); 
+    preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
+}
 
     // --- PREENCHIMENTO DAS LISTAS ---
 
