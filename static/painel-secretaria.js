@@ -110,7 +110,7 @@ async function carregarTudoDoBanco() {
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
         console.log("✅ Dados carregados!", SISTEMA.dados);
-        preencherSelectPastores();
+        renderizarCheckboxesPastores();
         renderizarMembros();
         renderizarAgendaPastor();
         renderizarDashboard();
@@ -532,35 +532,44 @@ window.abrirModalEventoPastor = function() {
 };
 window.prepararEdicaoPastor = function(id) {
     const a = SISTEMA.dados.agendaPastor.find(x => getVal(x, 'ID') == id);
-    if (!a) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Compromisso não encontrado',
-            text: 'O item selecionado não está mais na agenda.'
-        });
-        return;
-    }
+    if (!a) return;
+
     document.getElementById('p_id').value = getVal(a, 'ID');
     document.getElementById('p_evento').value = getVal(a, 'EVENTO');
     document.getElementById('p_data').value = dataIso(getVal(a, 'DATA'));
     document.getElementById('p_hora').value = getVal(a, 'HORARIO');
-    document.getElementById('p_hora_fim').value = getVal(a, 'HORARIO_FIM'); // Se tiver
+    document.getElementById('p_hora_fim').value = getVal(a, 'HORARIO_FIM');
     document.getElementById('p_local').value = getVal(a, 'LOCAL');
     document.getElementById('p_obs').value = getVal(a, 'OBSERVACAO');
     
-    // NOVO: Selecionar o Pastor correto
-    const selectPastor = document.getElementById('p_pastor');
-    if (selectPastor) {
-        selectPastor.value = getVal(a, 'PASTOR'); 
+    // 1. Limpa todos primeiro
+    const checkboxes = document.querySelectorAll('input[name="pastor_checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+
+    // 2. Pega a string salva (ex: "Pr. João, Pr. Marcos")
+    const pastoresSalvos = getVal(a, 'PASTOR'); 
+
+    if (pastoresSalvos) {
+        // 3. Marca os que estiverem na string
+        checkboxes.forEach(cb => {
+            // Verifica se o nome do checkbox está contido na string salva
+            if (pastoresSalvos.includes(cb.value)) {
+                cb.checked = true;
+            }
+        });
     }
 
     document.getElementById('modalPastor')?.classList.remove('hidden');
-};;
+};
 async function salvarPastor() {
     const id = document.getElementById('p_id')?.value;
     
-    // Pega o valor do select
-    const pastorSelecionado = document.getElementById('p_pastor')?.value || '';
+    // 1. Coleta todos os checkboxes marcados
+    const checkboxes = document.querySelectorAll('input[name="pastor_checkbox"]:checked');
+    
+    // 2. Transforma em um array de nomes e junta com vírgula
+    // Ex: ["Pr. João", "Pr. Marcos"] vira "Pr. João, Pr. Marcos"
+    const listaPastores = Array.from(checkboxes).map(cb => cb.value).join(', ');
 
     const dados = {
         EVENTO: document.getElementById('p_evento')?.value.trim() || '',
@@ -568,21 +577,21 @@ async function salvarPastor() {
         HORARIO: document.getElementById('p_hora')?.value || '',
         HORARIO_FIM: document.getElementById('p_hora_fim')?.value || '',
         LOCAL: document.getElementById('p_local')?.value.trim() || '',
-        PASTOR: pastorSelecionado, 
+        PASTOR: listaPastores, // Manda a string combinada
         OBSERVACAO: document.getElementById('p_obs')?.value.trim() || ''
     };
 
     if (!dados.EVENTO || !dados.DATA || !dados.HORARIO || !dados.PASTOR) {
-        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha Evento, Data, Horário e Pastor!' });
+        Swal.fire({ 
+            icon: 'warning', 
+            title: 'Campos obrigatórios', 
+            text: 'Selecione pelo menos um Pastor, além de Evento, Data e Horário.' 
+        });
         return;
     }
 
-    // AQUI: Passamos 'formPastor' como 4º argumento
     const sucesso = await enviarDados(`${API_BASE}/agenda-pastor`, id, dados, 'formPastor');
-    
-    if (sucesso) {
-        fecharModal('modalPastor');
-    }
+    if (sucesso) fecharModal('modalPastor');
 }
 window.deletarItem = async function(id, endpoint) {
     Swal.fire({
@@ -937,32 +946,45 @@ window.prepararEdicaoReserva = function(id) {
     document.getElementById('modalReserva').classList.remove('hidden');
 };
 
-function preencherSelectPastores() {
-    const select = document.getElementById('p_pastor');
-    if (!select) return;
+function renderizarCheckboxesPastores() {
+    const container = document.getElementById('container-pastores');
+    if (!container) return;
 
-    // Limpa opções anteriores (mantendo a primeira "Selecione...")
-    select.innerHTML = '<option value="">Selecione um Pastor...</option>';
+    container.innerHTML = ''; // Limpa
 
-    // Filtra membros que são Pastores (pelo Cargo ou Perfil)
+    // 1. Filtra quem é Pastor
     const pastores = SISTEMA.dados.membros.filter(m => {
         const cargo = getVal(m, 'CARGO').toUpperCase();
         const perfil = getVal(m, 'PERFIL').toUpperCase();
         const nome = getVal(m, 'NOME').toUpperCase();
         
-        // Lógica: Se o cargo contém "PASTOR" ou o perfil é "PASTOR"
         return cargo.includes('PASTOR') || perfil === 'PASTOR' || nome.startsWith('PR.');
     });
 
-    // Ordena alfabeticamente
+    // 2. Ordena
     pastores.sort((a, b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
 
-    // Adiciona ao select
+    if (pastores.length === 0) {
+        container.innerHTML = '<span style="font-size:0.8rem; color:red;">Nenhum pastor cadastrado.</span>';
+        return;
+    }
+
+    // 3. Cria os Checkboxes
     pastores.forEach(p => {
-        const option = document.createElement('option');
         const nome = getVal(p, 'NOME');
-        option.value = nome; // Vamos salvar o NOME, mas poderia ser o ID se preferir
-        option.textContent = nome;
-        select.appendChild(option);
+        
+        const label = document.createElement('label');
+        label.className = 'checkbox-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'pastor_checkbox'; // Para facilitar a seleção depois
+        checkbox.value = nome;
+        
+        const texto = document.createTextNode(nome);
+        
+        label.appendChild(checkbox);
+        label.appendChild(texto);
+        container.appendChild(label);
     });
 }
