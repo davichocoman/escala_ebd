@@ -185,61 +185,50 @@ function renderizarDashboard() {
         if (p === 'CONGREGADO') acc.congregados++;
         else if (p === 'MEMBRO') acc.membros++;
         else if (['ADMIN', 'SECRETARIA', 'PASTOR'].includes(p)) acc.admins++;
+        acc.total++;
         return acc;
-    }, { congregados: 0, membros: 0, admins: 0 });
+    }, { total: 0, congregados: 0, membros: 0, admins: 0 });
 
+    document.getElementById('count-total').innerText = stats.total;
     document.getElementById('count-membros').innerText = stats.membros;
     document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-admins').innerText = stats.admins;
 
-    // 2. Filtro de 7 Dias
+    // 2. Configuração de Datas (Hoje até +7 dias)
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const limite = new Date(); limite.setDate(hoje.getDate() + 7); limite.setHours(23,59,59);
 
-    const filtroSemana = (item, chaveData) => {
-        const d = dataParaObj(getVal(item, chaveData));
+    // --- FILTRO INTELIGENTE: Valida Data E Título ---
+    const filtroValido = (item, keyTitulo, keyData) => {
+        const titulo = getVal(item, keyTitulo).trim();
+        const dataStr = getVal(item, keyData).trim();
+        
+        // Se não tiver título ou for a string "null", ignora o card
+        if (!titulo || titulo.toLowerCase() === 'null' || !dataStr) return false;
+
+        const d = dataParaObj(dataStr);
         return d >= hoje && d <= limite;
     };
 
-    // --- PREENCHIMENTO DAS LISTAS (Atenção às Chaves!) ---
+    // --- PREENCHIMENTO DAS LISTAS ---
 
-    // 1. Agenda do Pastor (Usa Maiúsculas: EVENTO, DATA, HORARIO)
-    const listaPastor = (SISTEMA.dados.agendaPastor || []).filter(i => filtroSemana(i, 'DATA'));
+    // 1. Agenda do Pastor (Chaves: EVENTO, DATA, HORARIO)
+    const listaPastor = (SISTEMA.dados.agendaPastor || [])
+        .filter(i => filtroValido(i, 'EVENTO', 'DATA'));
     ordenarPorDataEHora(listaPastor, 'DATA', 'HORARIO');
     preencherListaDashSimples('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
 
-    // 2. Reservas (Usa Minúsculas do Python: evento, data, inicio)
-    const listaRes = (SISTEMA.dados.dashboard.reservas || []).filter(i => filtroSemana(i, 'data'));
+    // 2. Reservas (Chaves: evento, data, inicio)
+    const listaRes = (SISTEMA.dados.dashboard.reservas || [])
+        .filter(i => filtroValido(i, 'evento', 'data'));
     ordenarPorDataEHora(listaRes, 'data', 'inicio');
     preencherListaDashSimples('list-dash-reservas', listaRes, 'evento', 'data', '#22c55e', 'inicio');
 
-    // 3. Agenda Geral (Usa Minúsculas do Python: evento, data | SEM HORÁRIO)
-    const listaGeral = (SISTEMA.dados.dashboard.agenda || []).filter(i => filtroSemana(i, 'data'));
-    ordenarPorDataEHora(listaGeral, 'data', ''); // Sem chave de hora
+    // 3. Agenda Geral (Chaves: evento, data | Sem Horário)
+    const listaGeral = (SISTEMA.dados.dashboard.agenda || [])
+        .filter(i => filtroValido(i, 'evento', 'data'));
+    ordenarPorDataEHora(listaGeral, 'data', ''); 
     preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
-}
-
-// Helper para o Dashboard (Estilo que você gostou)
-function preencherListaDashSimples(elementId, lista, keyTitulo, keyData, color, keyHora = '') {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    
-    if (lista.length === 0) {
-        el.innerHTML = '<li class="empty-msg">Nada para os próximos dias.</li>';
-        return;
-    }
-
-    el.innerHTML = lista.map(item => {
-        const hora = keyHora ? getVal(item, keyHora) : '';
-        return `
-            <li style="border-left: 4px solid ${color}; padding-left: 10px; margin-bottom: 8px; list-style: none;">
-                <strong style="display:block; color:#1e293b;">${getVal(item, keyTitulo)}</strong>
-                <span style="font-size:0.85rem; color:#64748b;">
-                    ${getVal(item, keyData)} ${hora ? '| ' + hora : ''}
-                </span>
-            </li>
-        `;
-    }).join('');
 }
 
 // 1. Função de preenchimento atualizada para usar a nova ordenação
