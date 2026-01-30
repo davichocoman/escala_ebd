@@ -233,24 +233,6 @@ function renderizarDashboard() {
     preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
 }
 
-    // --- PREENCHIMENTO DAS LISTAS ---
-
-    // 1. Agenda do Pastor (Chaves: EVENTO, DATA, HORARIO)
-    const listaPastor = (SISTEMA.dados.agendaPastor || []).filter(i => filtroSemana(i, 'DATA'));
-    ordenarPorDataEHora(listaPastor, 'DATA', 'HORARIO');
-    preencherListaDashSimples('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
-
-    // 2. Reservas (Usa Minúsculas do Python: evento, data, inicio)
-    const listaRes = (SISTEMA.dados.dashboard.reservas || []).filter(i => filtroSemana(i, 'data'));
-    ordenarPorDataEHora(listaRes, 'data', 'inicio');
-    preencherListaDashSimples('list-dash-reservas', listaRes, 'evento', 'data', '#22c55e', 'inicio');
-
-    // 3. Agenda Geral (Usa Minúsculas do Python: evento, data | SEM HORÁRIO)
-    const listaGeral = (SISTEMA.dados.dashboard.agenda || []).filter(i => filtroSemana(i, 'data'));
-    ordenarPorDataEHora(listaGeral, 'data', ''); // Sem chave de hora
-    preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
-}
-
 // Helper para o Dashboard (Estilo que você gostou)
 function preencherListaDashSimples(elementId, lista, keyTitulo, keyData, color, keyHora = '') {
     const el = document.getElementById(elementId);
