@@ -178,45 +178,68 @@ function renderizarReservas() {
 // ============================================================
 // 2. Renderizador do Dashboard sincronizado com o Backend
 function renderizarDashboard() {
-    const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const limite = new Date(); 
-    limite.setDate(hoje.getDate() + 7);
-    limite.setHours(23,59,59,999);
-
-    const filtroSemana = (item, chaveEvento, chaveData) => {
-        if (!eventoValido(item, chaveEvento, chaveData)) return false;
-        const d = dataParaObj(getVal(item, chaveData));
-        return d <= limite; // eventoValido já garante que d >= hoje
-    };
-
-    // --- ESTATÍSTICAS (MANTIDO) ---
+    // 1. Estatísticas (Mantido)
     const membros = SISTEMA.dados.membros || [];
     const stats = membros.reduce((acc, m) => {
         const p = getVal(m, 'PERFIL').toUpperCase();
         if (p === 'CONGREGADO') acc.congregados++;
         else if (p === 'MEMBRO') acc.membros++;
-        else if (p === 'PASTOR') acc.pastores++;
-        else if (p === 'ADMIN') acc.admins++;
+        else if (['ADMIN', 'SECRETARIA', 'PASTOR'].includes(p)) acc.admins++;
         return acc;
-    }, { congregados: 0, membros: 0, pastores: 0, admins: 0 });
+    }, { congregados: 0, membros: 0, admins: 0 });
 
-    document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-membros').innerText = stats.membros;
-    document.getElementById('count-pastores').innerText = stats.pastores;
+    document.getElementById('count-congregados').innerText = stats.congregados;
     document.getElementById('count-admins').innerText = stats.admins;
 
-    // --- LISTAS DO DASHBOARD ---
-    // 1. Agenda do Pastor
-    preencherListaDash('list-dash-pastor', SISTEMA.dados.agendaPastor, 'EVENTO', 'DATA', 
-        (item, cd) => filtroSemana(item, 'EVENTO', cd), 'HORARIO', 'HORARIO_FIM');
+    // 2. Filtro de 7 Dias
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const limite = new Date(); limite.setDate(hoje.getDate() + 7); limite.setHours(23,59,59);
 
-    // 2. Reservas (Sincronizado com Python: 'evento', 'data', 'inicio', 'fim')
-    preencherListaDash('list-dash-reservas', SISTEMA.dados.dashboard.reservas, 'evento', 'data', 
-        (item, cd) => filtroSemana(item, 'evento', cd), 'inicio', 'fim');
+    const filtroSemana = (item, chaveData) => {
+        const d = dataParaObj(getVal(item, chaveData));
+        return d >= hoje && d <= limite;
+    };
 
-    // 3. Igreja/Agenda Geral (Sincronizado com Python: 'evento', 'data')
-    preencherListaDash('list-dash-igreja', SISTEMA.dados.dashboard.agenda, 'evento', 'data', 
-        (item, cd) => filtroSemana(item, 'evento', cd));
+    // --- PREENCHIMENTO DAS LISTAS (Atenção às Chaves!) ---
+
+    // 1. Agenda do Pastor (Usa Maiúsculas: EVENTO, DATA, HORARIO)
+    const listaPastor = (SISTEMA.dados.agendaPastor || []).filter(i => filtroSemana(i, 'DATA'));
+    ordenarPorDataEHora(listaPastor, 'DATA', 'HORARIO');
+    preencherListaDashSimples('list-dash-pastor', listaPastor, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
+
+    // 2. Reservas (Usa Minúsculas do Python: evento, data, inicio)
+    const listaRes = (SISTEMA.dados.dashboard.reservas || []).filter(i => filtroSemana(i, 'data'));
+    ordenarPorDataEHora(listaRes, 'data', 'inicio');
+    preencherListaDashSimples('list-dash-reservas', listaRes, 'evento', 'data', '#22c55e', 'inicio');
+
+    // 3. Agenda Geral (Usa Minúsculas do Python: evento, data | SEM HORÁRIO)
+    const listaGeral = (SISTEMA.dados.dashboard.agenda || []).filter(i => filtroSemana(i, 'data'));
+    ordenarPorDataEHora(listaGeral, 'data', ''); // Sem chave de hora
+    preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
+}
+
+// Helper para o Dashboard (Estilo que você gostou)
+function preencherListaDashSimples(elementId, lista, keyTitulo, keyData, color, keyHora = '') {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    
+    if (lista.length === 0) {
+        el.innerHTML = '<li class="empty-msg">Nada para os próximos dias.</li>';
+        return;
+    }
+
+    el.innerHTML = lista.map(item => {
+        const hora = keyHora ? getVal(item, keyHora) : '';
+        return `
+            <li style="border-left: 4px solid ${color}; padding-left: 10px; margin-bottom: 8px; list-style: none;">
+                <strong style="display:block; color:#1e293b;">${getVal(item, keyTitulo)}</strong>
+                <span style="font-size:0.85rem; color:#64748b;">
+                    ${getVal(item, keyData)} ${hora ? '| ' + hora : ''}
+                </span>
+            </li>
+        `;
+    }).join('');
 }
 
 // 1. Função de preenchimento atualizada para usar a nova ordenação
@@ -328,50 +351,33 @@ function renderizarAgendaPastor() {
 }
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
-    const dados = SISTEMA.dados.dashboard.agenda || [];
+    // Filtra apenas o que tem evento e data (minúsculos no Python)
+    const dados = (SISTEMA.dados.dashboard.agenda || []).filter(ev => getVal(ev, 'evento') && getVal(ev, 'data'));
     
-    // 1. Filtra primeiro (Data válida + Nome válido)
-    const validos = dados.filter(ev => eventoValido(ev, 'EVENTO', 'DATA'));
-    
-    // 2. Ordena por Data e Hora
-    // (Assume que o campo de hora na agenda geral é 'HORARIO')
-    ordenarPorDataEHora(validos, 'DATA', 'HORARIO');
-
-    if (validos.length === 0) {
-        container.innerHTML = '<p class="empty-msg">Nenhum evento cadastrado.</p>';
-        return;
-    }
+    ordenarPorDataEHora(dados, 'data', '');
 
     let html = "";
     let mesAtual = -1;
 
-    // 3. Loop na lista CORRETA (validos)
-    validos.forEach(ev => {
-        const d = dataParaObj(getVal(ev, 'DATA'));
+    dados.forEach(ev => {
+        const d = dataParaObj(getVal(ev, 'data'));
         const m = d.getMonth() + 1;
-
-        if (m !== mesAtual) {
-            mesAtual = m;
-            html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
-        }
+        if (m !== mesAtual) { mesAtual = m; html += `<div class="month-header">${NOMES_MESES[m]}</div>`; }
 
         html += `
             <div class="member-card">
-                <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
+                <div class="card-header"><strong>${getVal(ev, 'evento')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(ev, 'DATA')}</div>
-                    ${getVal(ev, 'HORARIO') ? `<div><strong>Horário:</strong> ${getVal(ev, 'HORARIO')}</div>` : ''}
-                    <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
-                    <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
+                    <div><strong>Data:</strong> ${getVal(ev, 'data')}</div>
+                    <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'ID')}', 'agenda-geral')">🗑️</button>
+                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'id')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'id')}', 'agenda-geral')">🗑️</button>
                 </div>
             </div>`;
     });
-    
-    container.innerHTML = html;
+    container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
 }
 // --- Funções Auxiliares de Formatação para o Perfil ---
 const formatarCPF = (valor) => {
