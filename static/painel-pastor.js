@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Renderiza Tela Inicial
     renderizarMeusDados(); // Já deixa pronto
-    renderizarDashboard();
+    ();
 });
 
 // ============================================================
@@ -136,9 +136,7 @@ function renderizarDashboard() {
             return naSemana && souEu;
         });
     
-    // APLICA ORDENAÇÃO (DATA + HORA)
     ordenarPorDataEHora(minhaSemana, 'DATA', 'HORARIO');
-    
     renderizarListaSimples('dash-lista-pastor', minhaSemana, 'EVENTO', 'DATA', '#3b82f6', 'HORARIO');
 
     // 4. Agenda Geral (Resumida + Ordenada)
@@ -146,17 +144,7 @@ function renderizarDashboard() {
     const geralSemana = geralLista
         .filter(i => filtroSemana(i, 'DATA') && getVal(i, 'EVENTO'));
 
-    // Agenda Geral geralmente não tem campo HORARIO padrão no seu JSON antigo, 
-    // mas se tiver, passa ele. Se não, ordena só por data.
-    ordenarPorDataEHora(geralSemana, 'DATA', 'HORARIO'); // Tenta ordenar por hora se existir
-
-    renderizarListaSimples('dash-lista-geral', geralSemana, 'EVENTO', 'DATA', '#b91c1c'); // Corrigido ID
-    // 4. Agenda Geral (Resumida)
-    const geralLista = SISTEMA.dados.dashboard.agenda || [];
-    const geralSemana = geralLista
-        .filter(i => filtroSemana(i, 'DATA') && getVal(i, 'EVENTO'))
-        .sort((a,b) => dataParaObj(getVal(a,'DATA')) - dataParaObj(getVal(b,'DATA')));
-
+    ordenarPorDataEHora(geralSemana, 'DATA', 'HORARIO'); 
     renderizarListaSimples('dash-lista-geral', geralSemana, 'EVENTO', 'DATA', '#b91c1c');
 
     // 5. Aniversariantes da Semana
@@ -179,7 +167,6 @@ function renderizarDashboard() {
         }
     }
 }
-
 // Helper para listas do dashboard
 function renderizarListaSimples(elementId, lista, keyTitulo, keyData, color, keyHora = '') {
     const el = document.getElementById(elementId);
@@ -294,7 +281,7 @@ function renderizarListaCompleta(elementId, dados, keyTitulo, keyData, corBorda,
                     ${horarioHtml}
                     <div><strong>Local:</strong> ${getVal(item, 'LOCAL')}</div>
                     
-                    ${pastores ? `<div style="color:#2563eb;"><strong>Dirigente(s):</strong> ${pastores}</div>` : ''}
+                    ${pastores ? `<div style="color:#2563eb;"><strong>Pastor(es) Responsável(eis):</strong> ${pastores}</div>` : ''}
                     ${responsavel ? `<div><strong>Resp:</strong> ${responsavel}</div>` : ''}
                     
                     ${getVal(item, 'OBSERVACAO') ? `<div><strong>Obs:</strong> ${getVal(item, 'OBSERVACAO')}</div>` : ''}
