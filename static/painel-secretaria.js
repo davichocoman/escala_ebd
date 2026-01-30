@@ -519,8 +519,11 @@ async function salvarMembro() {
         });
         return;
     }
-    await enviarDados(`${API_BASE}/membros`, id, dados);
-    document.getElementById('modalMembro')?.classList.add('hidden');
+    const sucesso = await enviarDados(`${API_BASE}/membros`, id, dados, 'formMembro');
+    
+    if (sucesso) {
+        document.getElementById('modalMembro')?.classList.add('hidden');
+    }
 }
 window.abrirModalEventoPastor = function() {
     document.getElementById('formPastor')?.reset();
@@ -565,21 +568,21 @@ async function salvarPastor() {
         HORARIO: document.getElementById('p_hora')?.value || '',
         HORARIO_FIM: document.getElementById('p_hora_fim')?.value || '',
         LOCAL: document.getElementById('p_local')?.value.trim() || '',
-        PASTOR: pastorSelecionado, // NOVO CAMPO
+        PASTOR: pastorSelecionado, 
         OBSERVACAO: document.getElementById('p_obs')?.value.trim() || ''
     };
 
     if (!dados.EVENTO || !dados.DATA || !dados.HORARIO || !dados.PASTOR) {
-        Swal.fire({ 
-            icon: 'warning', 
-            title: 'Campos obrigatórios', 
-            text: 'Evento, Data, Horário e Pastor Responsável são obrigatórios!' 
-        });
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha Evento, Data, Horário e Pastor!' });
         return;
     }
 
-    await enviarDados(`${API_BASE}/agenda-pastor`, id, dados);
-    fecharModal('modalPastor');
+    // AQUI: Passamos 'formPastor' como 4º argumento
+    const sucesso = await enviarDados(`${API_BASE}/agenda-pastor`, id, dados, 'formPastor');
+    
+    if (sucesso) {
+        fecharModal('modalPastor');
+    }
 }
 window.deletarItem = async function(id, endpoint) {
     Swal.fire({
@@ -622,15 +625,32 @@ window.fecharModal = function(id) {
 // ============================================================
 // 7. UTILITÁRIOS
 // ============================================================
-async function enviarDados(urlBase, id, payload) {
+// Substitua a função enviarDados inteira por esta:
+async function enviarDados(urlBase, id, payload, formId = null) {
     const url = id ? `${urlBase}/${id}` : urlBase;
     const method = id ? 'PUT' : 'POST';
-    // Seleciona o botão de submit do formulário ativo para desabilitá-lo
-    const btnSubmit = document.querySelector('form:not(.hidden) button[type="submit"]');
-    if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = 'Processando...';
+
+    // 1. Tenta achar o botão de submit específico do formulário
+    let btnSubmit = null;
+    let textoOriginal = 'Salvar';
+
+    if (formId) {
+        // Busca o botão dentro do formulário específico
+        const form = document.getElementById(formId);
+        if (form) btnSubmit = form.querySelector('button[type="submit"]');
+    } else {
+        // Fallback: Busca o botão do formulário visível (lógica antiga)
+        btnSubmit = document.querySelector('form:not(.hidden) button[type="submit"]');
     }
+
+    // 2. Se achou o botão, bloqueia ele
+    if (btnSubmit) {
+        textoOriginal = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        // Adiciona um efeito visual simples
+        btnSubmit.innerHTML = '<span class="material-icons spin" style="font-size:16px; vertical-align:middle; margin-right:5px;">sync</span> Processando...';
+    }
+
     try {
         const res = await fetch(url, {
             method,
@@ -640,18 +660,25 @@ async function enviarDados(urlBase, id, payload) {
             },
             body: JSON.stringify(payload)
         });
+
         const data = await res.json();
+
         if (!res.ok) {
-            // Se o backend retornou erro de CPF já existente (400)
             throw new Error(data.detail || 'Falha na API');
         }
-        await carregarTudoDoBanco();
+
+        await carregarTudoDoBanco(); // Atualiza a tela
+
+        // Sucesso
         Swal.fire({
             icon: 'success',
             title: 'Salvo com sucesso!',
-            timer: 2000,
+            timer: 1500,
             showConfirmButton: false
         });
+
+        return true; // Retorna true para indicar sucesso
+
     } catch (e) {
         console.error(e);
         Swal.fire({
@@ -659,11 +686,13 @@ async function enviarDados(urlBase, id, payload) {
             title: 'Erro ao salvar',
             text: e.message
         });
+        return false; // Retorna false em caso de erro
+
     } finally {
-        // REABILITA o botão após terminar o processo (sucesso ou erro)
+        // 3. SEMPRE Reabilita o botão no final (seja sucesso ou erro)
         if (btnSubmit) {
             btnSubmit.disabled = false;
-            btnSubmit.innerHTML = 'Salvar';
+            btnSubmit.innerHTML = textoOriginal;
         }
     }
 }
@@ -835,21 +864,33 @@ window.abrirModalReserva = () => {
 };
 // Salvar Agenda Geral (Pode ter vários no mesmo dia)
 async function salvarAgendaGeral(e) {
-    e.preventDefault();
+    if(e) e.preventDefault(); // Garante que não recarregue a página
+    
     const id = document.getElementById('ag_id').value;
     const dados = {
         DATA: dataBr(document.getElementById('ag_data').value),
         EVENTO: document.getElementById('ag_evento').value,
         LOCAL: document.getElementById('ag_local').value,
         RESPONSAVEL: document.getElementById('ag_resp').value,
-        OBSERVACAO: "" // Se você quiser adicionar um campo de obs no HTML da agenda geral futuramente
+        OBSERVACAO: "" 
     };
-    await enviarDados(`${API_BASE}/agenda-geral`, id, dados);
-    fecharModal('modalAgendaGeral');
+
+    if (!dados.DATA || !dados.EVENTO) {
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Data e Evento são obrigatórios.' });
+        return;
+    }
+
+    // AQUI: Passamos 'formAgendaGeral'
+    const sucesso = await enviarDados(`${API_BASE}/agenda-geral`, id, dados, 'formAgendaGeral');
+    
+    if (sucesso) {
+        fecharModal('modalAgendaGeral');
+    }
 }
 async function salvarReserva(e) {
-    e.preventDefault();
-    const id = document.getElementById('res_id').value; // PEGA O ID SE FOR EDIÇÃO
+    if(e) e.preventDefault();
+
+    const id = document.getElementById('res_id').value;
     const dados = {
         DATA: dataBr(document.getElementById('res_data').value),
         LOCAL: document.getElementById('res_local').value,
@@ -858,8 +899,18 @@ async function salvarReserva(e) {
         ATIVIDADE: document.getElementById('res_ativ').value,
         RESPONSAVEL: document.getElementById('res_resp').value
     };
-    await enviarDados(`${API_BASE}/reservas`, id, dados);
-    fecharModal('modalReserva');
+
+    if (!dados.DATA || !dados.HORARIO_INICIO || !dados.HORARIO_FIM || !dados.ATIVIDADE) {
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha Data, Horários e Atividade.' });
+        return;
+    }
+
+    // AQUI: Passamos 'formReserva'
+    const sucesso = await enviarDados(`${API_BASE}/reservas`, id, dados, 'formReserva');
+    
+    if (sucesso) {
+        fecharModal('modalReserva');
+    }
 }
 // --- Edição Agenda Geral ---
 window.prepararEdicaoGeral = function(id) {
