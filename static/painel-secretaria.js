@@ -110,6 +110,7 @@ async function carregarTudoDoBanco() {
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
         console.log("✅ Dados carregados!", SISTEMA.dados);
+        preencherSelectPastores();
         renderizarMembros();
         renderizarAgendaPastor();
         renderizarDashboard();
@@ -275,6 +276,8 @@ function renderizarAgendaPastor() {
         }
         // MUDANÇA AQUI: Usando 'member-card' e estrutura igual a de Reservas
         // Cor azul (#3b82f6) para diferenciar do verde das reservas
+        const nomePastor = getVal(a, 'PASTOR'); // Pega o nome
+
         html += `
         <div class="member-card" style="border-left: 5px solid #3b82f6;">
             <div class="card-header">
@@ -283,6 +286,9 @@ function renderizarAgendaPastor() {
             <div class="card-body">
                 <div><strong>Data:</strong> ${getVal(a, 'DATA')}</div>
                 <div><strong>Horário:</strong> ${getVal(a, 'HORARIO')} ${getVal(a, 'HORARIO_FIM') ? '- ' + getVal(a, 'HORARIO_FIM') : ''}</div>
+                
+                ${nomePastor ? `<div><strong>Pastor:</strong> ${nomePastor}</div>` : ''}
+                
                 <div><strong>Local:</strong> ${getVal(a, 'LOCAL')}</div>
                 ${getVal(a, 'OBSERVACAO') ? `<div><strong>Obs:</strong> ${getVal(a, 'OBSERVACAO')}</div>` : ''}
             </div>
@@ -535,24 +541,43 @@ window.prepararEdicaoPastor = function(id) {
     document.getElementById('p_evento').value = getVal(a, 'EVENTO');
     document.getElementById('p_data').value = dataIso(getVal(a, 'DATA'));
     document.getElementById('p_hora').value = getVal(a, 'HORARIO');
+    document.getElementById('p_hora_fim').value = getVal(a, 'HORARIO_FIM'); // Se tiver
     document.getElementById('p_local').value = getVal(a, 'LOCAL');
     document.getElementById('p_obs').value = getVal(a, 'OBSERVACAO');
+    
+    // NOVO: Selecionar o Pastor correto
+    const selectPastor = document.getElementById('p_pastor');
+    if (selectPastor) {
+        selectPastor.value = getVal(a, 'PASTOR'); 
+    }
+
     document.getElementById('modalPastor')?.classList.remove('hidden');
-};
+};;
 async function salvarPastor() {
     const id = document.getElementById('p_id')?.value;
+    
+    // Pega o valor do select
+    const pastorSelecionado = document.getElementById('p_pastor')?.value || '';
+
     const dados = {
         EVENTO: document.getElementById('p_evento')?.value.trim() || '',
         DATA: dataBr(document.getElementById('p_data')?.value),
         HORARIO: document.getElementById('p_hora')?.value || '',
-        HORARIO_FIM: document.getElementById('p_hora_fim')?.value || '', // CAPTURA O FIM
+        HORARIO_FIM: document.getElementById('p_hora_fim')?.value || '',
         LOCAL: document.getElementById('p_local')?.value.trim() || '',
+        PASTOR: pastorSelecionado, // NOVO CAMPO
         OBSERVACAO: document.getElementById('p_obs')?.value.trim() || ''
     };
-    if (!dados.EVENTO || !dados.DATA || !dados.HORARIO || !dados.HORARIO_FIM ) {
-        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Evento, Data, Horário e Horário de Término são obrigatórios!' });
+
+    if (!dados.EVENTO || !dados.DATA || !dados.HORARIO || !dados.PASTOR) {
+        Swal.fire({ 
+            icon: 'warning', 
+            title: 'Campos obrigatórios', 
+            text: 'Evento, Data, Horário e Pastor Responsável são obrigatórios!' 
+        });
         return;
     }
+
     await enviarDados(`${API_BASE}/agenda-pastor`, id, dados);
     fecharModal('modalPastor');
 }
@@ -860,3 +885,33 @@ window.prepararEdicaoReserva = function(id) {
     document.getElementById('res_resp').value = getVal(res, 'RESPONSAVEL');
     document.getElementById('modalReserva').classList.remove('hidden');
 };
+
+function preencherSelectPastores() {
+    const select = document.getElementById('p_pastor');
+    if (!select) return;
+
+    // Limpa opções anteriores (mantendo a primeira "Selecione...")
+    select.innerHTML = '<option value="">Selecione um Pastor...</option>';
+
+    // Filtra membros que são Pastores (pelo Cargo ou Perfil)
+    const pastores = SISTEMA.dados.membros.filter(m => {
+        const cargo = getVal(m, 'CARGO').toUpperCase();
+        const perfil = getVal(m, 'PERFIL').toUpperCase();
+        const nome = getVal(m, 'NOME').toUpperCase();
+        
+        // Lógica: Se o cargo contém "PASTOR" ou o perfil é "PASTOR"
+        return cargo.includes('PASTOR') || perfil === 'PASTOR' || nome.startsWith('PR.');
+    });
+
+    // Ordena alfabeticamente
+    pastores.sort((a, b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
+
+    // Adiciona ao select
+    pastores.forEach(p => {
+        const option = document.createElement('option');
+        const nome = getVal(p, 'NOME');
+        option.value = nome; // Vamos salvar o NOME, mas poderia ser o ID se preferir
+        option.textContent = nome;
+        select.appendChild(option);
+    });
+}
