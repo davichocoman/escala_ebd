@@ -176,11 +176,9 @@ function renderizarReservas() {
 // ============================================================
 // 4. RENDERIZAÇÃO (mantidas como cards)
 // ============================================================
-// Substitua a função renderizarDashboard inteira por esta:
+// 2. Renderizador do Dashboard sincronizado com o Backend
 function renderizarDashboard() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
-    
-    // CRIAR O LIMITE DE 7 DIAS
     const limite = new Date(); 
     limite.setDate(hoje.getDate() + 7);
     limite.setHours(23,59,59,999);
@@ -188,10 +186,10 @@ function renderizarDashboard() {
     const filtroSemana = (item, chaveEvento, chaveData) => {
         if (!eventoValido(item, chaveEvento, chaveData)) return false;
         const d = dataParaObj(getVal(item, chaveData));
-        return d <= limite;
+        return d <= limite; // eventoValido já garante que d >= hoje
     };
 
-    // --- ESTATÍSTICAS ---
+    // --- ESTATÍSTICAS (MANTIDO) ---
     const membros = SISTEMA.dados.membros || [];
     const stats = membros.reduce((acc, m) => {
         const p = getVal(m, 'PERFIL').toUpperCase();
@@ -207,59 +205,41 @@ function renderizarDashboard() {
     document.getElementById('count-pastores').innerText = stats.pastores;
     document.getElementById('count-admins').innerText = stats.admins;
 
-    // --- PREENCHIMENTO DAS LISTAS ---
-
+    // --- LISTAS DO DASHBOARD ---
     // 1. Agenda do Pastor
-    const listaPastor = SISTEMA.dados.agendaPastor || [];
-    preencherListaDash(
-        'list-dash-pastor', 
-        listaPastor, 
-        'EVENTO', 
-        'DATA', 
-        (item, chaveData) => filtroSemana(item, 'EVENTO', chaveData), 
-        'HORARIO', 
-        'HORARIO_FIM'
-    );
+    preencherListaDash('list-dash-pastor', SISTEMA.dados.agendaPastor, 'EVENTO', 'DATA', 
+        (item, cd) => filtroSemana(item, 'EVENTO', cd), 'HORARIO', 'HORARIO_FIM');
 
-    // 2. Reservas (CORRIGIDO AQUI)
-    const listaReservas = SISTEMA.dados.dashboard.reservas || [];
-    preencherListaDash(
-      'list-dash-reservas',
-      listaReservas,
-      'evento',   // Mudou de ATIVIDADE para evento
-      'data',
-      (item, chaveData) => filtroSemana(item, 'evento', chaveData), // Mudou de ATIVIDADE para evento
-      'inicio',   // Mudou de HORARIO_INICIO para inicio
-      'fim'       // Mudou de HORARIO_FIM para fim
-    );
+    // 2. Reservas (Sincronizado com Python: 'evento', 'data', 'inicio', 'fim')
+    preencherListaDash('list-dash-reservas', SISTEMA.dados.dashboard.reservas, 'evento', 'data', 
+        (item, cd) => filtroSemana(item, 'evento', cd), 'inicio', 'fim');
 
-    // 3. Igreja (Agenda Geral)
-    const listaIgreja = SISTEMA.dados.dashboard.agenda || [];
-    preencherListaDash(
-      'list-dash-igreja',
-      listaIgreja,
-      'EVENTO',
-      'DATA',
-      (item, chaveData) => filtroSemana(item, 'EVENTO', chaveData),
-      'HORARIO'
-    );
+    // 3. Igreja/Agenda Geral (Sincronizado com Python: 'evento', 'data')
+    preencherListaDash('list-dash-igreja', SISTEMA.dados.dashboard.agenda, 'evento', 'data', 
+        (item, cd) => filtroSemana(item, 'evento', cd));
 }
 
+// 1. Função de preenchimento atualizada para usar a nova ordenação
 function preencherListaDash(idElemento, lista, chaveTitulo, chaveData, filtro, chaveHoraIni = '', chaveHoraFim = '') {
     const ul = document.getElementById(idElemento);
     if (!ul) return;
+
+    // Filtra os itens
     const itensFiltrados = lista.filter(item => filtro(item, chaveData));
-    itensFiltrados.sort((a,b) => dataParaObj(getVal(a, chaveData)) - dataParaObj(getVal(b, chaveData)));
+
+    // --- ORDENAÇÃO POR DATA E HORA ---
+    ordenarPorDataEHora(itensFiltrados, chaveData, chaveHoraIni, chaveHoraFim);
+
     if (itensFiltrados.length === 0) {
-        ul.innerHTML = '<li class="empty-msg">Nada agendado.</li>';
+        ul.innerHTML = '<li class="empty-msg">Nada para os próximos 7 dias.</li>';
         return;
     }
+
     ul.innerHTML = itensFiltrados.map(item => {
-        const hIni = chaveHoraIni ? getVal(item, chaveHoraIni) : '';
-        const hFim = chaveHoraFim ? getVal(item, chaveHoraFim) : '';
-       
-        // Formata: "26/01 | 19:00 - 21:00" ou apenas "26/01 | 19:00"
+        const hIni = getVal(item, chaveHoraIni);
+        const hFim = getVal(item, chaveHoraFim);
         const tempo = hIni ? ` | ${hIni}${hFim ? ' - ' + hFim : ''}` : '';
+
         return `
             <li>
                 <strong>${getVal(item, chaveTitulo)}</strong>
