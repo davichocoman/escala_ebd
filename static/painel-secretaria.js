@@ -233,6 +233,26 @@ function renderizarDashboard() {
         .filter(i => filtrarItem(i, 'evento', 'data')); // <--- CORRIGIDO
     ordenarPorDataEHora(listaGeral, 'data', ''); 
     preencherListaDashSimples('list-dash-igreja', listaGeral, 'evento', 'data', '#ef4444');
+
+    // 5. Aniversariantes da Semana
+    const aniversariantes = getAniversariantesProximos(SISTEMA.dados.membros);
+    const elNiver = document.getElementById('dash-lista-niver');
+    
+    if (elNiver) {
+        if (aniversariantes.length === 0) {
+            elNiver.innerHTML = '<p class="empty-msg">Nenhum aniversariante nesta semana.</p>';
+        } else {
+            elNiver.innerHTML = aniversariantes.map(m => `
+                <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
+                        <div style="font-size:0.85rem; color:#64748b">Dia ${m.diaAniversario}</div>
+                    </div>
+                    <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
+                </div>
+            `).join('');
+        }
+    }
 }
 
 // Helper para o Dashboard (Estilo que você gostou)
@@ -1034,4 +1054,51 @@ function renderizarCheckboxesPastores() {
     });
 }
 
+function getAniversariantesProximos(listaMembros) {
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    
+    const limite = new Date();
+    limite.setDate(hoje.getDate() + 7); // Próximos 7 dias
+    
+    return listaMembros.filter(m => {
+        const nascRaw = getVal(m, 'NASCIMENTO');
+        if (!nascRaw) return false;
+        
+        // Assume formato YYYY-MM-DD ou converte
+        // Se seu banco salva DD/MM/YYYY, precisa tratar:
+        let dia, mes;
+        if (nascRaw.includes('/')) {
+            [dia, mes] = nascRaw.split('/');
+        } else if (nascRaw.includes('-')) {
+            const parts = nascRaw.split('-');
+            dia = parts[2];
+            mes = parts[1];
+        } else {
+            return false;
+        }
+
+        // Cria data de aniversário neste ano
+        const niverEsteAno = new Date(hoje.getFullYear(), parseInt(mes)-1, parseInt(dia));
+        
+        // Se já passou este ano, tenta ano que vem (para casos de fim de dezembro/começo de janeiro)
+        if (niverEsteAno < hoje) {
+            niverEsteAno.setFullYear(hoje.getFullYear() + 1);
+        }
+
+        // Verifica se está dentro do intervalo
+        const estaNaSemana = niverEsteAno >= hoje && niverEsteAno <= limite;
+        
+        if (estaNaSemana) {
+            m.diaAniversario = `${dia}/${mes}`; // Guarda pra exibir fácil
+        }
+        
+        return estaNaSemana;
+    }).sort((a,b) => {
+        // Ordena por dia
+        const da = a.diaAniversario.split('/').reverse().join('');
+        const db = b.diaAniversario.split('/').reverse().join('');
+        return da.localeCompare(db);
+    });
+}
 
