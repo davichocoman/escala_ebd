@@ -184,7 +184,7 @@ function renderizarDashboard() {
         const p = getVal(m, 'PERFIL').toUpperCase();
         if (p === 'CONGREGADO') acc.congregados++;
         else if (p === 'MEMBRO') acc.membros++;
-        else if (['ADMIN', 'SECRETARIA', 'PASTOR'].includes(p)) acc.admins++;
+        else if (['ADMIN', 'SECRETARIA'].includes(p)) acc.admins++;
         else if (p == 'PASTOR') acc.pastores++;
         acc.total++; // Incrementa o total
         return acc;
