@@ -114,6 +114,8 @@ async function carregarTudoDoBanco() {
         renderizarMembros();
         renderizarAgendaPastor();
         renderizarDashboard();
+        renderizarAgendaGeralCards(); 
+        renderizarReservasCards();
         renderizarMeusDados();
     } catch (erro) {
         console.error("Erro fatal ao carregar:", erro);
@@ -256,9 +258,12 @@ function renderizarMembros() {
 function renderizarAgendaPastor() {
     const container = document.getElementById('lista-agenda-pastor');
     if (!container) return;
+    
     const lista = SISTEMA.dados.agendaPastor || [];
     const filtered = lista.filter(a => eventoValido(a, 'EVENTO', 'DATA'));
-    filtered.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+    
+    // USAR A NOVA ORDENAÇÃO
+    ordenarPorDataEHora(filtered, 'DATA', 'HORARIO');
     if (filtered.length === 0) {
         container.innerHTML = '<div class="empty-msg">Agenda vazia.</div>';
         return;
@@ -782,7 +787,12 @@ const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUN
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
     const dados = SISTEMA.dados.dashboard.agenda || [];
-    dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+    
+    // Filtra primeiro
+    const validos = dados.filter(ev => eventoValido(ev, 'EVENTO', 'DATA'));
+    
+    // USAR A NOVA ORDENAÇÃO (Tenta ordenar por HORARIO se existir, senão só DATA)
+    ordenarPorDataEHora(validos, 'DATA', 'HORARIO');
     let html = "";
     let mesAtual = -1;
     dados
@@ -818,8 +828,15 @@ function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
     const dados = SISTEMA.dados.dashboard.reservas || [];
     
-    // Ordenação inicial
-    dados.sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
+    // Filtra
+    const validos = dados.filter(res => eventoValido(res, 'EVENTO', 'DATA'));
+    
+    // USAR A NOVA ORDENAÇÃO (Usa 'HORARIO_INICIO' ou 'inicio')
+    // Verifica qual chave de hora usar baseada no primeiro item ou padrão 'HORARIO_INICIO'
+    let keyHora = 'HORARIO_INICIO';
+    if(validos.length > 0 && validos[0].inicio) keyHora = 'inicio';
+
+    ordenarPorDataEHora(validos, 'DATA', keyHora);
 
     let html = "";
     let mesAtual = -1;
@@ -987,4 +1004,26 @@ function renderizarCheckboxesPastores() {
         label.appendChild(texto);
         container.appendChild(label);
     });
+}
+
+// Função auxiliar para ordenar por Data e depois por Horário
+function ordenarPorDataEHora(lista, chaveData, chaveHora) {
+    lista.sort((a, b) => {
+        const d1 = dataParaObj(getVal(a, chaveData));
+        const d2 = dataParaObj(getVal(b, chaveData));
+        
+        if (d1 < d2) return -1;
+        if (d1 > d2) return 1;
+
+        const h1 = timeParaMinutos(getVal(a, chaveHora));
+        const h2 = timeParaMinutos(getVal(b, chaveHora));
+        return h1 - h2;
+    });
+}
+
+function timeParaMinutos(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return 9999;
+    const partes = timeStr.split(':');
+    if (partes.length < 2) return 9999;
+    return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
 }
