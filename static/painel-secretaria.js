@@ -1135,10 +1135,18 @@ function getAniversariantesProximos(listaMembros) {
     });
 }
 
-// Processa a foto: Lê, Redimensiona e Mostra Preview
+// Processa a foto: Lê, Redimensiona agressivamente e Mostra Preview
 function processarFoto(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
+        
+        // Verifica tamanho inicial (se for > 5MB nem tenta)
+        if (file.size > 5 * 1024 * 1024) {
+            Swal.fire('Arquivo muito grande', 'Por favor, escolha uma imagem menor que 5MB.', 'warning');
+            input.value = ''; // Limpa o input
+            return;
+        }
+
         const reader = new FileReader();
 
         reader.onload = function(e) {
@@ -1146,27 +1154,51 @@ function processarFoto(input) {
             img.src = e.target.result;
             
             img.onload = function() {
-                // Redimensionar para no máximo 300px de largura (mantendo aspecto)
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                const MAX_WIDTH = 300;
+                // REDIMENSIONAMENTO AGRESSIVO
+                // Google Sheets aceita até 50.000 caracteres por célula.
+                // 150px de largura é suficiente para uma foto 3x4 na tela.
+                const MAX_WIDTH = 150; 
                 const scale = MAX_WIDTH / img.width;
                 const width = MAX_WIDTH;
                 const height = img.height * scale;
 
                 canvas.width = width;
                 canvas.height = height;
+
+                // Desenha a imagem redimensionada
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Converte para Base64 (JPEG qualidade 0.7)
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                // Converte para Base64 com BAIXA QUALIDADE (0.5 ou 50%)
+                // Isso reduz drasticamente o tamanho da string final
+                let dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+
+                // VERIFICAÇÃO DE SEGURANÇA
+                if (dataUrl.length > 49000) {
+                    // Se ainda for grande, tenta reduzir mais a qualidade
+                    dataUrl = canvas.toDataURL('image/jpeg', 0.3); 
+                }
+
+                if (dataUrl.length > 50000) {
+                     Swal.fire('Imagem muito complexa', 'Mesmo redimensionada, essa foto é muito pesada para o sistema. Tente uma foto mais simples ou corte-a antes.', 'error');
+                     return;
+                }
+
+                console.log("Tamanho final da string:", dataUrl.length); // Para debug
 
                 // Atualiza tela e input hidden
-                document.getElementById('previewFoto').src = dataUrl;
-                document.getElementById('previewFoto').style.display = 'block';
-                document.getElementById('iconFoto').style.display = 'none';
-                document.getElementById('m_foto_base64').value = dataUrl;
+                const preview = document.getElementById('previewFoto');
+                const icon = document.getElementById('iconFoto');
+                const hiddenInput = document.getElementById('m_foto_base64');
+
+                if(preview) {
+                    preview.src = dataUrl;
+                    preview.style.display = 'block';
+                }
+                if(icon) icon.style.display = 'none';
+                if(hiddenInput) hiddenInput.value = dataUrl;
             }
         }
         reader.readAsDataURL(file);
