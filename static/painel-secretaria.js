@@ -608,6 +608,27 @@ window.prepararEdicaoMembro = function(id) {
 };
 async function salvarMembro() {
     const id = document.getElementById('m_id')?.value;
+    
+    // Pega a string gigante da foto
+    const fotoFull = document.getElementById('m_foto_base64')?.value || '';
+    
+    // Define o tamanho do pedaço
+    const CHUNK_SIZE = 45000;
+    
+    // Inicializa as variáveis
+    let foto1 = "", foto2 = "", foto3 = "";
+
+    // Só fatia se tiver conteúdo
+    if (fotoFull.length > 0) {
+        if (fotoFull.length > (CHUNK_SIZE * 3)) {
+            Swal.fire({ icon: 'error', title: 'Foto muito grande', text: 'A foto escolhida é muito pesada mesmo após compressão. Tente outra.' });
+            return;
+        }
+        foto1 = fotoFull.substring(0, CHUNK_SIZE);
+        foto2 = fotoFull.substring(CHUNK_SIZE, CHUNK_SIZE * 2);
+        foto3 = fotoFull.substring(CHUNK_SIZE * 2, CHUNK_SIZE * 3);
+    }
+
     const dados = {
         NOME: document.getElementById('m_nome')?.value.trim() || '',
         NASCIMENTO: dataBr(document.getElementById('m_nasc')?.value),
@@ -626,7 +647,8 @@ async function salvarMembro() {
         BATISMO: dataBr(document.getElementById('m_batismo')?.value.trim() || ''),
         DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
         PERFIL: document.getElementById('m_perfil')?.value || '',
-        // Envia as fatias
+        
+        // Envia as fatias (vazias ou com dados)
         FOTO_1: foto1,
         FOTO_2: foto2,
         FOTO_3: foto3
@@ -652,6 +674,7 @@ async function salvarMembro() {
         document.getElementById('modalMembro')?.classList.add('hidden');
     }
 }
+
 window.abrirModalEventoPastor = function() {
     document.getElementById('formPastor')?.reset();
     document.getElementById('p_id').value = '';
