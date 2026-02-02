@@ -626,7 +626,10 @@ async function salvarMembro() {
         BATISMO: dataBr(document.getElementById('m_batismo')?.value.trim() || ''),
         DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
         PERFIL: document.getElementById('m_perfil')?.value || '',
-        FOTO: document.getElementById('m_foto_base64')?.value || ''
+        // Envia as fatias
+        FOTO_1: foto1,
+        FOTO_2: foto2,
+        FOTO_3: foto3
     };
     // Validação básica no front
     if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO || !dados.ESTADO_CIVIL || !dados.PROFISSAO || !dados.SITUACAO_TRABALHO || !dados.DEPARTAMENTO || !dados.PERFIL ) {
@@ -635,6 +638,12 @@ async function salvarMembro() {
             title: 'Campos obrigatórios',
             text: 'Nome, CPF, Data de Nascimento, Endereço, Contato, Estado Civil, Profissão, Situação de Trabalho, Departamento e Perfil são obrigatórios!'
         });
+        return;
+    }
+
+    // Se a foto for maior que a capacidade das 3 células (aprox 135k chars)
+    if (fotoFull.length > (CHUNK_SIZE * 3)) {
+        Swal.fire({ icon: 'error', title: 'Foto muito grande', text: 'A foto escolhida é muito pesada mesmo após compressão. Tente outra.' });
         return;
     }
     const sucesso = await enviarDados(`${API_BASE}/membros`, id, dados, 'formMembro');
@@ -1140,10 +1149,10 @@ function processarFoto(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         
-        // Verifica tamanho inicial (se for > 5MB nem tenta)
+        // Limite de upload inicial 5MB
         if (file.size > 5 * 1024 * 1024) {
-            Swal.fire('Arquivo muito grande', 'Por favor, escolha uma imagem menor que 5MB.', 'warning');
-            input.value = ''; // Limpa o input
+            Swal.fire('Arquivo muito grande', 'Escolha uma imagem menor que 5MB.', 'warning');
+            input.value = '';
             return;
         }
 
@@ -1157,10 +1166,8 @@ function processarFoto(input) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // REDIMENSIONAMENTO AGRESSIVO
-                // Google Sheets aceita até 50.000 caracteres por célula.
-                // 150px de largura é suficiente para uma foto 3x4 na tela.
-                const MAX_WIDTH = 150; 
+                // Podemos aumentar um pouco agora: 200px largura
+                const MAX_WIDTH = 200; 
                 const scale = MAX_WIDTH / img.width;
                 const width = MAX_WIDTH;
                 const height = img.height * scale;
@@ -1168,27 +1175,14 @@ function processarFoto(input) {
                 canvas.width = width;
                 canvas.height = height;
 
-                // Desenha a imagem redimensionada
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Converte para Base64 com BAIXA QUALIDADE (0.5 ou 50%)
-                // Isso reduz drasticamente o tamanho da string final
-                let dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                // Qualidade 0.6 (60%) é um bom balanço
+                let dataUrl = canvas.toDataURL('image/jpeg', 0.6);
 
-                // VERIFICAÇÃO DE SEGURANÇA
-                if (dataUrl.length > 49000) {
-                    // Se ainda for grande, tenta reduzir mais a qualidade
-                    dataUrl = canvas.toDataURL('image/jpeg', 0.3); 
-                }
+                console.log("Tamanho Base64:", dataUrl.length);
 
-                if (dataUrl.length > 50000) {
-                     Swal.fire('Imagem muito complexa', 'Mesmo redimensionada, essa foto é muito pesada para o sistema. Tente uma foto mais simples ou corte-a antes.', 'error');
-                     return;
-                }
-
-                console.log("Tamanho final da string:", dataUrl.length); // Para debug
-
-                // Atualiza tela e input hidden
+                // Atualiza tela
                 const preview = document.getElementById('previewFoto');
                 const icon = document.getElementById('iconFoto');
                 const hiddenInput = document.getElementById('m_foto_base64');
