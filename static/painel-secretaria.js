@@ -289,21 +289,30 @@ function renderizarMembros() {
         container.innerHTML = '<div class="empty-msg">Nenhum membro encontrado.</div>';
         return;
     }
-    container.innerHTML = filtrados.map(m => `
+    container.innerHTML = filtrados.map(m => {
+        const foto = getVal(m, 'FOTO');
+        const avatarHtml = foto && foto.length > 20 
+            ? `<img src="${foto}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.1);">`
+            : `<div style="width:50px; height:50px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#64748b;"><span class="material-icons">person</span></div>`;
+
+        return`
         <div class="member-card">
-            <div class="card-header">
-                <strong>${getVal(m, 'NOME')}</strong>
-            </div>
-            <div class="card-body">
-                <div><strong>PERFIL:</strong> <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span></div>
-                <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
-            </div>
-            <div class="card-actions">
-                <button class="btn-icon edit" onclick="prepararEdicaoMembro('${getVal(m, 'ID')}')">✏️</button>
-                <button class="btn-icon delete" onclick="deletarItem('${getVal(m, 'ID')}', 'membros')">🗑️</button>
+            <div class="card-header" style="display:flex; align-items:center; gap:15px;">
+                ${avatarHtml}
+                <div class="card-header">
+                    <strong>${getVal(m, 'NOME')}</strong>
+                </div>
+                <div class="card-body">
+                    <div><strong>PERFIL:</strong> <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span></div>
+                    <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon edit" onclick="prepararEdicaoMembro('${getVal(m, 'ID')}')">✏️</button>
+                    <button class="btn-icon delete" onclick="deletarItem('${getVal(m, 'ID')}', 'membros')">🗑️</button>
+                </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 function renderizarAgendaPastor() {
     const container = document.getElementById('lista-agenda-pastor');
@@ -538,6 +547,12 @@ window.logout = function() {
 window.abrirModalMembro = function() {
     document.getElementById('formMembro')?.reset();
     document.getElementById('m_id').value = '';
+// Limpa foto
+    document.getElementById('previewFoto').src = '';
+    document.getElementById('previewFoto').style.display = 'none';
+    document.getElementById('iconFoto').style.display = 'block';
+    document.getElementById('m_foto_base64').value = '';
+
     document.getElementById('modalMembro')?.classList.remove('hidden');
 };
 window.prepararEdicaoMembro = function(id) {
@@ -572,6 +587,23 @@ window.prepararEdicaoMembro = function(id) {
     set('m_departamento', getVal(m, 'DEPARTAMENTO'));
     set('m_batismo', dataIso(getVal(m, 'BATISMO')));
     set('m_perfil', getVal(m, 'PERFIL'));
+    // Lógica da Foto
+    const fotoBase64 = getVal(m, 'FOTO');
+    const imgPreview = document.getElementById('previewFoto');
+    const icon = document.getElementById('iconFoto');
+    const inputHidden = document.getElementById('m_foto_base64');
+
+    if (fotoBase64 && fotoBase64.length > 20) {
+        imgPreview.src = fotoBase64;
+        imgPreview.style.display = 'block';
+        icon.style.display = 'none';
+        inputHidden.value = fotoBase64;
+    } else {
+        imgPreview.src = '';
+        imgPreview.style.display = 'none';
+        icon.style.display = 'block';
+        inputHidden.value = '';
+    }
     document.getElementById('modalMembro')?.classList.remove('hidden');
 };
 async function salvarMembro() {
@@ -593,7 +625,8 @@ async function salvarMembro() {
         CARGO: document.getElementById('m_cargo')?.value.trim() || '',
         BATISMO: dataBr(document.getElementById('m_batismo')?.value.trim() || ''),
         DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
-        PERFIL: document.getElementById('m_perfil')?.value || ''
+        PERFIL: document.getElementById('m_perfil')?.value || '',
+        FOTO: document.getElementById('m_foto_base64')?.value || ''
     };
     // Validação básica no front
     if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO || !dados.ESTADO_CIVIL || !dados.PROFISSAO || !dados.SITUACAO_TRABALHO || !dados.DEPARTAMENTO || !dados.PERFIL ) {
@@ -1102,3 +1135,40 @@ function getAniversariantesProximos(listaMembros) {
     });
 }
 
+// Processa a foto: Lê, Redimensiona e Mostra Preview
+function processarFoto(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            
+            img.onload = function() {
+                // Redimensionar para no máximo 300px de largura (mantendo aspecto)
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const MAX_WIDTH = 300;
+                const scale = MAX_WIDTH / img.width;
+                const width = MAX_WIDTH;
+                const height = img.height * scale;
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Converte para Base64 (JPEG qualidade 0.7)
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                // Atualiza tela e input hidden
+                document.getElementById('previewFoto').src = dataUrl;
+                document.getElementById('previewFoto').style.display = 'block';
+                document.getElementById('iconFoto').style.display = 'none';
+                document.getElementById('m_foto_base64').value = dataUrl;
+            }
+        }
+        reader.readAsDataURL(file);
+    }
+}
