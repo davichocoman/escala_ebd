@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('userDisplay').innerHTML = `
         <div style="display:flex; align-items:center; gap:10px;">
             ${imgHtml}
-            <strong>${nome}</strong>
+            Olá, <strong>${nome}</strong>
         </div>`;
 
     // CONFIGURAR A PESQUISA (NOVO)
