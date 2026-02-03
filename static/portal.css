@@ -735,3 +735,48 @@ body {
     border-radius: 6px;
     cursor: pointer;
 }
+
+.install-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #1e293b;
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    border-bottom: 2px solid #3b82f6;
+    transition: 0.3s ease-in-out;
+}
+
+.install-content { display: flex; align-items: center; gap: 12px; }
+
+.install-text { display: flex; flex-direction: column; }
+.install-text strong { font-size: 0.95rem; }
+.install-text span { font-size: 0.8rem; opacity: 0.8; }
+
+.btn-install-now {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-dismiss {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.hidden { display: none !important; }
