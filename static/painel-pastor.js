@@ -308,25 +308,36 @@ function renderizarMembros() {
         const contato = getVal(m, 'CONTATO');
         const linkZap = gerarLinkZap(contato);
         const endereco = getVal(m, 'ENDERECO');
-        // Cria link do Google Maps
         const linkMaps = endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}` : '#';
+        
+        // --- LÓGICA DA FOTO ---
+        const foto = getVal(m, 'FOTO');
+        const avatarHtml = foto && foto.length > 20 
+            ? `<img src="${foto}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.1);">`
+            : `<div style="width:50px; height:50px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#64748b; font-weight:bold; border:2px solid #fff;">${getVal(m, 'NOME').charAt(0)}</div>`;
+        // ----------------------
 
         return `
         <div class="member-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <strong style="font-size:1.1rem; color:#1e293b;">${getVal(m, 'NOME')}</strong>
-                <span class="badge-perfil">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
+                
+                <div style="display:flex; align-items:center; gap:10px;">
+                    ${avatarHtml}
+                    <div style="display:flex; flex-direction:column;">
+                        <strong style="font-size:1.1rem; color:#1e293b;">${getVal(m, 'NOME')}</strong>
+                        <span class="badge-perfil" style="align-self:flex-start; font-size:0.75rem;">${getVal(m, 'PERFIL') || 'MEMBRO'}</span>
+                    </div>
+                </div>
+
             </div>
             
-            <div style="color:#64748b; font-size:0.95rem; display:flex; flex-direction:column; gap:8px;">
-                
-                <div style="display:flex; align-items:center; gap:8px;">
+            <div style="color:#64748b; font-size:0.95rem; display:flex; flex-direction:column; gap:8px; margin-left: 60px;"> <div style="display:flex; align-items:center; gap:8px;">
                     <span class="material-icons" style="font-size:1.2rem; color:#64748b;">smartphone</span>
                     <span style="flex:1;">${contato || 'Sem contato'}</span>
                     ${contato ? `
-                        <a href="${linkZap}" target="_blank" style="text-decoration:none;" title="Chamar no WhatsApp">
-                            <button style="background:#25D366; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                                <span class="material-icons" style="color:white; font-size:18px;">send</span>
+                        <a href="${linkZap}" target="_blank" style="text-decoration:none;">
+                            <button style="background:#25D366; border:none; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <span class="material-icons" style="color:white; font-size:16px;">send</span>
                             </button>
                         </a>
                     ` : ''}
@@ -335,21 +346,19 @@ function renderizarMembros() {
                 <div style="display:flex; align-items:start; gap:8px;">
                     <span class="material-icons" style="font-size:1.2rem; color:#64748b; margin-top:2px;">location_on</span>
                     <span style="flex:1; line-height:1.4;">${endereco || 'Endereço não informado'}</span>
-                    
                     ${endereco ? `
                         <div style="display:flex; gap:5px;">
-                            <button onclick="copiarEndereco('${endereco.replace(/'/g, "\\'")}')" title="Copiar Texto" style="background:#e2e8f0; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                                <span class="material-icons" style="color:#475569; font-size:16px;">content_copy</span>
+                            <button onclick="copiarEndereco('${endereco.replace(/'/g, "\\'")}')" style="background:#e2e8f0; border:none; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <span class="material-icons" style="color:#475569; font-size:14px;">content_copy</span>
                             </button>
-                            <a href="${linkMaps}" target="_blank" title="Abrir no GPS">
-                                <button style="background:#3b82f6; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                                    <span class="material-icons" style="color:white; font-size:16px;">map</span>
+                            <a href="${linkMaps}" target="_blank">
+                                <button style="background:#3b82f6; border:none; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                    <span class="material-icons" style="color:white; font-size:14px;">map</span>
                                 </button>
                             </a>
                         </div>
                     ` : ''}
                 </div>
-
             </div>
         </div>
     `}).join('');
