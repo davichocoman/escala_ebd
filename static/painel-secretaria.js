@@ -466,44 +466,39 @@ function renderizarMeusDados() {
             ]
         }
     ];
-    div.innerHTML = '';
+    let htmlCampos = '';
+
     secoes.forEach(secao => {
         const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
         if (!temDados) return;
-        // Título da Seção
-        div.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
+
+        htmlCampos += `<div class="section-title-bar" style="grid-column: span 12;">${secao.titulo}</div>`;
+
         secao.campos.forEach(campo => {
             let valor = getVal(SISTEMA.usuario, campo.key);
             if (!valor) return;
+
             let htmlConteudo = '';
-            // Aplicação das mesmas lógicas de pílulas e máscaras
-            if (campo.isCPF) {
-                htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
-            }
-            else if (campo.isDate) {
-                htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
-            }
+            if (campo.isCPF) htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
+            else if (campo.isDate) htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
             else if (campo.isList && valor.toString().includes(',')) {
-                htmlConteudo = valor.split(',')
-                    .map(item => `<span class="data-pill">${item.trim()}</span>`)
-                    .join('');
-            }
-            else {
+                htmlConteudo = valor.split(',').map(item => `<span class="data-pill">${item.trim()}</span>`).join('');
+            } else {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
-            div.innerHTML += `
-                <div class="form-group" style="grid-column: span ${campo.span}">
+
+            // Ajuste do span para layout responsivo (assume grid de 12 colunas no CSS .form-grid)
+            const spanStyle = window.innerWidth < 768 ? 'grid-column: span 12;' : `grid-column: span ${campo.span};`;
+
+            htmlCampos += `
+                <div class="form-group" style="${spanStyle}">
                     <label>${campo.label}</label>
-                    <div class="valor-box">
-                        ${htmlConteudo}
-                    </div>
-                </div>
-            `;
+                    <div class="valor-box">${htmlConteudo}</div>
+                </div>`;
         });
     });
-    if (div.innerHTML === '') {
-        div.innerHTML = '<p class="empty-msg">Nenhum dado disponível para exibição.</p>';
-    }
+
+    div.innerHTML = headerPerfil + htmlCampos;
 }
 // ============================================================
 // 5. INTERAÇÕES E BOTÕES
