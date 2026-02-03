@@ -31,11 +31,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     SISTEMA.usuario = JSON.parse(userStr);
 
-    // 2. Sidebar e Inicialização
-    const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Membro';
-    const perfil = getVal(SISTEMA.usuario, 'PERFIL') ? getVal(SISTEMA.usuario, 'PERFIL').split(' ')[0] : 'Membro';
-    const display = document.getElementById('userDisplay');
-    if (display) display.innerHTML = `Olá, <strong>${nome}</strong><br><small>${perfil}</small>`;
+    const nome = getVal(SISTEMA.usuario, 'NOME').split(' ')[0];
+    const foto = recuperarFoto(SISTEMA.usuario); // Usa a função de colagem
+
+    const imgHtml = foto.length > 100 
+        ? `<img src="${foto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #fff;">`
+        : `<div style="width:40px; height:40px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center; color:white;"><span class="material-icons">person</span></div>`;
+
+    document.getElementById('userDisplay').innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+            ${imgHtml}
+            <strong>${nome}</strong>
+        </div>`;
 
     // CONFIGURAR A PESQUISA (NOVO)
     const inputBusca = document.getElementById('buscaAgenda');
@@ -51,6 +58,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Busca dados da Agenda/Reservas em background
     await carregarDadosGerais();
 });
+function recuperarFoto(obj) {
+    if (!obj) return '';
+    let fotoFull = getVal(obj, 'FOTO');
+    if (!fotoFull || fotoFull.length < 100) {
+        const f1 = getVal(obj, 'FOTO_1');
+        const f2 = getVal(obj, 'FOTO_2');
+        const f3 = getVal(obj, 'FOTO_3');
+        fotoFull = (f1 + f2 + f3).replace(/null/g, '').trim();
+    }
+    return fotoFull;
+}
 
 // ============================================================
 // 2. CARREGAMENTO DE DADOS (Agenda e Reservas)
@@ -154,27 +172,19 @@ function renderizarMeusDados() {
     const container = document.getElementById('form-meus-dados');
     if (!container || !SISTEMA.usuario) return;
 
-    // --- LÓGICA DA FOTO GRANDE ---
-    const foto = getVal(SISTEMA.usuario, 'FOTO');
+    const foto = recuperarFoto(SISTEMA.usuario);
     const nome = getVal(SISTEMA.usuario, 'NOME');
     
-    let htmlFoto = '';
-    if (foto && foto.length > 20) {
-        htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
-    } else {
-        htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-            <span class="material-icons" style="font-size:60px; color:#fff;">person</span>
-        </div>`;
-    }
+    // Foto grande do perfil do membro
+    const htmlFoto = foto.length > 100 
+        ? `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`
+        : `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px;"><span class="material-icons" style="font-size:60px; color:#fff;">person</span></div>`;
 
-    // Header do Perfil (Injetado antes das seções)
     const headerPerfil = `
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0;">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
-            <h2 style="margin:0; color:#1e293b;">${nome}</h2>
-            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
-        </div>
-    `;
+            <h2 style="margin:0;">${nome}</h2>
+        </div>`;
     const secoes = [
         {
             titulo: 'Informações Básicas',
