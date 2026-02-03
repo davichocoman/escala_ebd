@@ -42,6 +42,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderizarDashboard();
 });
 
+function recuperarFoto(obj) {
+    if (!obj) return '';
+    let fotoFull = getVal(obj, 'FOTO');
+    if (!fotoFull || fotoFull.length < 100) {
+        const f1 = getVal(obj, 'FOTO_1');
+        const f2 = getVal(obj, 'FOTO_2');
+        const f3 = getVal(obj, 'FOTO_3');
+        fotoFull = (f1 + f2 + f3).replace(/null/g, '').trim();
+    }
+    return fotoFull;
+}
+
 // ============================================================
 // 2. FETCH DE DADOS (Busca Tudo igual Secretaria)
 // ============================================================
@@ -67,6 +79,15 @@ async function carregarTudo() {
         ]);
 
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
+        
+        // --- SINCRONIZAÇÃO DO PASTOR ---
+        const meuCpf = getVal(SISTEMA.usuario, 'CPF');
+        const euAtualizado = SISTEMA.dados.membros.find(m => getVal(m, 'CPF') === meuCpf);
+        if (euAtualizado) {
+            SISTEMA.usuario = euAtualizado;
+            atualizarHeaderPastor(); // Vamos criar esta função
+        }
+
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resGeral.ok) SISTEMA.dados.dashboard = await resGeral.json();
 
@@ -83,6 +104,20 @@ async function carregarTudo() {
         console.error(e);
         Swal.fire('Erro', 'Falha ao carregar dados do servidor.', 'error');
     }
+}
+
+function atualizarHeaderPastor() {
+    const nome = getVal(SISTEMA.usuario, 'NOME').split(' ')[0];
+    const foto = recuperarFoto(SISTEMA.usuario);
+    const imgHtml = foto.length > 100 
+        ? `<img src="${foto}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid #fff;">`
+        : `<div style="width:45px; height:45px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center; color:white;"><span class="material-icons">person</span></div>`;
+
+    document.getElementById('userDisplay').innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+            ${imgHtml}
+            <div>Olá, Pr. <strong>${nome}</strong></div>
+        </div>`;
 }
 
 // Remove tudo que não é número para criar o link
