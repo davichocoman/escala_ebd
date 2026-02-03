@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     SISTEMA.usuario = JSON.parse(userStr);
 
     const nome = getVal(SISTEMA.usuario, 'NOME').split(' ')[0];
+    const perfil = getVal(SISTEMA.usuario, 'PERFIL');
     const foto = recuperarFoto(SISTEMA.usuario); // Usa a função de colagem
 
     const imgHtml = foto.length > 100 
