@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ${imgHtml}
                 <div>
                     Olá, <strong>${nome}</strong><br>
-                    <small style="opacity:0.7">${perfil}</small>
+                    <small>${getVal(SISTEMA.usuario, 'PERFIL')}</small>
                 </div>
             </div>`;
     }
