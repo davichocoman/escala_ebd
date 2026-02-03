@@ -4,40 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso - AD Rodovia A</title>
-    <link rel="stylesheet" href="../static/portal.css">
-    <link rel="manifest" href="../static/manifest.json">
+    
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/ios/180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/ios/32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/ios/16.png">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="stylesheet" href="../static/portal.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f172a; }
-        .login-box { background: white; padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 400px; text-align: center; }
+        body { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            background: #0f172a; 
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .login-box { 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 400px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .login-logo {
+            width: 100px; /* Ajuste o tamanho conforme sua logo */
+            height: auto;
+            margin-bottom: 1.5rem;
+        }
+        /* Estilos do Banner PWA */
+        .install-banner {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: #1e293b; color: white; padding: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border-bottom: 3px solid #3b82f6;
+        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
+
+    <div id="pwa-install-banner" class="install-banner hidden">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span class="material-icons">install_mobile</span>
+            <div style="text-align:left;">
+                <div style="font-weight:bold; font-size:0.9rem;">App AD Rodovia A</div>
+                <div style="font-size:0.75rem; opacity:0.8;">Instale para acesso rápido</div>
+            </div>
+        </div>
+        <button id="btn-pwa-install" style="background:#3b82f6; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">Instalar</button>
+    </div>
+
     <div class="login-box">
-        <img src="../static/icons/icon-192.png" alt="Logo Rodovia A">
-        <h2>Bem-vindo</h2>
-        <p style="color:#666; margin-bottom:20px;">Portal AD Rodovia A</p>
+        <img src="../static/logo.png" alt="Logo AD Rodovia A" class="login-logo">
+        
+        <h2 style="margin: 0; color: #1e293b;">Bem-vindo</h2>
+        <p style="color:#64748b; margin-bottom:25px; font-size: 0.9rem;">Portal Administrativo</p>
+        
         <form onsubmit="fazerLogin(event)">
             <div class="form-group" style="text-align:left">
-                <label>CPF (Apenas números)</label>
-                <input type="text" id="login" class="form-input" required>
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">CPF (Apenas números)</label>
+                <input type="text" id="login" class="form-input" required placeholder="000.000.000-00">
             </div>
             <div class="form-group" style="text-align:left">
-                <label>Senha ou Data de Nascimento (DD/MM/AAAA)</label>
-                <input type="password" id="pass" class="form-input" required>
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Senha ou Nascimento</label>
+                <input type="password" id="pass" class="form-input" required placeholder="DD/MM/AAAA">
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%">Entrar</button>
+            <button type="submit" class="btn btn-primary" style="width:100%; padding: 12px; font-weight: bold; margin-top: 10px;">Entrar no Sistema</button>
         </form>
-        <br>
-        <a href="/" style="font-size:0.9rem;">Acessar EBD (Público)</a>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            <a href="/" style="text-decoration:none; color:#3b82f6; font-size:0.85rem; font-weight: 500;">Acessar EBD (Público)</a>
+        </div>
     </div>
 
     <script>
+        // --- LOGICA DE LOGIN ---
         async function fazerLogin(e) {
             e.preventDefault();
-            const btn = document.querySelector('button');
-            btn.innerText = "Carregando...";
+            const btn = document.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = "Autenticando...";
             
             try {
                 const res = await fetch('https://api-escala.onrender.com/api/auth/login', {
@@ -54,20 +111,38 @@
                     sessionStorage.setItem('usuario_sistema', JSON.stringify(data.user));
                     sessionStorage.setItem('token_sistema', data.token);
                     
-                    // ROTEAMENTO INTELIGENTE
-                    const perfil = data.user.PERFIL;
+                    const perfil = data.user.PERFIL.toUpperCase();
                     if(perfil === 'ADMIN' || perfil === 'SECRETARIA') window.location.href = '/secretaria';
                     else if(perfil === 'PASTOR') window.location.href = '/pastor';
                     else window.location.href = '/membro';
                 } else {
-                    alert(data.detail || "Erro ao entrar");
-                    btn.innerText = "Entrar";
+                    Swal.fire('Erro', data.detail || "Credenciais incorretas", 'error');
+                    btn.disabled = false;
+                    btn.innerText = "Entrar no Sistema";
                 }
             } catch(err) {
-                alert("Erro de conexão");
-                btn.innerText = "Entrar";
+                Swal.fire('Erro', "Falha na conexão com o servidor", 'error');
+                btn.disabled = false;
+                btn.innerText = "Entrar no Sistema";
             }
         }
+
+        // --- LÓGICA PWA ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('pwa-install-banner').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('pwa-install-banner').classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
