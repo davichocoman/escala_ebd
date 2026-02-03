@@ -169,27 +169,36 @@ function renderizarDashboard() {
 
 // --- Meus Dados ---
 function renderizarMeusDados() {
-    const container = document.getElementById('form-meus-dados');
-    if (!container || !SISTEMA.usuario) return;
+    const div = document.getElementById('form-meus-dados');
+    if (!div || !SISTEMA.usuario) return;
 
-    const foto = recuperarFoto(SISTEMA.usuario);
+    // --- LÓGICA DA FOTO GRANDE ---
+    const foto = getVal(SISTEMA.usuario, 'FOTO');
     const nome = getVal(SISTEMA.usuario, 'NOME');
     
-    // Foto grande do perfil do membro
-    const htmlFoto = foto.length > 100 
-        ? `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`
-        : `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px;"><span class="material-icons" style="font-size:60px; color:#fff;">person</span></div>`;
+    let htmlFoto = '';
+    if (foto && foto.length > 20) {
+        htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
+    } else {
+        htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <span class="material-icons" style="font-size:60px; color:#fff;">person</span>
+        </div>`;
+    }
 
+    // Header do Perfil
     const headerPerfil = `
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
-            <h2 style="margin:0;">${nome}</h2>
-        </div>`;
+            <h2 style="margin:0; color:#1e293b;">${nome}</h2>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+        </div>
+    `;
+
+    // --- SEÇÕES DE DADOS (Mantém seus campos) ---
     const secoes = [
         {
             titulo: 'Informações Básicas',
             campos: [
-                { key: 'NOME', label: 'Nome Completo', span: 12 },
                 { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
                 { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
                 { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
@@ -217,19 +226,19 @@ function renderizarMeusDados() {
             titulo: 'Dados Eclesiásticos',
             campos: [
                 { key: 'BATISMO', label: 'Data de Batismo', span: 6, isDate: true },
-                { key: 'CARGO', label: 'Cargo Atual', span: 6, isList: true },
+                { key: 'CARGO', label: 'Cargo Atual', span: 6 },
                 { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
             ]
         }
     ];
 
-    container.innerHTML = '';
+    let htmlCampos = '';
 
     secoes.forEach(secao => {
         const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
         if (!temDados) return;
 
-        container.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
+        htmlCampos += `<div class="section-title-bar" style="grid-column: span 12;">${secao.titulo}</div>`;
 
         secao.campos.forEach(campo => {
             let valor = getVal(SISTEMA.usuario, campo.key);
@@ -244,15 +253,19 @@ function renderizarMeusDados() {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
 
-            container.innerHTML += `
-                <div class="form-group" style="grid-column: span ${campo.span}">
+            // Ajuste responsivo
+            const spanStyle = window.innerWidth < 768 ? 'grid-column: span 12;' : `grid-column: span ${campo.span};`;
+
+            htmlCampos += `
+                <div class="form-group" style="${spanStyle}">
                     <label>${campo.label}</label>
                     <div class="valor-box">${htmlConteudo}</div>
                 </div>`;
         });
     });
-}
 
+    div.innerHTML = headerPerfil + htmlCampos;
+}
 // --- Agenda Geral (Visualização) ---
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
