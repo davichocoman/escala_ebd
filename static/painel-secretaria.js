@@ -406,15 +406,15 @@ const formatarData = (valor) => {
     return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
 };
 function renderizarMeusDados() {
-    const container = document.getElementById('form-meus-dados');
-    if (!container || !SISTEMA.usuario) return;
+    const div = document.getElementById('form-meus-dados');
+    if (!div || !SISTEMA.usuario) return;
 
-    // --- LÓGICA DA FOTO GRANDE ---
+    // --- CABEÇALHO COM FOTO GRANDE ---
     const foto = getVal(SISTEMA.usuario, 'FOTO');
     const nome = getVal(SISTEMA.usuario, 'NOME');
     
     let htmlFoto = '';
-    if (foto && foto.length > 20) {
+    if (foto && foto.length > 50) {
         htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
     } else {
         htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
@@ -422,12 +422,11 @@ function renderizarMeusDados() {
         </div>`;
     }
 
-    // Header do Perfil (Injetado antes das seções)
     const headerPerfil = `
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0;">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
             <h2 style="margin:0; color:#1e293b;">${nome}</h2>
-            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Administração'}</span>
         </div>
     `;
     const secoes = [
