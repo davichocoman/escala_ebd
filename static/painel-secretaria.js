@@ -1300,3 +1300,42 @@ function processarFoto(input) {
         reader.readAsDataURL(file);
     }
 }
+
+let deferredPrompt;
+const installBanner = document.getElementById('pwa-install-banner');
+const btnInstall = document.getElementById('btn-pwa-install');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Impede o Chrome de mostrar o prompt automático
+    e.preventDefault();
+    // Salva o evento para ser disparado depois
+    deferredPrompt = e;
+    // Mostra o nosso banner personalizado
+    installBanner.classList.remove('hidden');
+});
+
+if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // Mostra o prompt de instalação nativo
+            deferredPrompt.prompt();
+            // Espera pela resposta do usuário
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Usuário escolheu: ${outcome}`);
+            // Limpa o prompt
+            deferredPrompt = null;
+            // Esconde o banner
+            installBanner.classList.add('hidden');
+        }
+    });
+}
+
+function dismissInstall() {
+    installBanner.classList.add('hidden');
+}
+
+// Oculta o banner se o app já estiver instalado
+window.addEventListener('appinstalled', () => {
+    installBanner.classList.add('hidden');
+    console.log('PWA: Aplicativo instalado com sucesso!');
+});
