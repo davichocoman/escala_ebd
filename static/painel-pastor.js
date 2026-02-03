@@ -400,12 +400,35 @@ function renderizarMembros() {
 function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div || !SISTEMA.usuario) return;
-    // 1. Definição das Seções para manter o padrão visual
+
+    // --- LÓGICA DA FOTO GRANDE (Usando a função de colagem de fatias) ---
+    const foto = recuperarFoto(SISTEMA.usuario);
+    const nome = getVal(SISTEMA.usuario, 'NOME');
+    
+    let htmlFoto = '';
+    if (foto && foto.length > 100) {
+        htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
+    } else {
+        htmlFoto = `
+        <div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <span class="material-icons" style="font-size:60px; color:#fff;">person</span>
+        </div>`;
+    }
+
+    // Header do Perfil (Nome e Cargo)
+    const headerPerfil = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
+            ${htmlFoto}
+            <h2 style="margin:0; color:#1e293b; text-align:center;">${nome}</h2>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+        </div>
+    `;
+
+    // --- DEFINIÇÃO DAS SEÇÕES ---
     const secoes = [
         {
             titulo: 'Informações Básicas',
             campos: [
-                { key: 'NOME', label: 'Nome Completo', span: 12 },
                 { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
                 { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
                 { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
@@ -438,46 +461,42 @@ function renderizarMeusDados() {
             ]
         }
     ];
-    div.innerHTML = '';
+
+    let htmlCampos = '';
+
     secoes.forEach(secao => {
+        // Verifica se a seção tem algum dado preenchido antes de renderizar o título
         const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
         if (!temDados) return;
-        // Título da Seção
-        div.innerHTML += `<div class="section-title-bar">${secao.titulo}</div>`;
+
+        htmlCampos += `<div class="section-title-bar" style="grid-column: span 12;">${secao.titulo}</div>`;
+
         secao.campos.forEach(campo => {
             let valor = getVal(SISTEMA.usuario, campo.key);
             if (!valor) return;
+
             let htmlConteudo = '';
-            // Aplicação das mesmas lógicas de pílulas e máscaras
-            if (campo.isCPF) {
-                htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
-            }
-            else if (campo.isDate) {
-                htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
-            }
+            if (campo.isCPF) htmlConteudo = `<span class="data-pill">${formatarCPF(valor)}</span>`;
+            else if (campo.isDate) htmlConteudo = `<span class="data-pill">${formatarData(valor)}</span>`;
             else if (campo.isList && valor.toString().includes(',')) {
-                htmlConteudo = valor.split(',')
-                    .map(item => `<span class="data-pill">${item.trim()}</span>`)
-                    .join('');
-            }
-            else {
+                htmlConteudo = valor.split(',').map(item => `<span class="data-pill">${item.trim()}</span>`).join('');
+            } else {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
-            div.innerHTML += `
-                <div class="form-group" style="grid-column: span ${campo.span}">
-                    <label>${campo.label}</label>
-                    <div class="valor-box">
-                        ${htmlConteudo}
-                    </div>
-                </div>
-            `;
+
+            // Ajuste responsivo do grid
+            const spanStyle = window.innerWidth < 768 ? 'grid-column: span 12;' : `grid-column: span ${campo.span};`;
+
+            htmlCampos += `
+                <div class="form-group" style="${spanStyle}">
+                    <label style="display:block; text-align:center;">${campo.label}</label>
+                    <div class="valor-box" style="display:flex; justify-content:center;">${htmlConteudo}</div>
+                </div>`;
         });
     });
-    if (div.innerHTML === '') {
-        div.innerHTML = '<p class="empty-msg">Nenhum dado disponível para exibição.</p>';
-    }
-}
 
+    div.innerHTML = headerPerfil + htmlCampos;
+}
 // ============================================================
 // 4. UTILITÁRIOS
 // ============================================================
