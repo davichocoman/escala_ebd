@@ -47,6 +47,24 @@ function ordenarPorDataEHora(lista, chaveData, chaveHoraIni, chaveHoraFim = '') 
     });
 }
 
+function recuperarFoto(obj) {
+    if (!obj) return '';
+    
+    let fotoFull = getVal(obj, 'FOTO');
+    
+    // Se o campo FOTO estiver vazio ou for pequeno demais, monta as fatias
+    if (!fotoFull || fotoFull.length < 100) {
+        const f1 = getVal(obj, 'FOTO_1');
+        const f2 = getVal(obj, 'FOTO_2');
+        const f3 = getVal(obj, 'FOTO_3');
+        
+        // Só junta se houver conteúdo real
+        fotoFull = (f1 + f2 + f3).replace(/null/g, '').trim();
+    }
+    
+    return fotoFull;
+}
+
 function timeParaMinutos(timeStr) {
     if (!timeStr || typeof timeStr !== 'string') return 9999;
     const partes = timeStr.split(':');
@@ -130,18 +148,21 @@ async function carregarTudoDoBanco() {
         ]);
 
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
-        if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
-        if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
-
-        // --- ATUALIZAÇÃO DO USUÁRIO LOGADO ---
-        // Procura o seu cadastro atualizado na lista de membros (usando o CPF como chave)
+        
+        // --- LOGICA DE SINCRONIZAÇÃO DA FOTO ---
+        // Procuramos você na lista que acabou de vir do banco (ela já vem com a FOTO montada)
         const meuCpf = getVal(SISTEMA.usuario, 'CPF');
         const euAtualizado = SISTEMA.dados.membros.find(m => getVal(m, 'CPF') === meuCpf);
         
         if (euAtualizado) {
-            SISTEMA.usuario = euAtualizado; // Atualiza o estado global com dados frescos
-            atualizarSidebar(); // Função que vamos criar para atualizar o topo
+            // Atualiza o objeto global com a foto completa vinda da API
+            SISTEMA.usuario = euAtualizado; 
+            atualizarSidebar(); // Redesenha o topo com a foto nova
         }
+        // ---------------------------------------
+
+        if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
+        if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
 
         renderizarCheckboxesPastores();
         renderizarMembros();
@@ -170,12 +191,12 @@ function atualizarSidebar() {
     const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
     const perfil = getVal(SISTEMA.usuario, 'PERFIL') || 'Admin';
     
-    // Usamos a função recuperarFoto que você já tem no final do arquivo
+    // Recupera a foto (tenta o campo FOTO ou junta as fatias FOTO_1, 2, 3)
     const foto = recuperarFoto(SISTEMA.usuario);
     
     let imgHtml = '';
     if (foto && foto.length > 100) {
-        imgHtml = `<img src="${foto}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); margin-bottom:5px;">`;
+        imgHtml = `<img src="${foto}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">`;
     } else {
         imgHtml = `<div style="width:45px; height:45px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center; color:white;"><span class="material-icons">person</span></div>`;
     }
@@ -1277,22 +1298,4 @@ function processarFoto(input) {
         }
         reader.readAsDataURL(file);
     }
-}
-
-// Função para garantir que a foto seja lida corretamente (unindo os pedaços se necessário)
-function recuperarFoto(obj) {
-    if (!obj) return '';
-    
-    // 1. Tenta pegar o campo FOTO completo (se já vier pronto da API)
-    let fotoFull = getVal(obj, 'FOTO');
-    
-    // 2. Se não tiver FOTO, tenta montar a partir das fatias FOTO_1, FOTO_2, FOTO_3
-    if (!fotoFull || fotoFull.length < 50) {
-        const f1 = getVal(obj, 'FOTO_1');
-        const f2 = getVal(obj, 'FOTO_2');
-        const f3 = getVal(obj, 'FOTO_3');
-        fotoFull = f1 + f2 + f3;
-    }
-    
-    return fotoFull;
 }
