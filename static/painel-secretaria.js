@@ -30,6 +30,12 @@ function getVal(obj, key) {
     }
     return '';
 }
+function getUsuarioAtualizado() {
+    if (!SISTEMA.usuario) return null;
+
+    const id = getVal(SISTEMA.usuario, 'ID');
+    return SISTEMA.dados.membros.find(m => getVal(m, 'ID') == id) || SISTEMA.usuario;
+}
 // Função auxiliar para ordenar por Data e depois por Horário
 function ordenarPorDataEHora(lista, chaveData, chaveHoraIni, chaveHoraFim = '') {
     lista.sort((a, b) => {
@@ -96,11 +102,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         return;
     }
-    SISTEMA.usuario = JSON.parse(userStr);
     // 2. Mostra nome no topo
-    const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
-    const perfil = getVal(SISTEMA.usuario, 'PERFIL') || 'Admin';
-    const foto = getVal(SISTEMA.usuario, 'FOTO');
+    const usuario = getUsuarioAtualizado();
+    const nome = getVal(usuario, 'NOME') ? getVal(usuario, 'NOME').split(' ')[0] : 'Admin';
+    const perfil = getVal(usuario, 'PERFIL') || 'Admin';
+    const foto = getVal(usuario, 'FOTO');
     
     // Miniatura na sidebar
     let imgHtml = '';
@@ -426,11 +432,13 @@ const formatarData = (valor) => {
 };
 function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
+    const usuario = getUsuarioAtualizado();
+    if (!usuario) return;
     if (!div || !SISTEMA.usuario) return;
-
+    
     // --- LÓGICA DA FOTO GRANDE ---
-    const foto = getVal(SISTEMA.usuario, 'FOTO');
-    const nome = getVal(SISTEMA.usuario, 'NOME');
+    const foto = getVal(usuario, 'FOTO');
+    const nome = getVal(usuario, 'NOME');
     
     let htmlFoto = '';
     if (foto && foto.length > 20) {
@@ -446,7 +454,7 @@ function renderizarMeusDados() {
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
             <h2 style="margin:0; color:#1e293b;">${nome}</h2>
-            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(usuario, 'CARGO') || 'Membro'}</span>
         </div>
     `;
 
