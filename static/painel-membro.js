@@ -38,11 +38,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? `<img src="${foto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #fff;">`
         : `<div style="width:40px; height:40px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center; color:white;"><span class="material-icons">person</span></div>`;
 
-    document.getElementById('userDisplay').innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-            ${imgHtml}
-            Olá, <strong>${nome}</strong>
-        </div>`;
+    const display = document.getElementById('userDisplay');
+    if (display) {
+        // Layout: Foto em cima ou ao lado do nome
+        display.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                ${imgHtml}
+                <div>
+                    Olá, <strong>${nome}</strong><br>
+                    <small style="opacity:0.7">${perfil}</small>
+                </div>
+            </div>`;
+    }
 
     // CONFIGURAR A PESQUISA (NOVO)
     const inputBusca = document.getElementById('buscaAgenda');
