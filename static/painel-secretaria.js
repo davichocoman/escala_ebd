@@ -99,8 +99,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     SISTEMA.usuario = JSON.parse(userStr);
     // 2. Mostra nome no topo
     const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
+    const perfil = getVal(SISTEMA.usuario, 'PERFIL') || 'Admin';
+    const foto = getVal(SISTEMA.usuario, 'FOTO');
+    
+    // Miniatura na sidebar
+    let imgHtml = '';
+    if (foto && foto.length > 20) {
+        imgHtml = `<img src="${foto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #334155; margin-bottom:5px;">`;
+    }
+
     const display = document.getElementById('userDisplay');
-    if (display) display.innerHTML = `Olá, <strong>${nome}</strong>`;
+    if (display) {
+        // Layout: Foto em cima ou ao lado do nome
+        display.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                ${imgHtml}
+                <div>
+                    Olá, <strong>${nome}</strong><br>
+                    <small style="opacity:0.7">${perfil}</small>
+                </div>
+            </div>`;
+    }
     // 3. Configura botões e eventos
     configurarBotoes();
     // 4. Carrega todos os dados
@@ -409,12 +428,12 @@ function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div || !SISTEMA.usuario) return;
 
-    // --- CABEÇALHO COM FOTO GRANDE ---
+    // --- LÓGICA DA FOTO GRANDE ---
     const foto = getVal(SISTEMA.usuario, 'FOTO');
     const nome = getVal(SISTEMA.usuario, 'NOME');
     
     let htmlFoto = '';
-    if (foto && foto.length > 50) {
+    if (foto && foto.length > 20) {
         htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
     } else {
         htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
@@ -422,18 +441,20 @@ function renderizarMeusDados() {
         </div>`;
     }
 
+    // Header do Perfil
     const headerPerfil = `
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
             <h2 style="margin:0; color:#1e293b;">${nome}</h2>
-            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Administração'}</span>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
         </div>
     `;
+
+    // --- SEÇÕES DE DADOS (Mantém seus campos) ---
     const secoes = [
         {
             titulo: 'Informações Básicas',
             campos: [
-                { key: 'NOME', label: 'Nome Completo', span: 12 },
                 { key: 'NASCIMENTO', label: 'Data de Nascimento', span: 6, isDate: true },
                 { key: 'CPF', label: 'CPF', span: 6, isCPF: true },
                 { key: 'ESTADO_CIVIL', label: 'Estado Civil', span: 6 },
@@ -461,11 +482,12 @@ function renderizarMeusDados() {
             titulo: 'Dados Eclesiásticos',
             campos: [
                 { key: 'BATISMO', label: 'Data de Batismo', span: 6, isDate: true },
-                { key: 'CARGO', label: 'Cargo Atual', span: 6, isList: true },
+                { key: 'CARGO', label: 'Cargo Atual', span: 6 },
                 { key: 'DEPARTAMENTO', label: 'Departamento', span: 6 }
             ]
         }
     ];
+
     let htmlCampos = '';
 
     secoes.forEach(secao => {
@@ -487,7 +509,7 @@ function renderizarMeusDados() {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
 
-            // Ajuste do span para layout responsivo (assume grid de 12 colunas no CSS .form-grid)
+            // Ajuste responsivo
             const spanStyle = window.innerWidth < 768 ? 'grid-column: span 12;' : `grid-column: span ${campo.span};`;
 
             htmlCampos += `
@@ -500,6 +522,7 @@ function renderizarMeusDados() {
 
     div.innerHTML = headerPerfil + htmlCampos;
 }
+ 
 // ============================================================
 // 5. INTERAÇÕES E BOTÕES
 // ============================================================
