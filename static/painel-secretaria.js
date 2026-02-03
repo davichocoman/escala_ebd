@@ -96,36 +96,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         return;
     }
-SISTEMA.usuario = JSON.parse(userStr);
     
-    const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
-    const perfil = getVal(SISTEMA.usuario, 'PERFIL') || 'Admin';
+    SISTEMA.usuario = JSON.parse(userStr);
     
-    // --- CORREÇÃO AQUI ---
-    const foto = recuperarFoto(SISTEMA.usuario);
+    // Chama a atualização visual inicial
+    atualizarSidebar();
     
-    let imgHtml = '';
-    if (foto && foto.length > 100) {
-        imgHtml = `<img src="${foto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #334155; margin-bottom:5px;">`;
-    } else {
-        // Fallback para ícone se não tiver foto
-        imgHtml = `<div style="width:40px; height:40px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center;"><span class="material-icons" style="color:white; font-size:20px;">person</span></div>`;
-    }
-
-    const display = document.getElementById('userDisplay');
-    if (display) {
-        display.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                ${imgHtml}
-                <div>
-                    Olá, <strong>${nome}</strong><br>
-                    <small style="opacity:0.7">${perfil}</small>
-                </div>
-            </div>`;
-    }
-    // 3. Configura botões e eventos
     configurarBotoes();
-    // 4. Carrega todos os dados
     await carregarTudoDoBanco();
 });
 // ============================================================
@@ -151,10 +128,21 @@ async function carregarTudoDoBanco() {
             fetch(`${API_BASE}/agenda-pastor`, { headers }),
             fetch(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
+
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
-        console.log("✅ Dados carregados!", SISTEMA.dados);
+
+        // --- ATUALIZAÇÃO DO USUÁRIO LOGADO ---
+        // Procura o seu cadastro atualizado na lista de membros (usando o CPF como chave)
+        const meuCpf = getVal(SISTEMA.usuario, 'CPF');
+        const euAtualizado = SISTEMA.dados.membros.find(m => getVal(m, 'CPF') === meuCpf);
+        
+        if (euAtualizado) {
+            SISTEMA.usuario = euAtualizado; // Atualiza o estado global com dados frescos
+            atualizarSidebar(); // Função que vamos criar para atualizar o topo
+        }
+
         renderizarCheckboxesPastores();
         renderizarMembros();
         renderizarAgendaPastor();
@@ -175,6 +163,33 @@ async function carregarTudoDoBanco() {
                 carregarTudoDoBanco();
             }
         });
+    }
+}
+
+function atualizarSidebar() {
+    const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
+    const perfil = getVal(SISTEMA.usuario, 'PERFIL') || 'Admin';
+    
+    // Usamos a função recuperarFoto que você já tem no final do arquivo
+    const foto = recuperarFoto(SISTEMA.usuario);
+    
+    let imgHtml = '';
+    if (foto && foto.length > 100) {
+        imgHtml = `<img src="${foto}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); margin-bottom:5px;">`;
+    } else {
+        imgHtml = `<div style="width:45px; height:45px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center; color:white;"><span class="material-icons">person</span></div>`;
+    }
+
+    const display = document.getElementById('userDisplay');
+    if (display) {
+        display.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                ${imgHtml}
+                <div>
+                    Olá, <strong>${nome}</strong><br>
+                    <small style="opacity:0.7; font-size:0.75rem;">${perfil}</small>
+                </div>
+            </div>`;
     }
 }
 
