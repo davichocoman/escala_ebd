@@ -3,6 +3,9 @@ const assets = [
   '/',
   '/static/portal.css',
   '/static/painel-secretaria.js',
+  '/static/painel-pastor.js',
+  '/static/painel-membro.js',
+  '/static/script.js',
   '/static/icons/icon-192.png'
 ];
 
