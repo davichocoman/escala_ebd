@@ -406,9 +406,30 @@ const formatarData = (valor) => {
     return isNaN(data) ? valor : data.toLocaleDateString('pt-BR');
 };
 function renderizarMeusDados() {
-    const div = document.getElementById('form-meus-dados');
-    if (!div || !SISTEMA.usuario) return;
-    // 1. Definição das Seções para manter o padrão visual
+    const container = document.getElementById('form-meus-dados');
+    if (!container || !SISTEMA.usuario) return;
+
+    // --- LÓGICA DA FOTO GRANDE ---
+    const foto = getVal(SISTEMA.usuario, 'FOTO');
+    const nome = getVal(SISTEMA.usuario, 'NOME');
+    
+    let htmlFoto = '';
+    if (foto && foto.length > 20) {
+        htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
+    } else {
+        htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <span class="material-icons" style="font-size:60px; color:#fff;">person</span>
+        </div>`;
+    }
+
+    // Header do Perfil (Injetado antes das seções)
+    const headerPerfil = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0;">
+            ${htmlFoto}
+            <h2 style="margin:0; color:#1e293b;">${nome}</h2>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+        </div>
+    `;
     const secoes = [
         {
             titulo: 'Informações Básicas',
