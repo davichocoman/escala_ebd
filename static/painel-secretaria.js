@@ -30,12 +30,6 @@ function getVal(obj, key) {
     }
     return '';
 }
-function getUsuarioAtualizado() {
-    if (!SISTEMA.usuario) return null;
-
-    const id = getVal(SISTEMA.usuario, 'ID');
-    return SISTEMA.dados.membros.find(m => getVal(m, 'ID') == id) || SISTEMA.usuario;
-}
 // Função auxiliar para ordenar por Data e depois por Horário
 function ordenarPorDataEHora(lista, chaveData, chaveHoraIni, chaveHoraFim = '') {
     lista.sort((a, b) => {
@@ -102,21 +96,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         return;
     }
-    // 2. Mostra nome no topo
-    const usuario = getUsuarioAtualizado();
-    const nome = getVal(usuario, 'NOME') ? getVal(usuario, 'NOME').split(' ')[0] : 'Admin';
-    const perfil = getVal(usuario, 'PERFIL') || 'Admin';
-    const foto = getVal(usuario, 'FOTO');
+SISTEMA.usuario = JSON.parse(userStr);
     
-    // Miniatura na sidebar
+    const nome = getVal(SISTEMA.usuario, 'NOME') ? getVal(SISTEMA.usuario, 'NOME').split(' ')[0] : 'Admin';
+    const perfil = getVal(SISTEMA.usuario, 'PERFIL') || 'Admin';
+    
+    // --- CORREÇÃO AQUI ---
+    const foto = recuperarFoto(SISTEMA.usuario);
+    
     let imgHtml = '';
-    if (foto && foto.length > 20) {
+    if (foto && foto.length > 100) {
         imgHtml = `<img src="${foto}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #334155; margin-bottom:5px;">`;
+    } else {
+        // Fallback para ícone se não tiver foto
+        imgHtml = `<div style="width:40px; height:40px; border-radius:50%; background:#334155; display:flex; align-items:center; justify-content:center;"><span class="material-icons" style="color:white; font-size:20px;">person</span></div>`;
     }
 
     const display = document.getElementById('userDisplay');
     if (display) {
-        // Layout: Foto em cima ou ao lado do nome
         display.innerHTML = `
             <div style="display:flex; align-items:center; gap:10px;">
                 ${imgHtml}
@@ -432,19 +429,18 @@ const formatarData = (valor) => {
 };
 function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
-    const usuario = getUsuarioAtualizado();
-    if (!usuario) return;
     if (!div || !SISTEMA.usuario) return;
-    
-    // --- LÓGICA DA FOTO GRANDE ---
-    const foto = getVal(usuario, 'FOTO');
-    const nome = getVal(usuario, 'NOME');
+
+    // --- CORREÇÃO DA FOTO GRANDE ---
+    const foto = recuperarFoto(SISTEMA.usuario);
+    const nome = getVal(SISTEMA.usuario, 'NOME');
     
     let htmlFoto = '';
-    if (foto && foto.length > 20) {
+    if (foto && foto.length > 100) {
         htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
     } else {
-        htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+        htmlFoto = `
+        <div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
             <span class="material-icons" style="font-size:60px; color:#fff;">person</span>
         </div>`;
     }
@@ -454,7 +450,7 @@ function renderizarMeusDados() {
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
             <h2 style="margin:0; color:#1e293b;">${nome}</h2>
-            <span style="color:#64748b; font-size:0.9rem;">${getVal(usuario, 'CARGO') || 'Membro'}</span>
+            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
         </div>
     `;
 
@@ -1266,4 +1262,22 @@ function processarFoto(input) {
         }
         reader.readAsDataURL(file);
     }
+}
+
+// Função para garantir que a foto seja lida corretamente (unindo os pedaços se necessário)
+function recuperarFoto(obj) {
+    if (!obj) return '';
+    
+    // 1. Tenta pegar o campo FOTO completo (se já vier pronto da API)
+    let fotoFull = getVal(obj, 'FOTO');
+    
+    // 2. Se não tiver FOTO, tenta montar a partir das fatias FOTO_1, FOTO_2, FOTO_3
+    if (!fotoFull || fotoFull.length < 50) {
+        const f1 = getVal(obj, 'FOTO_1');
+        const f2 = getVal(obj, 'FOTO_2');
+        const f3 = getVal(obj, 'FOTO_3');
+        fotoFull = f1 + f2 + f3;
+    }
+    
+    return fotoFull;
 }
