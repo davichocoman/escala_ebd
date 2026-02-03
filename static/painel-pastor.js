@@ -26,30 +26,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     SISTEMA.usuario = JSON.parse(userStr);
-    
-    // Header Sidebar
-    const nome = getVal(SISTEMA.usuario, 'NOME').split(' ')[0];
-    document.getElementById('userDisplay').innerHTML = `Olá, Pr. <strong>${nome}</strong>`;
 
-    // Configura Buscas
+    // CHAMADA INICIAL: Mostra a foto (mesmo fatiada) logo que abre
+    atualizarHeaderPastor(); 
+
     configurarBuscas();
-
-    // Carrega Dados
     await carregarTudo();
-    
-    // Renderiza Tela Inicial
-    renderizarMeusDados(); // Já deixa pronto
+    renderizarMeusDados();
     renderizarDashboard();
 });
 
 function recuperarFoto(obj) {
     if (!obj) return '';
     let fotoFull = getVal(obj, 'FOTO');
+    // Se a foto estiver vazia ou for só um pedaço, tenta colar as fatias
     if (!fotoFull || fotoFull.length < 100) {
-        const f1 = getVal(obj, 'FOTO_1');
-        const f2 = getVal(obj, 'FOTO_2');
-        const f3 = getVal(obj, 'FOTO_3');
-        fotoFull = (f1 + f2 + f3).replace(/null/g, '').trim();
+        const f1 = String(getVal(obj, 'FOTO_1') || '').replace('null', '');
+        const f2 = String(getVal(obj, 'FOTO_2') || '').replace('null', '');
+        const f3 = String(getVal(obj, 'FOTO_3') || '').replace('null', '');
+        fotoFull = (f1 + f2 + f3).trim();
     }
     return fotoFull;
 }
@@ -78,14 +73,17 @@ async function carregarTudo() {
             fetch(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
 
-        if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
-        
-        // --- SINCRONIZAÇÃO DO PASTOR ---
-        const meuCpf = getVal(SISTEMA.usuario, 'CPF');
-        const euAtualizado = SISTEMA.dados.membros.find(m => getVal(m, 'CPF') === meuCpf);
-        if (euAtualizado) {
-            SISTEMA.usuario = euAtualizado;
-            atualizarHeaderPastor(); // Vamos criar esta função
+        if (resMembros.ok) {
+            SISTEMA.dados.membros = await resMembros.json();
+            
+            // --- "UPGRADE" DO USUÁRIO PASTOR ---
+            const meuCpf = getVal(SISTEMA.usuario, 'CPF');
+            const euAtualizado = SISTEMA.dados.membros.find(m => getVal(m, 'CPF') === meuCpf);
+            if (euAtualizado) {
+                SISTEMA.usuario = euAtualizado; // Agora você tem a foto inteira da API
+                atualizarHeaderPastor(); // Atualiza a sidebar com a foto perfeita
+                renderizarMeusDados();   // Atualiza a aba Meus Dados com a foto perfeita
+            }
         }
 
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
