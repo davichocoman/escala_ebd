@@ -172,29 +172,30 @@ function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div || !SISTEMA.usuario) return;
 
-    // --- LÓGICA DA FOTO GRANDE ---
-    const foto = getVal(SISTEMA.usuario, 'FOTO');
+    // --- LÓGICA DA FOTO GRANDE (Usando a função de colagem de fatias) ---
+    const foto = recuperarFoto(SISTEMA.usuario);
     const nome = getVal(SISTEMA.usuario, 'NOME');
     
     let htmlFoto = '';
-    if (foto && foto.length > 20) {
+    if (foto && foto.length > 100) {
         htmlFoto = `<img src="${foto}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:15px;">`;
     } else {
-        htmlFoto = `<div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+        htmlFoto = `
+        <div style="width:120px; height:120px; border-radius:50%; background:#cbd5e1; display:flex; align-items:center; justify-content:center; margin-bottom:15px; border:4px solid #fff; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
             <span class="material-icons" style="font-size:60px; color:#fff;">person</span>
         </div>`;
     }
 
-    // Header do Perfil
+    // Header do Perfil (Nome e Cargo)
     const headerPerfil = `
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
-            <h2 style="margin:0; color:#1e293b;">${nome}</h2>
+            <h2 style="margin:0; color:#1e293b; text-align:center;">${nome}</h2>
             <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
         </div>
     `;
 
-    // --- SEÇÕES DE DADOS (Mantém seus campos) ---
+    // --- DEFINIÇÃO DAS SEÇÕES ---
     const secoes = [
         {
             titulo: 'Informações Básicas',
@@ -235,6 +236,7 @@ function renderizarMeusDados() {
     let htmlCampos = '';
 
     secoes.forEach(secao => {
+        // Verifica se a seção tem algum dado preenchido antes de renderizar o título
         const temDados = secao.campos.some(c => getVal(SISTEMA.usuario, c.key));
         if (!temDados) return;
 
@@ -253,13 +255,13 @@ function renderizarMeusDados() {
                 htmlConteudo = `<span class="data-pill">${valor}</span>`;
             }
 
-            // Ajuste responsivo
+            // Ajuste responsivo do grid
             const spanStyle = window.innerWidth < 768 ? 'grid-column: span 12;' : `grid-column: span ${campo.span};`;
 
             htmlCampos += `
                 <div class="form-group" style="${spanStyle}">
-                    <label>${campo.label}</label>
-                    <div class="valor-box">${htmlConteudo}</div>
+                    <label style="display:block; text-align:center;">${campo.label}</label>
+                    <div class="valor-box" style="display:flex; justify-content:center;">${htmlConteudo}</div>
                 </div>`;
         });
     });
