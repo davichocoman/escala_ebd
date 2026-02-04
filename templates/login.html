@@ -145,23 +145,29 @@
 
 <script>
 /* ===============================
-   VISUALIZAR / OCULTAR SENHA
+   UTILITÁRIOS (Conversão de String para Buffer)
+   Necessário para criar um ID de usuário fixo baseado no CPF
+================================ */
+function strToBin(str) {
+    return Uint8Array.from(str, c => c.charCodeAt(0));
+}
+
+function binToStr(bin) {
+    return String.fromCharCode.apply(null, bin);
+}
+
+/* ===============================
+   INTERACE / MÁSCARAS
 ================================ */
 document.getElementById("togglePass").addEventListener("click", () => {
     const pass = document.getElementById("pass");
     pass.type = pass.type === "password" ? "text" : "password";
 });
 
-/* ===============================
-   CPF: SOMENTE NÚMEROS
-================================ */
 document.getElementById("login").addEventListener("input", (e) => {
     e.target.value = e.target.value.replace(/\D/g, "");
 });
 
-/* ===============================
-   SENHA / DATA INTELIGENTE
-================================ */
 const passInput = document.getElementById("pass");
 const hint = document.getElementById("passHint");
 const loginInput = document.getElementById("login");
@@ -184,10 +190,7 @@ loginInput.addEventListener("input", () => {
 
 passInput.addEventListener("input", (e) => {
     let v = e.target.value;
-    if (/[a-zA-Z]/.test(v)) {
-        hint.innerText = "Senha alfanumérica detectada";
-        return; 
-    }
+    if (/[a-zA-Z]/.test(v)) return; 
     hint.innerText = "Membros: data de nascimento";
     v = v.replace(/\D/g, "");
     if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
@@ -196,11 +199,10 @@ passInput.addEventListener("input", (e) => {
 });
 
 /* ===============================
-   LOGIN COM SENHA + REGISTRO BIOMETRIA (CORRIGIDO)
+   LOGIN + REGISTRO BIOMETRIA (CORRIGIDO)
 ================================ */
 async function fazerLogin(e) {
     e.preventDefault();
-
     const btn = document.querySelector("button[type='submit']");
     btn.disabled = true;
     btn.innerText = "Autenticando...";
@@ -209,14 +211,11 @@ async function fazerLogin(e) {
         const login = document.getElementById("login").value.trim();
         const password = document.getElementById("pass").value.trim();
 
-        const res = await fetch(
-            "https://api-escala.onrender.com/api/auth/login",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ login, password })
-            }
-        );
+        const res = await fetch("https://api-escala.onrender.com/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ login, password })
+        });
 
         const data = await res.json();
 
@@ -225,10 +224,18 @@ async function fazerLogin(e) {
             sessionStorage.setItem("usuario_sistema", JSON.stringify(data.user));
             sessionStorage.setItem("token_sistema", data.token);
 
-            // 2. Tenta Registrar Biometria (ANTES de redirecionar)
-            await tentarRegistrarBiometria(login, data.user);
+            // 2. Verifica Biometria
+            if (window.PublicKeyCredential) {
+                const bioSalva = localStorage.getItem("biometria_usuario");
+                const bioObj = bioSalva ? JSON.parse(bioSalva) : null;
 
-            // 3. Redireciona (Somente agora)
+                // Se não tem biometria para ESTE login específico
+                if (!bioObj || bioObj.login !== login) {
+                    await registrarBiometria(login, data.user, data.token);
+                }
+            }
+
+            // 3. Redireciona
             irParaHome(data.user.PERFIL);
 
         } else {
@@ -238,89 +245,74 @@ async function fazerLogin(e) {
         }
     } catch (err) {
         console.error(err);
-        Swal.fire("Erro", "Falha na conexão com o servidor", "error");
+        Swal.fire("Erro", "Falha na conexão", "error");
         btn.disabled = false;
         btn.innerText = "Entrar no Sistema";
     }
 }
 
-// Função isolada para gerenciar o fluxo da biometria
-async function tentarRegistrarBiometria(login, user) {
-    // Verifica se o navegador suporta
-    if (!window.PublicKeyCredential) {
-        console.log("Navegador não suporta WebAuthn");
-        return;
-    }
-
-    // Verifica se já tem biometria salva para este usuário
-    const bioSalva = localStorage.getItem("biometria_usuario");
-    const bioObj = bioSalva ? JSON.parse(bioSalva) : null;
-
-    // Se já tem salvo para este login, pula
-    if (bioObj && bioObj.login === login) {
-        return;
-    }
-
-    // Pergunta ao usuário
-    // Usamos um confirm nativo ou Promise wrapper para pausar a execução
-    const desejaAtivar = await Swal.fire({
-        title: 'Facilitar acesso?',
-        text: "Deseja ativar o login por Biometria/FaceID para a próxima vez?",
+async function registrarBiometria(login, user, token) {
+    const deseja = await Swal.fire({
+        title: 'Ativar Biometria?',
+        text: "Deseja entrar usando sua digital/face na próxima vez?",
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#3b82f6',
-        cancelButtonColor: '#d33',
         confirmButtonText: 'Sim, ativar',
-        cancelButtonText: 'Não, obrigado'
+        cancelButtonText: 'Agora não'
     });
 
-    if (desejaAtivar.isConfirmed) {
-        try {
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
+    if (!deseja.isConfirmed) return;
 
-            const userId = new Uint8Array(16);
-            window.crypto.getRandomValues(userId);
+    try {
+        // --- AQUI ESTAVA O PROBLEMA ANTERIOR ---
+        // Agora usamos o CPF como ID fixo, e o domínio atual como RP ID
+        
+        const publicKeyCredentialCreationOptions = {
+            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+            rp: {
+                name: "Gestão Rodovia A",
+                id: window.location.hostname // Força o domínio atual (evita bug de subdominio)
+            },
+            user: {
+                id: strToBin(login), // ID FIXO baseado no CPF (Crucial para Android)
+                name: login,
+                displayName: user.NOME || login
+            },
+            pubKeyCredParams: [{alg: -7, type: "public-key"}, {alg: -257, type: "public-key"}],
+            authenticatorSelection: {
+                authenticatorAttachment: "platform",
+                userVerification: "required"
+            },
+            timeout: 60000,
+            attestation: "none"
+        };
 
-            // Chama a API do navegador (Isso abre o popup do Android/iOS/Windows)
-            await navigator.credentials.create({
-                publicKey: {
-                    challenge: challenge,
-                    rp: { name: "Gestão Rodovia A" },
-                    user: {
-                        id: userId,
-                        name: login,
-                        displayName: user.NOME || login
-                    },
-                    pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-                    timeout: 60000,
-                    authenticatorSelection: { 
-                        authenticatorAttachment: "platform", // Força usar o do dispositivo (TouchID/FaceID)
-                        userVerification: "required"
-                    }
-                }
-            });
+        const credential = await navigator.credentials.create({
+            publicKey: publicKeyCredentialCreationOptions
+        });
 
-            // Se chegou aqui, deu certo! Salva no LocalStorage
-            localStorage.setItem(
-                "biometria_usuario",
-                JSON.stringify({
-                    login,
-                    perfil: user.PERFIL,
-                    token: sessionStorage.getItem("token_sistema"), // Usa o token atual
-                    nome: user.NOME
-                })
-            );
+        // Se chegou aqui, o Android salvou!
+        localStorage.setItem("biometria_usuario", JSON.stringify({
+            login: login,
+            perfil: user.PERFIL,
+            token: token,
+            nome: user.NOME,
+            credentialId: btoa(binToStr(new Uint8Array(credential.rawId))) // Salva ID da credencial para debug se precisar
+        }));
 
-            await Swal.fire({
-                toast: true, position: 'top-end', icon: 'success', 
-                title: 'Biometria configurada!', showConfirmButton: false, timer: 1500
-            });
+        // Feedback importante: Obriga o usuário a ver que deu certo antes de navegar
+        await Swal.fire({
+            icon: 'success',
+            title: 'Tudo pronto!',
+            text: 'Biometria configurada com sucesso.',
+            timer: 1500,
+            showConfirmButton: false
+        });
 
-        } catch (errBio) {
-            console.error("Erro ao criar biometria:", errBio);
-            await Swal.fire("Atenção", "Não foi possível ativar a biometria. O dispositivo pode não ser compatível ou foi cancelado.", "warning");
-        }
+    } catch (err) {
+        console.error("Erro Biometria:", err);
+        // Não mostramos erro para não travar o fluxo de quem cancelou
     }
 }
 
@@ -332,45 +324,61 @@ function irParaHome(perfil) {
 }
 
 /* ===============================
-   LOGIN VIA BIOMETRIA (Botão)
+   LOGIN VIA BIOMETRIA (BOTÃO)
 ================================ */
 const btnBio = document.getElementById("btnBiometria");
 
+// Só exibe se tiver salvo E for o mesmo domínio
 if (window.PublicKeyCredential && localStorage.getItem("biometria_usuario")) {
     btnBio.style.display = "block";
 }
 
 btnBio.addEventListener("click", async () => {
     try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
+        const dadosLocais = JSON.parse(localStorage.getItem("biometria_usuario"));
+        
+        const publicKeyCredentialRequestOptions = {
+            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+            timeout: 60000,
+            rpId: window.location.hostname, // Garante que busca no domínio certo
+            userVerification: "required"
+        };
 
+        // Solicita a digital
         const assertion = await navigator.credentials.get({
-            publicKey: {
-                challenge: challenge,
-                timeout: 60000,
-                userVerification: "required"
-            }
+            publicKey: publicKeyCredentialRequestOptions
         });
 
         if (assertion) {
-            const dados = JSON.parse(localStorage.getItem("biometria_usuario"));
-            if (!dados) return;
-
-            // Restaura sessão
-            sessionStorage.setItem("token_sistema", dados.token);
+            // Sucesso! Recupera sessão
+            sessionStorage.setItem("token_sistema", dadosLocais.token);
             sessionStorage.setItem("usuario_sistema", JSON.stringify({ 
-                NOME: dados.nome, 
-                PERFIL: dados.perfil, 
-                CPF: dados.login 
+                NOME: dadosLocais.nome, 
+                PERFIL: dadosLocais.perfil, 
+                CPF: dadosLocais.login 
             }));
 
-            irParaHome(dados.perfil);
+            irParaHome(dadosLocais.perfil);
         }
     } catch (e) {
-        Swal.fire({ title: "Erro", text: "Biometria não reconhecida.", icon: "error" });
+        console.error(e);
+        // Erro específico quando não encontra chave
+        if (e.name === "NotAllowedError" || e.name === "NotFoundError") {
+            Swal.fire({
+                title: "Nenhuma chave encontrada",
+                text: "Faça login com a senha novamente para recadastrar sua biometria.",
+                icon: "warning"
+            }).then(() => {
+                // Limpa para forçar recadastro
+                localStorage.removeItem("biometria_usuario");
+                window.location.reload();
+            });
+        } else {
+            Swal.fire("Erro", "Não foi possível validar a biometria.", "error");
+        }
     }
 });
+
 function resetarBiometria() {
     if (confirm("Isso vai apagar a configuração biométrica deste dispositivo. Continuar?")) {
         localStorage.removeItem("biometria_usuario");
