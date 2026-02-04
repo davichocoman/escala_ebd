@@ -136,6 +136,11 @@
             Acessar EBD (Público)
         </a>
     </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <button type="button" onclick="resetarBiometria()" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
+            [DEV] Limpar Biometria Salva
+        </button>
+    </div>
 </div>
 
 <script>
@@ -366,6 +371,13 @@ btnBio.addEventListener("click", async () => {
         Swal.fire({ title: "Erro", text: "Biometria não reconhecida.", icon: "error" });
     }
 });
+function resetarBiometria() {
+    if (confirm("Isso vai apagar a configuração biométrica deste dispositivo. Continuar?")) {
+        localStorage.removeItem("biometria_usuario");
+        alert("Limpeza concluída! Faça login novamente para ver o prompt.");
+        window.location.reload();
+    }
+}
 </script>
 </body>
 </html>
