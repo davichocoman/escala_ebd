@@ -159,32 +159,49 @@ document.getElementById("login").addEventListener("input", (e) => {
 ================================ */
 const passInput = document.getElementById("pass");
 const hint = document.getElementById("passHint");
+const loginInput = document.getElementById("login");
+const perfilLabel = document.getElementById("perfilDetectado");
 
-passInput.addEventListener("input", (e) => {
-    let v = e.target.value;
+loginInput.addEventListener("input", () => {
+    const valor = loginInput.value.trim();
 
-    // Se começar com letra → senha normal
-    if (/^[a-zA-Z]/.test(v)) {
-        hint.innerText = "Senha do sistema";
+    // Se tiver letra -> administração (improvável no campo numeric, mas mantendo a lógica)
+    if (/[a-zA-Z]/.test(valor)) {
+        perfilLabel.innerText = "Perfil detectado: Administração";
+        passInput.placeholder = "Senha do sistema";
+        hint.innerText = "Use sua senha";
         return;
     }
 
-    hint.innerText = "Membros: data de nascimento";
+    // Se só números e >= 6 dígitos -> membro
+    if (/^\d+$/.test(valor) && valor.length >= 6) {
+        perfilLabel.innerText = "Perfil detectado: Membro";
+        passInput.placeholder = "DD/MM/AAAA";
+        hint.innerText = "Data de nascimento";
+        return;
+    }
 
-    // Máscara de data
+    perfilLabel.innerText = "";
+});
+
+passInput.addEventListener("input", (e) => {
+    let v = e.target.value;
+    
+    // Se for perfil admin (detectado pela lógica acima ou se digitar letras) não aplica máscara
+    if (perfilLabel.innerText.includes("Administração")) return;
+
+    // Máscara de data apenas para números
     v = v.replace(/\D/g, "");
-
     if (v.length >= 3 && v.length <= 4) {
         v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
     } else if (v.length >= 5) {
         v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
     }
-
     e.target.value = v.slice(0, 10);
 });
 
 /* ===============================
-   LOGIN
+   LOGIN COM SENHA + REGISTRO BIOMETRIA
 ================================ */
 async function fazerLogin(e) {
     e.preventDefault();
@@ -195,9 +212,7 @@ async function fazerLogin(e) {
 
     try {
         const login = document.getElementById("login").value.trim();
-        const password = document.getElementById("pass").value
-            .trim()
-            .replace(/\s+/g, "");
+        const password = document.getElementById("pass").value.trim().replace(/\s+/g, "");
 
         const res = await fetch(
             "https://api-escala.onrender.com/api/auth/login",
@@ -211,31 +226,78 @@ async function fazerLogin(e) {
         const data = await res.json();
 
         if (res.ok) {
+            // Login Sucesso: Salva sessão
             sessionStorage.setItem("usuario_sistema", JSON.stringify(data.user));
             sessionStorage.setItem("token_sistema", data.token);
 
-            const perfil = data.user.PERFIL.toUpperCase();
-
-            if (perfil === "ADMIN" || perfil === "SECRETARIA") {
-                window.location.href = "/secretaria";
-            } else if (perfil === "PASTOR") {
-                window.location.href = "/pastor";
-            } else {
-                window.location.href = "/membro";
-            }
+            // --- LÓGICA DE REGISTRO DA BIOMETRIA ---
             if (window.PublicKeyCredential) {
-                const ativar = confirm("Deseja ativar login por biometria neste dispositivo?");
-                if (ativar) {
-                    localStorage.setItem(
-                        "biometria_usuario",
-                        JSON.stringify({
-                            login,
-                            perfil: data.user.PERFIL,
-                            token: data.token
-                        })
-                    );
+                // Verifica se já tem biometria salva para este usuário
+                const bioSalva = localStorage.getItem("biometria_usuario");
+                const bioObj = bioSalva ? JSON.parse(bioSalva) : null;
+                
+                // Se não tiver biometria ou for usuário diferente, oferece
+                if (!bioObj || bioObj.login !== login) {
+                    const ativar = confirm("Deseja ativar login por biometria/FaceID para facilitar o próximo acesso?");
+                    
+                    if (ativar) {
+                        try {
+                            // 1. CRIAÇÃO DA CREDENCIAL (Isso que faltava!)
+                            // Gera um desafio aleatório
+                            const challenge = new Uint8Array(32);
+                            window.crypto.getRandomValues(challenge);
+
+                            const userId = new Uint8Array(16);
+                            window.crypto.getRandomValues(userId);
+
+                            await navigator.credentials.create({
+                                publicKey: {
+                                    challenge: challenge,
+                                    rp: { name: "Gestão Rodovia A" },
+                                    user: {
+                                        id: userId,
+                                        name: login,
+                                        displayName: data.user.NOME || login
+                                    },
+                                    pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                                    timeout: 60000,
+                                    authenticatorSelection: { authenticatorAttachment: "platform" } // Usa FaceID/TouchID do dispositivo
+                                }
+                            });
+
+                            // 2. Se o navegador criou com sucesso, salva os dados no LocalStorage
+                            localStorage.setItem(
+                                "biometria_usuario",
+                                JSON.stringify({
+                                    login,
+                                    perfil: data.user.PERFIL,
+                                    token: data.token, // Guardamos o token para o futuro (Nota: idealmente o token tem validade longa)
+                                    nome: data.user.NOME
+                                })
+                            );
+                            
+                            Swal.fire({
+                                toast: true, position: 'top-end', icon: 'success', 
+                                title: 'Biometria ativada!', showConfirmButton: false, timer: 1500
+                            });
+
+                        } catch (errBio) {
+                            console.error("Erro ao criar biometria:", errBio);
+                            // Não impede o login, só avisa
+                        }
+                    }
                 }
             }
+            // ---------------------------------------
+
+            // Redirecionamento
+            const perfil = data.user.PERFIL.toUpperCase();
+            setTimeout(() => {
+                if (perfil === "ADMIN" || perfil === "SECRETARIA") window.location.href = "/secretaria";
+                else if (perfil === "PASTOR") window.location.href = "/pastor";
+                else window.location.href = "/membro";
+            }, 500);
+
         } else {
             Swal.fire("Erro", data.detail || "Credenciais inválidas", "error");
         }
@@ -247,57 +309,58 @@ async function fazerLogin(e) {
     }
 }
 
-    const loginInput = document.getElementById("login");
-    const perfilLabel = document.getElementById("perfilDetectado");
-    const passHint = document.getElementById("passHint");
-    
-    loginInput.addEventListener("input", () => {
-        const valor = loginInput.value.trim();
-    
-        // Se tiver letra → administração
-        if (/[a-zA-Z]/.test(valor)) {
-            perfilLabel.innerText = "Perfil detectado: Administração";
-            passInput.placeholder = "Senha do sistema";
-            passHint.innerText = "Use sua senha";
-            passInput.value = "";
-            return;
-        }
-    
-        // Se só números e >= CPF
-        if (/^\d+$/.test(valor) && valor.length >= 6) {
-            perfilLabel.innerText = "Perfil detectado: Membro";
-            passInput.placeholder = "DD/MM/AAAA";
-            passHint.innerText = "Data de nascimento";
-            passInput.value = "";
-            return;
-        }
-    
-        perfilLabel.innerText = "";
-    });
-    const btnBio = document.getElementById("btnBiometria");
+/* ===============================
+   LOGIN VIA BIOMETRIA (Botão)
+================================ */
+const btnBio = document.getElementById("btnBiometria");
 
-    if (window.PublicKeyCredential) {
-        btnBio.style.display = "block";
-    }
-    btnBio.addEventListener("click", async () => {
-        try {
-            // Dispara autenticação local (Face ID / Digital / PIN)
-            await navigator.credentials.get({
-                publicKey: {
-                    challenge: new Uint8Array(32),
-                    timeout: 60000,
-                    userVerification: "required"
-                }
-            });
-    
+// Só mostra o botão se tiver dados salvos no localStorage E o navegador suportar
+if (window.PublicKeyCredential && localStorage.getItem("biometria_usuario")) {
+    const dadosBio = JSON.parse(localStorage.getItem("biometria_usuario"));
+    // Opcional: Mostrar nome do usuário no botão
+    // btnBio.innerText = `🔐 Entrar como ${dadosBio.nome.split(' ')[0]}`;
+    btnBio.style.display = "block";
+}
+
+btnBio.addEventListener("click", async () => {
+    try {
+        // Gera desafio aleatório
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        // Pede autenticação ao sistema (FaceID/Digital)
+        const assertion = await navigator.credentials.get({
+            publicKey: {
+                challenge: challenge,
+                timeout: 60000,
+                userVerification: "required"
+            }
+        });
+
+        if (assertion) {
+            // Se o sistema operacional validou a digital/face:
             const dados = JSON.parse(localStorage.getItem("biometria_usuario"));
+            
             if (!dados) {
-                Swal.fire("Erro", "Biometria não configurada neste dispositivo", "error");
+                Swal.fire("Erro", "Dados de biometria não encontrados. Faça login com senha novamente.", "error");
                 return;
             }
-    
+
+            // Restaura a sessão
             sessionStorage.setItem("token_sistema", dados.token);
-    
+            
+            // Precisamos recuperar o objeto 'user' completo. 
+            // Como no localStorage simplificado talvez não tenhamos tudo, 
+            // idealmente buscaríamos na API usando o token, mas para simplificar o cache local:
+            // Vamos simular o objeto user básico necessário para os painéis funcionarem
+            const userSimulado = {
+                NOME: dados.nome,
+                PERFIL: dados.perfil,
+                CPF: dados.login
+            };
+            sessionStorage.setItem("usuario_sistema", JSON.stringify(userSimulado));
+
+            // Redireciona
             if (dados.perfil === "ADMIN" || dados.perfil === "SECRETARIA") {
                 window.location.href = "/secretaria";
             } else if (dados.perfil === "PASTOR") {
@@ -305,11 +368,16 @@ async function fazerLogin(e) {
             } else {
                 window.location.href = "/membro";
             }
-    
-        } catch (e) {
-            Swal.fire("Erro", "Falha na autenticação biométrica", "error");
         }
-    });
+    } catch (e) {
+        console.error(e);
+        Swal.fire({
+            title: "Não reconhecido",
+            text: "Não foi possível validar a biometria. Use sua senha.",
+            icon: "error"
+        });
+    }
+});
 </script>
 
 </body>
