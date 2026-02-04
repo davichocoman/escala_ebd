@@ -93,7 +93,7 @@
                 required
             >
         </div>
-
+        <div id="perfilDetectado" style="font-size:0.75rem; color:#475569; margin-bottom:8px;"></div>
         <!-- SENHA / NASCIMENTO -->
         <div class="form-group">
             <label id="labelPass">Senha ou Nascimento</label>
@@ -120,6 +120,15 @@
         >
             Entrar no Sistema
         </button>
+        <button
+            type="button"
+            id="btnBiometria"
+            class="btn"
+            style="width:100%; margin-top:10px; display:none;"
+        >
+            🔐 Entrar com biometria
+        </button>
+
     </form>
 
     <div style="margin-top:20px; border-top:1px solid #e2e8f0; padding-top:15px;">
@@ -214,6 +223,19 @@ async function fazerLogin(e) {
             } else {
                 window.location.href = "/membro";
             }
+            if (window.PublicKeyCredential) {
+                const ativar = confirm("Deseja ativar login por biometria neste dispositivo?");
+                if (ativar) {
+                    localStorage.setItem(
+                        "biometria_usuario",
+                        JSON.stringify({
+                            login,
+                            perfil: data.user.PERFIL,
+                            token: data.token
+                        })
+                    );
+                }
+            }
         } else {
             Swal.fire("Erro", data.detail || "Credenciais inválidas", "error");
         }
@@ -224,6 +246,71 @@ async function fazerLogin(e) {
         btn.innerText = "Entrar no Sistema";
     }
 }
+
+    const loginInput = document.getElementById("login");
+    const passInput = document.getElementById("pass");
+    const perfilLabel = document.getElementById("perfilDetectado");
+    const passHint = document.getElementById("passHint");
+    
+    loginInput.addEventListener("input", () => {
+        const valor = loginInput.value.trim();
+    
+        // Se tiver letra → administração
+        if (/[a-zA-Z]/.test(valor)) {
+            perfilLabel.innerText = "Perfil detectado: Administração";
+            passInput.placeholder = "Senha do sistema";
+            passHint.innerText = "Use sua senha";
+            passInput.value = "";
+            return;
+        }
+    
+        // Se só números e >= CPF
+        if (/^\d+$/.test(valor) && valor.length >= 6) {
+            perfilLabel.innerText = "Perfil detectado: Membro";
+            passInput.placeholder = "DD/MM/AAAA";
+            passHint.innerText = "Data de nascimento";
+            passInput.value = "";
+            return;
+        }
+    
+        perfilLabel.innerText = "";
+    });
+    const btnBio = document.getElementById("btnBiometria");
+
+    if (window.PublicKeyCredential) {
+        btnBio.style.display = "block";
+    }
+    btnBio.addEventListener("click", async () => {
+        try {
+            // Dispara autenticação local (Face ID / Digital / PIN)
+            await navigator.credentials.get({
+                publicKey: {
+                    challenge: new Uint8Array(32),
+                    timeout: 60000,
+                    userVerification: "required"
+                }
+            });
+    
+            const dados = JSON.parse(localStorage.getItem("biometria_usuario"));
+            if (!dados) {
+                Swal.fire("Erro", "Biometria não configurada neste dispositivo", "error");
+                return;
+            }
+    
+            sessionStorage.setItem("token_sistema", dados.token);
+    
+            if (dados.perfil === "ADMIN" || dados.perfil === "SECRETARIA") {
+                window.location.href = "/secretaria";
+            } else if (dados.perfil === "PASTOR") {
+                window.location.href = "/pastor";
+            } else {
+                window.location.href = "/membro";
+            }
+    
+        } catch (e) {
+            Swal.fire("Erro", "Falha na autenticação biométrica", "error");
+        }
+    });
 </script>
 
 </body>
