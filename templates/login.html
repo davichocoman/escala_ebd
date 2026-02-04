@@ -26,7 +26,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            min-height: 90vh;
             background: #0f172a;
             margin: 0;
             font-family: 'Segoe UI', sans-serif;
@@ -36,7 +36,7 @@
             background: white;
             padding: 2.5rem;
             border-radius: 16px;
-            width: 90%;
+            width: 85%;
             max-width: 400px;
             text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
@@ -48,7 +48,7 @@
         }
 
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
             position: relative;
             text-align: left;
         }
@@ -78,6 +78,12 @@
     <p style="color:#64748b; margin-bottom:20px; font-size:0.9rem;">
         Gestão Rodovia A
     </p>
+
+    <div style="margin-top:20px; border-top:1px solid #e2e8f0; padding-top:15px;">
+        <a href="/ebd" style="text-decoration:none; color:#3b82f6; font-size:0.85rem;">
+            Acessar Site da EBD (Público)
+        </a>
+    </div>
 
     <form onsubmit="fazerLogin(event)">
 
@@ -131,16 +137,11 @@
 
     </form>
 
-    <div style="margin-top:20px; border-top:1px solid #e2e8f0; padding-top:15px;">
-        <a href="/" style="text-decoration:none; color:#3b82f6; font-size:0.85rem;">
-            Acessar EBD (Público)
-        </a>
-    </div>
-    <div style="margin-top: 15px; text-align: center;">
+    <!-- <div style="margin-top: 15px; text-align: center;">
         <button type="button" onclick="resetarBiometria()" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
             [DEV] Limpar Biometria Salva
         </button>
-    </div>
+    </div> -->
 </div>
 
 <script>
@@ -407,13 +408,13 @@ function irParaHome(perfil) {
     else if (p === "PASTOR") window.location.href = "/pastor";
     else window.location.href = "/membro";
 }
-function resetarBiometria() {
-    if (confirm("Isso vai apagar a configuração biométrica deste dispositivo. Continuar?")) {
-        localStorage.removeItem("biometria_usuario");
-        alert("Limpeza concluída! Faça login novamente para ver o prompt.");
-        window.location.reload();
-    }
-}
+// function resetarBiometria() {
+//     if (confirm("Isso vai apagar a configuração biométrica deste dispositivo. Continuar?")) {
+//         localStorage.removeItem("biometria_usuario");
+//         alert("Limpeza concluída! Faça login novamente para ver o prompt.");
+//         window.location.reload();
+//     }
+// }
 </script>
 </body>
 </html>
