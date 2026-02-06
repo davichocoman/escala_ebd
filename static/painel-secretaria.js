@@ -583,64 +583,50 @@ function urlBase64ToUint8Array(base64String) {
 async function ativarNotificacoes() {
     const btn = document.getElementById('btn-push');
     
-    if (!('serviceWorker' in navigator)) {
-        Swal.fire('Erro', 'Service Worker não encontrado!', 'error');
-        return;
-    }
-
     try {
+        console.log("Solicitando permissão...");
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-            Swal.fire('Atenção', 'Você precisa permitir as notificações.', 'warning');
+            Swal.fire('Aviso', 'Permissão negada.', 'warning');
             return;
         }
 
-        btn.innerHTML = '<span class="material-icons spin">sync</span> Verificando SW...';
+        btn.innerHTML = '<span class="material-icons spin">sync</span> Verificando Canal...';
         btn.disabled = true;
 
-        // Garante que o SW está pronto com um timeout de 10 segundos
-        const registration = await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('SW Timeout')), 10000))
-        ]);
-
-        btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando Assinatura...';
-
-        // Verifica se já existe assinatura para não criar duplicado
-        let subscription = await registration.pushManager.getSubscription();
+        // Registro manual para garantir que ele não fique "preso"
+        const registration = await navigator.serviceWorker.register('/sw.js');
         
-        if (!subscription) {
-            subscription = await registration.pushManager.subscribe({
+        // Aguarda ele ficar ativo de verdade
+        btn.innerHTML = '<span class="material-icons spin">sync</span> Ativando Serviço...';
+        
+        // Pequena gambiarra técnica para não travar: se em 5s não responder, dá erro
+        const subscription = await Promise.race([
+            registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array('BAgPehTm8ZhgYy0mKvcgF-HefK4xwvbn-Cz1OGeQlbZtLsRJi4PnnmmiHrtYF_1FX5ty9KElHMD5AJ_tGM1Eiks')
-            });
-        }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de Conexão')), 8000))
+        ]);
 
-        btn.innerHTML = '<span class="material-icons spin">sync</span> Salvando no Servidor...';
+        console.log("Assinatura gerada:", subscription);
 
+        // Envia para o Render
         const res = await fetch(`${API_BASE}/push/subscribe`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-admin-token': SISTEMA.token 
-            },
-            body: JSON.stringify({ 
-                cpf: getVal(SISTEMA.usuario, 'CPF'), 
-                data: subscription 
-            })
+            headers: { 'Content-Type': 'application/json', 'x-admin-token': SISTEMA.token },
+            body: JSON.stringify({ cpf: getVal(SISTEMA.usuario, 'CPF'), data: subscription })
         });
 
         if (res.ok) {
-            Swal.fire({ icon: 'success', title: 'Pronto!', text: 'Notificações ativadas.', timer: 2000, showConfirmButton: false });
-            btn.innerHTML = '<span class="material-icons">check_circle</span> Ativado';
-            btn.style.background = '#dcfce7';
-        } else {
-            throw new Error('Erro no servidor');
+            Swal.fire({ icon: 'success', title: 'Ativado!', timer: 2000, showConfirmButton: false });
+            btn.innerHTML = '<span class="material-icons">check_circle</span> Notificações OK';
+            btn.classList.add('active-btn'); // Crie uma classe verde no CSS
         }
 
     } catch (error) {
-        console.error("Erro no Push:", error);
-        Swal.fire('Erro', 'Falha na configuração. Tente recarregar a página.', 'error');
+        console.error("Erro fatal no registro:", error);
+        Swal.fire('Erro', 'O serviço de notificações demorou muito a responder. Tente recarregar a página.', 'error');
         btn.innerHTML = '<span class="material-icons">notifications_active</span> Tentar Novamente';
         btn.disabled = false;
     }
