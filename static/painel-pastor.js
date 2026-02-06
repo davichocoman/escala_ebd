@@ -420,7 +420,12 @@ function renderizarMeusDados() {
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e2e8f0; grid-column: span 12;">
             ${htmlFoto}
             <h2 style="margin:0; color:#1e293b; text-align:center;">${nome}</h2>
-            <span style="color:#64748b; font-size:0.9rem;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+            <span style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
+            
+            <button onclick="ativarNotificacoes()" id="btn-push" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:0.2s;">
+                <span class="material-icons" style="font-size:1.1rem;">notifications_active</span>
+                Ativar Avisos no Celular
+            </button>
         </div>
     `;
 
@@ -500,6 +505,81 @@ function renderizarMeusDados() {
 // ============================================================
 // 4. UTILITÁRIOS
 // ============================================================
+// Função para converter a chave VAPID pública (necessário para o navegador)
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
+    return outputArray;
+}
+
+async function ativarNotificacoes() {
+    const btn = document.getElementById('btn-push');
+    
+    // 1. Verifica suporte
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        Swal.fire('Não suportado', 'Seu navegador não suporta notificações push.', 'error');
+        return;
+    }
+
+    try {
+        // 2. Pede permissão
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            Swal.fire('Permissão Negada', 'Você precisa permitir as notificações para receber os avisos.', 'warning');
+            return;
+        }
+
+        btn.innerHTML = '<span class="material-icons spin">sync</span> Configurando...';
+        btn.disabled = true;
+
+        // 3. Obtém a inscrição do Push Service
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array('BAgPehTm8ZhgYy0mKvcgF-HefK4xwvbn-Cz1OGeQlbZtLsRJi4PnnmmiHrtYF_1FX5ty9KElHMD5AJ_tGM1Eiks')
+        });
+
+        // 4. Envia para o seu Backend FastAPI
+        const res = await fetch(`${API_BASE}/push/subscribe`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-admin-token': SISTEMA.token 
+            },
+            body: JSON.stringify({ 
+                cpf: getVal(SISTEMA.usuario, 'CPF'), 
+                data: subscription 
+            })
+        });
+
+        if (res.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Notificações Ativas!',
+                text: 'Você agora receberá avisos de reservas e aniversariantes.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+            btn.style.background = '#dcfce7';
+            btn.style.color = '#15803d';
+            btn.style.borderColor = '#bbf7d0';
+            btn.innerHTML = '<span class="material-icons">check_circle</span> Notificações Ativadas';
+        } else {
+            throw new Error('Falha ao salvar inscrição no servidor.');
+        }
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Erro', 'Não foi possível ativar as notificações.', 'error');
+        btn.innerHTML = '<span class="material-icons">notifications_active</span> Ativar Avisos no Celular';
+        btn.disabled = false;
+    }
+}
+
+
 
 function configurarBuscas() {
     const buscaGeral = document.getElementById('buscaAgendaGeral');
