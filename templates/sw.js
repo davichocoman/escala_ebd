@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ad-rodovia-v1';
+const CACHE_NAME = 'ad-rodovia-v2';
 const assets = [
   '/',
   '/static/portal.css',
@@ -9,18 +9,22 @@ const assets = [
   '/static/icons/icon-192.png'
 ];
 
-self.addEventListener('install', evt => {
-  evt.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      cache.addAll(assets);
-    })
-  );
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(assets))
+    );
 });
 
-self.addEventListener('fetch', evt => {
-  evt.respondWith(
-    caches.match(evt.request).then(res => {
-      return res || fetch(evt.request);
-    })
-  );
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            // Retorna o arquivo do cache ou tenta buscar na rede
+            return response || fetch(event.request).catch(() => {
+                // Se a rede falhar e for uma navegação de página, mostra a página offline
+                if (event.request.mode === 'navigate') {
+                    return caches.match(OFFLINE_URL);
+                }
+            });
+        })
+    );
 });
