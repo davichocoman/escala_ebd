@@ -28,3 +28,25 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+self.addEventListener('push', (event) => {
+    const data = event.data ? event.data.json() : { title: 'Nova Atualização', body: 'Confira as novidades no painel.' };
+    
+    const options = {
+        body: data.body,
+        icon: '/static/icons/android/android-launchericon-192-192.png',
+        badge: '/static/icons/android/android-launchericon-96-96.png',
+        vibrate: [100, 50, 100],
+        data: { url: '/secretaria' }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// Abre o app ao clicar na notificação
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(clients.openWindow(event.notification.data.url));
+});
