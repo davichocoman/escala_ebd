@@ -524,3 +524,41 @@ window.addEventListener('appinstalled', () => {
     installBanner.classList.add('hidden');
     console.log('PWA: Aplicativo instalado com sucesso!');
 });
+
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // No Android/PC, mostra o botão de instalar
+    document.getElementById('item-instalar')?.classList.remove('hidden');
+});
+
+// Detecta se é iOS para mostrar o guia manual
+const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+const isStandalone = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+
+if (isIos() && !isStandalone()) {
+    document.getElementById('item-instalar')?.classList.remove('hidden');
+}
+
+window.iniciarInstalacao = async () => {
+    if (isIos()) {
+        // Guia para iPhone
+        Swal.fire({
+            title: 'Instale no seu iPhone',
+            html: `1. Toque no ícone de <strong>Compartilhar</strong> <span class="material-icons">ios_share</span> na barra do Safari.<br>
+                   2. Selecione <strong>Adicionar à Tela de Início</strong> <span class="material-icons">add_box</span>.`,
+            icon: 'info',
+            confirmButtonColor: '#3b82f6'
+        });
+    } else if (deferredPrompt) {
+        // Prompt automático para Android/PC
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            document.getElementById('item-instalar').classList.add('hidden');
+        }
+        deferredPrompt = null;
+    }
+};
