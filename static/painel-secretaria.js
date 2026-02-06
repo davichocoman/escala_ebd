@@ -583,31 +583,41 @@ function urlBase64ToUint8Array(base64String) {
 async function ativarNotificacoes() {
     const btn = document.getElementById('btn-push');
     
-    // 1. Verifica suporte
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        Swal.fire('Não suportado', 'Seu navegador não suporta notificações push.', 'error');
+    if (!('serviceWorker' in navigator)) {
+        Swal.fire('Erro', 'Service Worker não encontrado!', 'error');
         return;
     }
 
     try {
-        // 2. Pede permissão
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-            Swal.fire('Permissão Negada', 'Você precisa permitir as notificações para receber os avisos.', 'warning');
+            Swal.fire('Atenção', 'Você precisa permitir as notificações.', 'warning');
             return;
         }
 
-        btn.innerHTML = '<span class="material-icons spin">sync</span> Configurando...';
+        btn.innerHTML = '<span class="material-icons spin">sync</span> Verificando SW...';
         btn.disabled = true;
 
-        // 3. Obtém a inscrição do Push Service
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array('BAgPehTm8ZhgYy0mKvcgF-HefK4xwvbn-Cz1OGeQlbZtLsRJi4PnnmmiHrtYF_1FX5ty9KElHMD5AJ_tGM1Eiks')
-        });
+        // Garante que o SW está pronto com um timeout de 10 segundos
+        const registration = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SW Timeout')), 10000))
+        ]);
 
-        // 4. Envia para o seu Backend FastAPI
+        btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando Assinatura...';
+
+        // Verifica se já existe assinatura para não criar duplicado
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array('BAgPehTm8ZhgYy0mKvcgF-HefK4xwvbn-Cz1OGeQlbZtLsRJi4PnnmmiHrtYF_1FX5ty9KElHMD5AJ_tGM1Eiks')
+            });
+        }
+
+        btn.innerHTML = '<span class="material-icons spin">sync</span> Salvando no Servidor...';
+
         const res = await fetch(`${API_BASE}/push/subscribe`, {
             method: 'POST',
             headers: { 
@@ -621,29 +631,20 @@ async function ativarNotificacoes() {
         });
 
         if (res.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Notificações Ativas!',
-                text: 'Você agora receberá avisos de reservas e aniversariantes.',
-                timer: 3000,
-                showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: 'Pronto!', text: 'Notificações ativadas.', timer: 2000, showConfirmButton: false });
+            btn.innerHTML = '<span class="material-icons">check_circle</span> Ativado';
             btn.style.background = '#dcfce7';
-            btn.style.color = '#15803d';
-            btn.style.borderColor = '#bbf7d0';
-            btn.innerHTML = '<span class="material-icons">check_circle</span> Notificações Ativadas';
         } else {
-            throw new Error('Falha ao salvar inscrição no servidor.');
+            throw new Error('Erro no servidor');
         }
 
     } catch (error) {
-        console.error(error);
-        Swal.fire('Erro', 'Não foi possível ativar as notificações.', 'error');
-        btn.innerHTML = '<span class="material-icons">notifications_active</span> Ativar Avisos no Celular';
+        console.error("Erro no Push:", error);
+        Swal.fire('Erro', 'Falha na configuração. Tente recarregar a página.', 'error');
+        btn.innerHTML = '<span class="material-icons">notifications_active</span> Tentar Novamente';
         btn.disabled = false;
     }
 }
-
 // ============================================================
 // 5. INTERAÇÕES E BOTÕES
 // ============================================================
