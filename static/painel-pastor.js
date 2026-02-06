@@ -677,7 +677,7 @@ function timeParaMinutos(timeStr) {
     return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
 }
 
-let deferredPrompt;
+
 const installBanner = document.getElementById('pwa-install-banner');
 const btnInstall = document.getElementById('btn-pwa-install');
 
@@ -715,8 +715,6 @@ window.addEventListener('appinstalled', () => {
     installBanner.classList.add('hidden');
     console.log('PWA: Aplicativo instalado com sucesso!');
 });
-
-let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
