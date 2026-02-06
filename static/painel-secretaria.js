@@ -1340,8 +1340,6 @@ window.addEventListener('appinstalled', () => {
     console.log('PWA: Aplicativo instalado com sucesso!');
 });
 
-let deferredPrompt;
-
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
