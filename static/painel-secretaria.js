@@ -424,15 +424,24 @@ function renderizarAgendaPastor() {
 }
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
-    // Filtra apenas o que tem evento e data (minúsculos no Python)
-    const dados = (SISTEMA.dados.dashboard.agenda || []).filter(ev =>
-    eventoValido(ev, 'EVENTO', 'DATA')
-    );
+    const busca = (document.getElementById('buscaAgendaGeral')?.value || '').toLowerCase();
+    
+    // Filtra por Evento ou Local
+    const dados = (SISTEMA.dados.dashboard.agenda || []).filter(ev => {
+        const correspondeBusca = getVal(ev, 'EVENTO').toLowerCase().includes(busca) || 
+                                 getVal(ev, 'LOCAL').toLowerCase().includes(busca);
+        return correspondeBusca && eventoValido(ev, 'EVENTO', 'DATA');
+    });
     
     ordenarPorDataEHora(dados, 'data', '');
 
     let html = "";
     let mesAtual = -1;
+
+    if (dados.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhum evento encontrado.</p>';
+        return;
+    }
 
     dados.forEach(ev => {
         const d = dataParaObj(getVal(ev, 'data'));
@@ -452,7 +461,7 @@ function renderizarAgendaGeralCards() {
                 </div>
             </div>`;
     });
-    container.innerHTML = html || '<p class="empty-msg">Nenhum evento cadastrado.</p>';
+    container.innerHTML = html;
 }
 // --- Funções Auxiliares de Formatação para o Perfil ---
 const formatarCPF = (valor) => {
@@ -637,19 +646,23 @@ async function ativarNotificacoes() {
 // 5. INTERAÇÕES E BOTÕES
 // ============================================================
 function configurarBotoes() {
-    const buscaEl = document.getElementById('buscaMembro');
+    const buscaMembro = document.getElementById('buscaMembro');
     const buscaGeral = document.getElementById('buscaAgendaGeral');
+    const buscaReservas = document.getElementById('buscaReservas');
 
-    if(buscaGeral) buscaGeral.addEventListener('input', debounce(() => renderizarAgendaGeral(), 300));
-   
-    if (buscaEl) {
-        // Criamos uma versão "debounced" da renderização
-        const buscarComDebounce = debounce(() => {
-            console.log("🔍 Filtrando membros...");
-            renderizarMembros();
-        }, 400); // 400ms é o "doce balanço" entre velocidade e economia de CPU
-        // Trocamos o renderizarMembros direto pela versão com debounce
-        buscaEl.addEventListener('input', buscarComDebounce);
+    // Busca de Membros
+    if (buscaMembro) {
+        buscaMembro.addEventListener('input', debounce(() => renderizarMembros(), 300));
+    }
+
+    // Busca na Agenda Geral
+    if (buscaGeral) {
+        buscaGeral.addEventListener('input', debounce(() => renderizarAgendaGeralCards(), 300));
+    }
+
+    // Busca nas Reservas
+    if (buscaReservas) {
+        buscaReservas.addEventListener('input', debounce(() => renderizarReservasCards(), 300));
     }
     // Restante dos seus formulários...
     document.querySelectorAll('form').forEach(f => {
@@ -1083,12 +1096,13 @@ const NOMES_MESES = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUN
 // 3. Função para renderizar Reservas
 function renderizarReservasCards() {
     const container = document.getElementById('lista-reservas-cards');
+    const busca = (document.getElementById('buscaReservas')?.value || '').toLowerCase();
     const dados = SISTEMA.dados.dashboard.reservas || [];
     
-    // 1. Filtra
-    // O backend envia "evento" (minúsculo) na rota /patrimonio/dados
-    // A função eventoValido e getVal lidam com maiúsculas/minúsculas, então 'EVENTO' funciona
-    const validos = dados.filter(res => eventoValido(res, 'EVENTO', 'DATA'));
+    const validos = dados.filter(res => {
+        const termo = (getVal(res, 'EVENTO') + getVal(res, 'LOCAL') + getVal(res, 'RESPONSAVEL')).toLowerCase();
+        return termo.includes(busca) && eventoValido(res, 'EVENTO', 'DATA');
+    });
     
     // 2. Descobre qual o nome do campo de hora ('inicio' ou 'HORARIO_INICIO')
     let keyHora = 'HORARIO_INICIO';
