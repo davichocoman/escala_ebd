@@ -425,7 +425,9 @@ function renderizarAgendaPastor() {
 function renderizarAgendaGeralCards() {
     const container = document.getElementById('lista-agenda-geral-cards');
     // Filtra apenas o que tem evento e data (minúsculos no Python)
-    const dados = (SISTEMA.dados.dashboard.agenda || []).filter(ev => getVal(ev, 'evento') && getVal(ev, 'data'));
+    const dados = (SISTEMA.dados.dashboard.agenda || []).filter(ev =>
+    eventoValido(ev, 'EVENTO', 'DATA')
+    );
     
     ordenarPorDataEHora(dados, 'data', '');
 
