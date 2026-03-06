@@ -638,6 +638,9 @@ async function ativarNotificacoes() {
 // ============================================================
 function configurarBotoes() {
     const buscaEl = document.getElementById('buscaMembro');
+    const buscaGeral = document.getElementById('buscaAgendaGeral');
+
+    if(buscaGeral) buscaGeral.addEventListener('input', debounce(() => renderizarAgendaGeral(), 300));
    
     if (buscaEl) {
         // Criamos uma versão "debounced" da renderização
@@ -1266,6 +1269,8 @@ function renderizarCheckboxesPastores() {
         container.appendChild(label);
     });
 }
+
+
 
 function getAniversariantesProximos(listaMembros) {
     const hoje = new Date();
