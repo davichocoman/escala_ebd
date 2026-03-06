@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso - AD Rodovia A</title>
 
-    <!-- PWA -->
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Ícones -->
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/ios/180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/ios/32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/ios/16.png">
 
-    <!-- Estilos -->
     <link rel="stylesheet" href="../static/portal.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -101,7 +98,6 @@
 
     <form onsubmit="fazerLogin(event)">
 
-        <!-- CPF -->
         <div class="form-group">
             <label>CPF</label>
             <input
@@ -110,14 +106,14 @@
                 class="form-input"
                 placeholder="Somente números"
                 inputmode="numeric"
+                maxlength="11"
                 required
             >
         </div>
         <div id="perfilDetectado" style="font-size:0.75rem; color:#475569; margin-bottom:8px;"></div>
-        <!-- SENHA / NASCIMENTO -->
+
         <div class="form-group">
             <label id="labelPass">Senha ou Nascimento</label>
-
             <input
                 type="password"
                 id="pass"
@@ -126,206 +122,128 @@
                 autocomplete="current-password"
                 required
             >
-
             <span class="toggle-pass" id="togglePass">👁️</span>
             <div class="hint" id="passHint">
                 Membros: data de nascimento
             </div>
         </div>
 
-        <button
-            type="submit"
-            class="btn btn-primary"
-            style="width:100%; padding:12px; font-weight:bold;"
-        >
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-weight:bold;">
             Entrar no Sistema
         </button>
-        <button
-            type="button"
-            id="btnBiometria"
-            class="btn"
-            style="width:100%; margin-top:10px; display:none;"
-        >
+        
+        <button type="button" id="btnBiometria" class="btn" style="width:100%; margin-top:10px; display:none;">
             🔐 Entrar com biometria
         </button>
-
     </form>
-
-    <!-- <div style="margin-top: 15px; text-align: center;">
-        <button type="button" onclick="resetarBiometria()" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
-            [DEV] Limpar Biometria Salva
-        </button>
-    </div> -->
 </div>
 
 <script>
-// No início do seu Script ou dentro do DOMContentLoaded
-window.onload = () => {
-    document.getElementById("login").focus(); // Começa com foco no CPF
-};
-
-// 1. Pular para senha ao terminar CPF
-loginInput.addEventListener("input", (e) => {
-    let v = e.target.value.replace(/\D/g, "");
-    e.target.value = v; // Garante apenas números
-    
-    if (v.length === 11) {
-        passInput.focus(); // Pula para a senha automaticamente
-    }
-
-    // Sua lógica de perfil existente...
-    if (/^\d+$/.test(v) && v.length >= 6) {
-        perfilLabel.innerText = "Perfil detectado: Membro/Pastor";
-        passInput.placeholder = "Senha ou Nascimento";
-    } else {
-        perfilLabel.innerText = "";
-    }
-});
-
-// 2. Lógica de Senha Refinada (Visibilidade + Teclado Numérico)
-passInput.addEventListener("input", (e) => {
-    let v = e.target.value;
+/* ===============================
+   CONTROLE DE INTERFACE (DOM)
+================================ */
+document.addEventListener("DOMContentLoaded", () => {
+    const loginInput = document.getElementById("login");
+    const passInput = document.getElementById("pass");
     const toggleIcon = document.getElementById("togglePass");
-    
-    if (v.length > 0) {
-        if (/^\d/.test(v)) {
-            passInput.type = "text";
-            passInput.inputMode = "numeric"; // Abre teclado numérico no celular
-            toggleIcon.style.display = "none";
+    const hint = document.getElementById("passHint");
+    const perfilLabel = document.getElementById("perfilDetectado");
+    const btnBio = document.getElementById("btnBiometria");
+
+    // 1. Foco Inicial
+    loginInput.focus();
+
+    // 2. Lógica do CPF
+    loginInput.addEventListener("input", (e) => {
+        let valor = e.target.value.replace(/\D/g, "");
+        e.target.value = valor;
+
+        if (valor.length >= 6) {
+            perfilLabel.innerText = "Perfil detectado: Membro/Pastor";
+        } else {
+            perfilLabel.innerText = "";
+        }
+
+        if (valor.length === 11) {
+            passInput.focus(); // Pulo automático
+        }
+    });
+
+    // 3. Lógica da Senha / Data
+    passInput.addEventListener("input", (e) => {
+        let v = e.target.value;
+
+        if (v.length > 0) {
+            if (/^\d/.test(v)) {
+                // É DATA: mostra texto, teclado numérico e esconde olho
+                passInput.type = "text";
+                passInput.inputMode = "numeric";
+                toggleIcon.style.display = "none";
+            } else {
+                // É SENHA: oculta texto, teclado padrão e mostra olho
+                passInput.type = "password";
+                passInput.inputMode = "text";
+                toggleIcon.style.display = "block";
+            }
         } else {
             passInput.type = "password";
-            passInput.inputMode = "text"; // Teclado normal para senhas admin
             toggleIcon.style.display = "block";
         }
-    } else {
-        passInput.type = "password";
-        toggleIcon.style.display = "block";
+
+        // Aplica Máscara se não houver letras
+        if (!/[a-zA-Z]/.test(v)) {
+            hint.innerText = "Membros: data de nascimento";
+            v = v.replace(/\D/g, "");
+            if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
+            else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+            if (v.length <= 10) e.target.value = v;
+        } else {
+            hint.innerText = "Senha alfanumérica detectada";
+        }
+    });
+
+    // 4. Alternar olho manualmente (Administradores)
+    toggleIcon.addEventListener("click", () => {
+        passInput.type = passInput.type === "password" ? "text" : "password";
+    });
+
+    // 5. Exibição do botão de biometria
+    const dadosLocais = localStorage.getItem("biometria_usuario");
+    if (window.PublicKeyCredential && dadosLocais) {
+        btnBio.style.display = "block";
     }
 
-    // Máscara de data
-    if (/[a-zA-Z]/.test(v)) {
-        hint.innerText = "Senha alfanumérica detectada";
-        return; 
-    }
-    hint.innerText = "Membros: data de nascimento";
-    v = v.replace(/\D/g, "");
-    if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
-    else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
-    if (v.length <= 10) e.target.value = v;
+    // Listener do botão de biometria
+    btnBio.addEventListener("click", loginBiometrico);
 });
+
 /* ===============================
-   UTILITÁRIOS: CONVERSÃO DE DADOS (CRUCIAL)
+   AUTENTICAÇÃO E BIOMETRIA
 ================================ */
-// Converte ArrayBuffer para String Base64 para salvar no LocalStorage
 function bufferToBase64(buffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
     return window.btoa(binary);
 }
 
-// Converte String Base64 de volta para ArrayBuffer para enviar ao navegador
 function base64ToBuffer(base64) {
     const binary_string = window.atob(base64);
-    const len = binary_string.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
-    }
+    const bytes = new Uint8Array(binary_string.length);
+    for (let i = 0; i < binary_string.length; i++) bytes[i] = binary_string.charCodeAt(i);
     return bytes.buffer;
 }
 
-// Cria um ID de usuário fixo a partir do CPF (para o Android não achar que é outra pessoa)
-function strToBuffer(str) {
-    const encoder = new TextEncoder();
-    return encoder.encode(str);
-}
-
-/* ===============================
-   INTERFACE E MÁSCARAS
-================================ */
-document.getElementById("togglePass").addEventListener("click", () => {
-    const pass = document.getElementById("pass");
-    pass.type = pass.type === "password" ? "text" : "password";
-});
-
-document.getElementById("login").addEventListener("input", (e) => {
-    e.target.value = e.target.value.replace(/\D/g, "");
-});
-
-const passInput = document.getElementById("pass");
-const hint = document.getElementById("passHint");
-const loginInput = document.getElementById("login");
-const perfilLabel = document.getElementById("perfilDetectado");
-
-loginInput.addEventListener("input", () => {
-    const valor = loginInput.value.trim();
-    if (/[a-zA-Z]/.test(valor)) {
-        perfilLabel.innerText = "Perfil detectado: Administração";
-        passInput.placeholder = "Senha do sistema";
-        return;
-    }
-    if (/^\d+$/.test(valor) && valor.length >= 6) {
-        perfilLabel.innerText = "Perfil detectado: Membro/Pastor";
-        passInput.placeholder = "Senha ou Nascimento";
-        return;
-    }
-    perfilLabel.innerText = "";
-});
-
-const toggleIcon = document.getElementById("togglePass"); // Referência ao ícone
-
-passInput.addEventListener("input", (e) => {
-    let v = e.target.value;
-    
-    // --- LÓGICA DE VISIBILIDADE E OCULTAR OLHINHO ---
-    if (v.length > 0) {
-        if (/^\d/.test(v)) {
-            // É número (Data): Mostra o texto e esconde o ícone
-            passInput.type = "text";
-            toggleIcon.style.display = "none";
-        } else {
-            // É letra (Admin): Oculta o texto e mostra o ícone
-            passInput.type = "password";
-            toggleIcon.style.display = "block";
-        }
-    } else {
-        // Campo vazio: Volta ao padrão (Password e ícone visível)
-        passInput.type = "password";
-        toggleIcon.style.display = "block";
-    }
-
-    // --- MANTÉM SUA LÓGICA DE MÁSCARA ABAIXO ---
-    if (/[a-zA-Z]/.test(v)) {
-        hint.innerText = "Senha alfanumérica detectada";
-        return; 
-    }
-    
-    hint.innerText = "Membros: data de nascimento";
-    v = v.replace(/\D/g, "");
-    
-    if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
-    else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
-    
-    if (v.length <= 10) e.target.value = v;
-});
-
-/* ===============================
-   LOGIN COM SENHA + REGISTRO
-================================ */
 async function fazerLogin(e) {
     e.preventDefault();
     const btn = document.querySelector("button[type='submit']");
+    const login = document.getElementById("login").value.trim();
+    const password = document.getElementById("pass").value.trim();
+
     btn.disabled = true;
     btn.innerText = "Autenticando...";
 
     try {
-        const login = document.getElementById("login").value.trim();
-        const password = document.getElementById("pass").value.trim();
-
         const res = await fetch("https://api-escala.onrender.com/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -335,38 +253,51 @@ async function fazerLogin(e) {
         const data = await res.json();
 
         if (res.ok) {
-            // 1. Salva Sessão
             sessionStorage.setItem("usuario_sistema", JSON.stringify(data.user));
             sessionStorage.setItem("token_sistema", data.token);
 
-            // 2. Tenta Registrar Biometria (Fluxo Pausado)
             if (window.PublicKeyCredential) {
                 const bioSalva = localStorage.getItem("biometria_usuario");
                 const bioObj = bioSalva ? JSON.parse(bioSalva) : null;
-
-                // Se não tem biometria para este login, ou se a biometria salva é de outro CPF
                 if (!bioObj || bioObj.login !== login) {
                     await registrarBiometria(login, data.user, data.token);
                 }
             }
-
-            // 3. Redireciona
             irParaHome(data.user.PERFIL);
-
         } else {
             Swal.fire("Erro", data.detail || "Credenciais inválidas", "error");
             btn.disabled = false;
             btn.innerText = "Entrar no Sistema";
         }
     } catch (err) {
-        console.error(err);
-        Swal.fire("Erro", "Falha na conexão com o servidor", "error");
+        Swal.fire("Erro", "Falha na conexão", "error");
         btn.disabled = false;
         btn.innerText = "Entrar no Sistema";
     }
 }
 
-// Função de Registro da Biometria
+async function loginBiometrico() {
+    try {
+        const dados = JSON.parse(localStorage.getItem("biometria_usuario"));
+        const assertion = await navigator.credentials.get({
+            publicKey: {
+                challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+                timeout: 60000,
+                rpId: window.location.hostname,
+                allowCredentials: [{ id: base64ToBuffer(dados.credentialId), type: 'public-key' }]
+            }
+        });
+
+        if (assertion) {
+            sessionStorage.setItem("token_sistema", dados.token);
+            sessionStorage.setItem("usuario_sistema", JSON.stringify({ NOME: dados.nome, PERFIL: dados.perfil, CPF: dados.login }));
+            irParaHome(dados.perfil);
+        }
+    } catch (e) {
+        Swal.fire("Erro", "Falha na leitura biométrica.", "error");
+    }
+}
+
 async function registrarBiometria(login, user, token) {
     const result = await Swal.fire({
         title: 'Facilitar acesso?',
@@ -374,125 +305,29 @@ async function registrarBiometria(login, user, token) {
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#3b82f6',
-        confirmButtonText: 'Sim, cadastrar',
-        cancelButtonText: 'Agora não'
+        confirmButtonText: 'Sim, cadastrar'
     });
 
     if (!result.isConfirmed) return;
 
     try {
-        // Opções de Criação
-        const publicKeyCredentialCreationOptions = {
+        const options = {
             challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-            rp: {
-                name: "Gestão Rodovia A",
-                id: window.location.hostname // Importante para o Android vincular ao domínio
-            },
-            user: {
-                id: strToBuffer(login), // ID fixo baseado no CPF
-                name: login,
-                displayName: user.NOME || login
-            },
+            rp: { name: "Gestão Rodovia A", id: window.location.hostname },
+            user: { id: new TextEncoder().encode(login), name: login, displayName: user.NOME || login },
             pubKeyCredParams: [{alg: -7, type: "public-key"}, {alg: -257, type: "public-key"}],
-            authenticatorSelection: {
-                authenticatorAttachment: "platform", // Força usar o leitor do celular
-                userVerification: "required",
-                requireResidentKey: false // Não exige chave residente (mais compatível)
-            },
-            timeout: 60000,
-            attestation: "none"
+            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+            timeout: 60000
         };
 
-        const credential = await navigator.credentials.create({
-            publicKey: publicKeyCredentialCreationOptions
-        });
-
-        // Converte o ID da credencial (buffer) para Base64 para salvar no texto
-        const rawIdBase64 = bufferToBase64(credential.rawId);
-
-        // Salva tudo no LocalStorage
+        const credential = await navigator.credentials.create({ publicKey: options });
         localStorage.setItem("biometria_usuario", JSON.stringify({
-            login: login,
-            perfil: user.PERFIL,
-            token: token,
-            nome: user.NOME,
-            credentialId: rawIdBase64 // <--- AQUI ESTÁ O SEGREDO
+            login, perfil: user.PERFIL, token, nome: user.NOME, credentialId: bufferToBase64(credential.rawId)
         }));
 
-        await Swal.fire({
-            icon: 'success',
-            title: 'Biometria Salva!',
-            text: 'Da próxima vez, clique no botão "Entrar com biometria".',
-            timer: 2000,
-            showConfirmButton: false
-        });
-
-    } catch (err) {
-        console.error("Erro ao registrar:", err);
-        // Não mostra erro para o usuário para não travar o fluxo, apenas segue o login
-    }
+        Swal.fire({ icon: 'success', title: 'Biometria Salva!', timer: 2000, showConfirmButton: false });
+    } catch (err) { console.error(err); }
 }
-
-/* ===============================
-   LOGIN VIA BIOMETRIA (BOTÃO)
-================================ */
-const btnBio = document.getElementById("btnBiometria");
-
-// Só mostra o botão se tivermos dados E o ID da credencial salvos
-const dadosLocais = localStorage.getItem("biometria_usuario");
-if (window.PublicKeyCredential && dadosLocais) {
-    btnBio.style.display = "block";
-}
-
-btnBio.addEventListener("click", async () => {
-    try {
-        const dados = JSON.parse(dadosLocais);
-        if (!dados || !dados.credentialId) {
-            Swal.fire("Atenção", "Dados biométricos inválidos. Faça login com senha novamente para recadastrar.", "warning");
-            return;
-        }
-
-        // Converte o ID salvo de volta para Buffer
-        const credentialIdBuffer = base64ToBuffer(dados.credentialId);
-
-        // Solicita autenticação ESPECÍFICA para esta credencial
-        const assertion = await navigator.credentials.get({
-            publicKey: {
-                challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                timeout: 60000,
-                rpId: window.location.hostname,
-                userVerification: "required",
-                allowCredentials: [{
-                    id: credentialIdBuffer, // <--- MANDAMOS O ID EXATO QUE O CELULAR QUER
-                    type: 'public-key',
-                    transports: ['internal']
-                }]
-            }
-        });
-
-        if (assertion) {
-            // Sucesso!
-            sessionStorage.setItem("token_sistema", dados.token);
-            sessionStorage.setItem("usuario_sistema", JSON.stringify({ 
-                NOME: dados.nome, 
-                PERFIL: dados.perfil, 
-                CPF: dados.login 
-            }));
-
-            irParaHome(dados.perfil);
-        }
-    } catch (e) {
-        console.error(e);
-        let msg = "Falha na leitura biométrica.";
-        if (e.name === "NotAllowedError") msg = "Leitura cancelada ou não autorizada.";
-        
-        Swal.fire({
-            title: "Erro no Acesso",
-            text: msg + " Tente novamente ou use a senha.",
-            icon: "error"
-        });
-    }
-});
 
 function irParaHome(perfil) {
     const p = perfil.toUpperCase();
@@ -500,51 +335,11 @@ function irParaHome(perfil) {
     else if (p === "PASTOR") window.location.href = "/pastor";
     else window.location.href = "/membro";
 }
-let deferredPrompt;
-const installBanner = document.getElementById('pwa-install-banner');
-const btnInstall = document.getElementById('btn-pwa-install');
 
-window.addEventListener('beforeinstallprompt', (e) => {
-    // Impede o Chrome de mostrar o prompt automático
-    e.preventDefault();
-    // Salva o evento para ser disparado depois
-    deferredPrompt = e;
-    // Mostra o nosso banner personalizado
-    installBanner.classList.remove('hidden');
-});
-
-if (btnInstall) {
-    btnInstall.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            // Mostra o prompt de instalação nativo
-            deferredPrompt.prompt();
-            // Espera pela resposta do usuário
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Usuário escolheu: ${outcome}`);
-            // Limpa o prompt
-            deferredPrompt = null;
-            // Esconde o banner
-            installBanner.classList.add('hidden');
-        }
-    });
-}
-
-function dismissInstall() {
-    installBanner.classList.add('hidden');
-}
-
-// Oculta o banner se o app já estiver instalado
-window.addEventListener('appinstalled', () => {
-    installBanner.classList.add('hidden');
-    console.log('PWA: Aplicativo instalado com sucesso!');
-});
-// function resetarBiometria() {
-//     if (confirm("Isso vai apagar a configuração biométrica deste dispositivo. Continuar?")) {
-//         localStorage.removeItem("biometria_usuario");
-//         alert("Limpeza concluída! Faça login novamente para ver o prompt.");
-//         window.location.reload();
-//     }
-// }
+/* ===============================
+   PWA
+================================ */
+function dismissInstall() { document.getElementById('pwa-install-banner').classList.add('hidden'); }
 </script>
 </body>
 </html>
