@@ -606,7 +606,7 @@ async function ativarNotificacoes() {
         btn.disabled = true;
 
         // Registro manual para garantir que ele não fique "preso"
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         
         // Aguarda ele ficar ativo de verdade
         btn.innerHTML = '<span class="material-icons spin">sync</span> Ativando Serviço...';
