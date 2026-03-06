@@ -224,14 +224,32 @@ loginInput.addEventListener("input", () => {
 
 passInput.addEventListener("input", (e) => {
     let v = e.target.value;
+    
+    // --- LÓGICA DE VISIBILIDADE AUTOMÁTICA ---
+    if (v.length > 0) {
+        // Verifica se o primeiro caractere é um número
+        if (/^\d/.test(v)) {
+            // É número (Data de Nascimento), então exibe o texto
+            passInput.type = "text";
+        } else {
+            // É letra (Senha Admin), então oculta
+            passInput.type = "password";
+        }
+    }
+
+    // --- LÓGICA DE MÁSCARA E HINT ---
     if (/[a-zA-Z]/.test(v)) {
         hint.innerText = "Senha alfanumérica detectada";
         return; 
     }
+    
     hint.innerText = "Membros: data de nascimento";
-    v = v.replace(/\D/g, "");
+    v = v.replace(/\D/g, ""); // Remove tudo que não é número
+    
+    // Aplica a máscara de data DD/MM/AAAA
     if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
     else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+    
     if (v.length <= 10) e.target.value = v;
 });
 
