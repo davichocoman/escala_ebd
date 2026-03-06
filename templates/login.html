@@ -159,6 +159,60 @@
 </div>
 
 <script>
+// No início do seu Script ou dentro do DOMContentLoaded
+window.onload = () => {
+    document.getElementById("login").focus(); // Começa com foco no CPF
+};
+
+// 1. Pular para senha ao terminar CPF
+loginInput.addEventListener("input", (e) => {
+    let v = e.target.value.replace(/\D/g, "");
+    e.target.value = v; // Garante apenas números
+    
+    if (v.length === 11) {
+        passInput.focus(); // Pula para a senha automaticamente
+    }
+
+    // Sua lógica de perfil existente...
+    if (/^\d+$/.test(v) && v.length >= 6) {
+        perfilLabel.innerText = "Perfil detectado: Membro/Pastor";
+        passInput.placeholder = "Senha ou Nascimento";
+    } else {
+        perfilLabel.innerText = "";
+    }
+});
+
+// 2. Lógica de Senha Refinada (Visibilidade + Teclado Numérico)
+passInput.addEventListener("input", (e) => {
+    let v = e.target.value;
+    const toggleIcon = document.getElementById("togglePass");
+    
+    if (v.length > 0) {
+        if (/^\d/.test(v)) {
+            passInput.type = "text";
+            passInput.inputMode = "numeric"; // Abre teclado numérico no celular
+            toggleIcon.style.display = "none";
+        } else {
+            passInput.type = "password";
+            passInput.inputMode = "text"; // Teclado normal para senhas admin
+            toggleIcon.style.display = "block";
+        }
+    } else {
+        passInput.type = "password";
+        toggleIcon.style.display = "block";
+    }
+
+    // Máscara de data
+    if (/[a-zA-Z]/.test(v)) {
+        hint.innerText = "Senha alfanumérica detectada";
+        return; 
+    }
+    hint.innerText = "Membros: data de nascimento";
+    v = v.replace(/\D/g, "");
+    if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
+    else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+    if (v.length <= 10) e.target.value = v;
+});
 /* ===============================
    UTILITÁRIOS: CONVERSÃO DE DADOS (CRUCIAL)
 ================================ */
@@ -222,31 +276,37 @@ loginInput.addEventListener("input", () => {
     perfilLabel.innerText = "";
 });
 
+const toggleIcon = document.getElementById("togglePass"); // Referência ao ícone
+
 passInput.addEventListener("input", (e) => {
     let v = e.target.value;
     
-    // --- LÓGICA DE VISIBILIDADE AUTOMÁTICA ---
+    // --- LÓGICA DE VISIBILIDADE E OCULTAR OLHINHO ---
     if (v.length > 0) {
-        // Verifica se o primeiro caractere é um número
         if (/^\d/.test(v)) {
-            // É número (Data de Nascimento), então exibe o texto
+            // É número (Data): Mostra o texto e esconde o ícone
             passInput.type = "text";
+            toggleIcon.style.display = "none";
         } else {
-            // É letra (Senha Admin), então oculta
+            // É letra (Admin): Oculta o texto e mostra o ícone
             passInput.type = "password";
+            toggleIcon.style.display = "block";
         }
+    } else {
+        // Campo vazio: Volta ao padrão (Password e ícone visível)
+        passInput.type = "password";
+        toggleIcon.style.display = "block";
     }
 
-    // --- LÓGICA DE MÁSCARA E HINT ---
+    // --- MANTÉM SUA LÓGICA DE MÁSCARA ABAIXO ---
     if (/[a-zA-Z]/.test(v)) {
         hint.innerText = "Senha alfanumérica detectada";
         return; 
     }
     
     hint.innerText = "Membros: data de nascimento";
-    v = v.replace(/\D/g, ""); // Remove tudo que não é número
+    v = v.replace(/\D/g, "");
     
-    // Aplica a máscara de data DD/MM/AAAA
     if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
     else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
     
