@@ -147,10 +147,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Taggear o usuário logado (para poder enviar notificações segmentadas depois)
         if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
-            await OneSignal.setExternalUserId(SISTEMA.usuario.CPF);
-            await OneSignal.sendTag("cpf", SISTEMA.usuario.CPF);
-            await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
-            await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
+            try {
+                // Faz login com ID externo (substitui setExternalUserId)
+                await OneSignal.login(SISTEMA.usuario.CPF);
+        
+                // Adiciona alias (opcional, mas recomendado para identificar)
+                await OneSignal.addAlias("cpf", SISTEMA.usuario.CPF);
+        
+                // Envia tags personalizadas (ainda funciona)
+                await OneSignal.sendTag("cpf", SISTEMA.usuario.CPF);
+                await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
+                await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
+        
+                console.log("OneSignal: Usuário logado com CPF e tags enviadas!");
+            } catch (err) {
+                console.error("Erro ao logar/taggear no OneSignal:", err);
+            }
         }
     });
 });
