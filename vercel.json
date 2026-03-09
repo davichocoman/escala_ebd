@@ -12,7 +12,10 @@
     { "source": "/agenda", "destination": "/templates/agenda.html" },
     { "source": "/reservas", "destination": "/templates/reservas.html" },
     
-    { "source": "/(.*)", "destination": "/templates/login.html" }
+    { "source": "/(.*)", "destination": "/templates/login.html" },
+    { "source": "/sw.js", "destination": "/static/sw.js" },
+    { "source": "/manifest.json", "destination": "/static/manifest.json" }
   ]
 }
+
 
