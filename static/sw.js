@@ -1,5 +1,5 @@
 const CACHE_NAME = 'ad-rodovia-v3'; // Mudei a versão para forçar atualização
-const OFFLINE_URL = '/static/offline.html'; // <-- Faltava isso!
+const OFFLINE_URL = '/templates/offline.html'; // <-- Faltava isso!
 
 const assets = [
   '/',
