@@ -1463,3 +1463,36 @@ window.iniciarInstalacao = async () => {
         deferredPrompt = null;
     }
 };
+
+
+
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+await OneSignal.init({
+  appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",  // Seu App ID real da igreja
+  safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",  // Mantenha se ativou Safari no dashboard
+  notifyButton: {
+    enable: false,  // Desative o sininho se não quiser (ou true para teste)
+    // position: "bottom-right"  // Opcional
+  },
+  // Opcional: prompt automático suave (slide-down após X segundos)
+  promptOptions: {
+    slidedown: {
+      enabled: true,
+      autoPrompt: true,
+      timeDelay: 10,   // Mostra após 10s na primeira visita
+      pageViews: 1
+    }
+  }
+});
+
+console.log("OneSignal inicializado na igreja!");
+
+// Taggear o usuário logado (para envios segmentados por CPF/função)
+if (SISTEMA && SISTEMA.usuario && SISTEMA.usuario.CPF) {
+  await OneSignal.setExternalUserId(SISTEMA.usuario.CPF);  // Identificador único
+  await OneSignal.sendTag("cpf", SISTEMA.usuario.CPF);
+  await OneSignal.sendTag("funcao", SISTEMA.usuario.funcao || "membro");  // ex: "pastor", "secretaria", "ebd"
+  await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");  // Opcional
+}
+});
