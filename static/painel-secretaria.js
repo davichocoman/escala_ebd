@@ -123,9 +123,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarBotoes();
     await carregarTudoDoBanco();
     
-// Inicialização do OneSignal
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
+    // Inicialização do OneSignal
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
         appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
         safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
@@ -145,28 +145,28 @@ OneSignalDeferred.push(async function(OneSignal) {
             }
         }
     });
-
+    
     console.log("OneSignal inicializado com sucesso!");
-
+    
     // Login e tags simples (sem addAlias, que pode não existir na sua versão)
     if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
         try {
             // Completa com zeros à esquerda até 11 dígitos
             const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
-
+    
             if (cpfLimpo.length !== 11) {
                 console.warn("CPF inválido (não 11 dígitos):", SISTEMA.usuario.CPF);
                 return;
             }
-
+    
             // Login com CPF como external ID
             await OneSignal.login(cpfLimpo);
-
+    
             // Tags (ainda suportadas)
             await OneSignal.sendTag("cpf", cpfLimpo);
             await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
             await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
-
+    
             console.log("OneSignal: Login e tags OK! CPF:", cpfLimpo);
         } catch (err) {
             console.error("Erro no login/tag OneSignal:", err);
