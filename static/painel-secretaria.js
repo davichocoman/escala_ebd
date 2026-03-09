@@ -123,59 +123,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarBotoes();
     await carregarTudoDoBanco();
     
-// Inicialização do OneSignal (depois do login e SISTEMA.usuario estar pronto)
+// Inicialização do OneSignal
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
         appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
         safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
         notifyButton: { enable: false },
-    
         promptOptions: {
             slidedown: {
                 enabled: true,
                 autoPrompt: true,
                 timeDelay: 10,
                 pageViews: 1,
-    
-                // TEXTOS PERSONALIZADOS EM PORTUGUÊS (substitui o inglês)
+                // TEXTOS EM PORTUGUÊS (personalizados)
                 actionMessage: "Receba avisos da igreja no seu celular!",
                 acceptButtonText: "Permitir",
                 cancelButtonText: "Cancelar",
-                mainTitle: "Notificações da AD Rodovia A",
-                mainText: "Fique por dentro de aniversariantes, eventos, agenda pastoral e novidades em tempo real!"
+                mainTitle: "Notificações AD Rodovia A",
+                mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
             }
         }
     });
 
-        console.log("OneSignal inicializado com sucesso!");
+    console.log("OneSignal inicializado com sucesso!");
 
-        // Taggear o usuário logado (para poder enviar notificações segmentadas depois)
-        if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
-            try {
-                // Força string e completa com zeros à esquerda até 11 dígitos
-                let cpfRaw = String(SISTEMA.usuario.CPF).replace(/\D/g, '').trim();
-                const cpfLimpo = cpfRaw.padStart(11, '0');  // <--- ESSA LINHA RESOLVE!
-        
-                if (cpfLimpo.length !== 11) {
-                    console.warn("CPF inválido (não tem 11 dígitos) para OneSignal:", SISTEMA.usuario.CPF);
-                    return;
-                }
-        
-                // Login com external ID
-                await OneSignal.login(cpfLimpo);
-        
-                // Alias
-                await OneSignal.addAlias("cpf", cpfLimpo);
-        
-                // Tags
-                await OneSignal.sendTag("cpf", cpfLimpo);
-                await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
-                await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
-        
-                console.log("OneSignal: Login e tags OK! CPF usado:", cpfLimpo);
-            } catch (err) {
-                console.error("Erro no login/tag OneSignal:", err);
+    // Login e tags simples (sem addAlias, que pode não existir na sua versão)
+    if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
+        try {
+            // Completa com zeros à esquerda até 11 dígitos
+            const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
+
+            if (cpfLimpo.length !== 11) {
+                console.warn("CPF inválido (não 11 dígitos):", SISTEMA.usuario.CPF);
+                return;
             }
+
+            // Login com CPF como external ID
+            await OneSignal.login(cpfLimpo);
+
+            // Tags (ainda suportadas)
+            await OneSignal.sendTag("cpf", cpfLimpo);
+            await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
+            await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
+
+            console.log("OneSignal: Login e tags OK! CPF:", cpfLimpo);
+        } catch (err) {
+            console.error("Erro no login/tag OneSignal:", err);
         }
+    }
 });
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
