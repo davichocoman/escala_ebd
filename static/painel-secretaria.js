@@ -122,6 +122,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     configurarBotoes();
     await carregarTudoDoBanco();
+    
+// Inicialização do OneSignal (depois do login e SISTEMA.usuario estar pronto)
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+            appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
+            safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
+            notifyButton: {
+                enable: false,  // Mude para true se quiser o sininho flutuante
+                // position: "bottom-right", size: "medium"  // opcional
+            },
+            promptOptions: {
+                slidedown: {
+                    enabled: true,
+                    autoPrompt: true,
+                    timeDelay: 10,    // segundos até mostrar o prompt
+                    pageViews: 1      // mostra na primeira visita
+                }
+            }
+        });
+
+        console.log("OneSignal inicializado com sucesso!");
+
+        // Taggear o usuário logado (para poder enviar notificações segmentadas depois)
+        if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
+            await OneSignal.setExternalUserId(SISTEMA.usuario.CPF);
+            await OneSignal.sendTag("cpf", SISTEMA.usuario.CPF);
+            await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
+            await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
+        }
+    });
 });
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
@@ -499,10 +530,6 @@ function renderizarMeusDados() {
             <h2 style="margin:0; color:#1e293b; text-align:center;">${nome}</h2>
             <span style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">${getVal(SISTEMA.usuario, 'CARGO') || 'Membro'}</span>
             
-            <button onclick="ativarNotificacoes()" id="btn-push" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:20px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:0.2s;">
-                <span class="material-icons" style="font-size:1.1rem;">notifications_active</span>
-                Ativar Avisos no Celular
-            </button>
         </div>
     `;
 
@@ -580,68 +607,6 @@ function renderizarMeusDados() {
     div.innerHTML = headerPerfil + htmlCampos;
 }
 
-
-// Função para converter a chave VAPID pública (necessário para o navegador)
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
-    return outputArray;
-}
-
-async function ativarNotificacoes() {
-    const btn = document.getElementById('btn-push');
-    
-    try {
-        console.log("Solicitando permissão...");
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            Swal.fire('Aviso', 'Permissão negada.', 'warning');
-            return;
-        }
-
-        btn.innerHTML = '<span class="material-icons spin">sync</span> Verificando Canal...';
-        btn.disabled = true;
-
-        // Registro manual para garantir que ele não fique "preso"
-        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-        
-        // Aguarda ele ficar ativo de verdade
-        btn.innerHTML = '<span class="material-icons spin">sync</span> Ativando Serviço...';
-        
-        // Pequena gambiarra técnica para não travar: se em 5s não responder, dá erro
-        const subscription = await Promise.race([
-            registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array('BAgPehTm8ZhgYy0mKvcgF-HefK4xwvbn-Cz1OGeQlbZtLsRJi4PnnmmiHrtYF_1FX5ty9KElHMD5AJ_tGM1Eiks')
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de Conexão')), 8000))
-        ]);
-
-        console.log("Assinatura gerada:", subscription);
-
-        // Envia para o Render
-        const res = await fetch(`${API_BASE}/push/subscribe`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-token': SISTEMA.token },
-            body: JSON.stringify({ cpf: getVal(SISTEMA.usuario, 'CPF'), data: subscription })
-        });
-
-        if (res.ok) {
-            Swal.fire({ icon: 'success', title: 'Ativado!', timer: 2000, showConfirmButton: false });
-            btn.innerHTML = '<span class="material-icons">check_circle</span> Notificações OK';
-            btn.classList.add('active-btn'); // Crie uma classe verde no CSS
-        }
-
-    } catch (error) {
-        console.error("Erro fatal no registro:", error);
-        Swal.fire('Erro', 'O serviço de notificações demorou muito a responder. Tente recarregar a página.', 'error');
-        btn.innerHTML = '<span class="material-icons">notifications_active</span> Tentar Novamente';
-        btn.disabled = false;
-    }
-}
 // ============================================================
 // 5. INTERAÇÕES E BOTÕES
 // ============================================================
@@ -1466,33 +1431,4 @@ window.iniciarInstalacao = async () => {
 
 
 
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-await OneSignal.init({
-  appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",  // Seu App ID real da igreja
-  safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",  // Mantenha se ativou Safari no dashboard
-  notifyButton: {
-    enable: false,  // Desative o sininho se não quiser (ou true para teste)
-    // position: "bottom-right"  // Opcional
-  },
-  // Opcional: prompt automático suave (slide-down após X segundos)
-  promptOptions: {
-    slidedown: {
-      enabled: true,
-      autoPrompt: true,
-      timeDelay: 10,   // Mostra após 10s na primeira visita
-      pageViews: 1
-    }
-  }
-});
 
-console.log("OneSignal inicializado na igreja!");
-
-// Taggear o usuário logado (para envios segmentados por CPF/função)
-if (SISTEMA && SISTEMA.usuario && SISTEMA.usuario.CPF) {
-  await OneSignal.setExternalUserId(SISTEMA.usuario.CPF);  // Identificador único
-  await OneSignal.sendTag("cpf", SISTEMA.usuario.CPF);
-  await OneSignal.sendTag("funcao", SISTEMA.usuario.funcao || "membro");  // ex: "pastor", "secretaria", "ebd"
-  await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");  // Opcional
-}
-});
