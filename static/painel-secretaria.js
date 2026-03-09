@@ -124,47 +124,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     await carregarTudoDoBanco();
     
 // Inicialização do OneSignal (depois do login e SISTEMA.usuario estar pronto)
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-            appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
-            safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
-            notifyButton: {
-                enable: false,  // Mude para true se quiser o sininho flutuante
-                // position: "bottom-right", size: "medium"  // opcional
-            },
-            promptOptions: {
-                slidedown: {
-                    enabled: true,
-                    autoPrompt: true,
-                    timeDelay: 10,    // segundos até mostrar o prompt
-                    pageViews: 1      // mostra na primeira visita
-                }
+    await OneSignal.init({
+        appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
+        safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
+        notifyButton: { enable: false },
+    
+        promptOptions: {
+            slidedown: {
+                enabled: true,
+                autoPrompt: true,
+                timeDelay: 10,
+                pageViews: 1,
+    
+                // TEXTOS PERSONALIZADOS EM PORTUGUÊS (substitui o inglês)
+                actionMessage: "Receba avisos da igreja no seu celular!",
+                acceptButtonText: "Permitir",
+                cancelButtonText: "Cancelar",
+                mainTitle: "Notificações da AD Rodovia A",
+                mainText: "Fique por dentro de aniversariantes, eventos, agenda pastoral e novidades em tempo real!"
             }
-        });
+        }
+    });
 
         console.log("OneSignal inicializado com sucesso!");
 
         // Taggear o usuário logado (para poder enviar notificações segmentadas depois)
         if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
             try {
-                // Normaliza CPF para string pura (remove pontos, traços, espaços)
-                const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '');
+                // Força string pura, remove tudo que não é número
+                const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').trim();
         
-                // Faz login com ID externo (obrigatório string)
+                if (!cpfLimpo || cpfLimpo.length < 11) {
+                    console.warn("CPF inválido para OneSignal:", SISTEMA.usuario.CPF);
+                    return;
+                }
+        
+                // Login com external ID (obrigatório string)
                 await OneSignal.login(cpfLimpo);
         
-                // Adiciona alias para busca futura (opcional, mas bom)
+                // Alias para busca (opcional, mas ajuda na segmentação)
                 await OneSignal.addAlias("cpf", cpfLimpo);
         
-                // Envia tags (ainda funciona)
+                // Tags normais
                 await OneSignal.sendTag("cpf", cpfLimpo);
                 await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
                 await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
         
-                console.log("OneSignal: Usuário logado com CPF limpo e tags enviadas! CPF usado:", cpfLimpo);
+                console.log("OneSignal: Login e tags OK! CPF usado:", cpfLimpo);
             } catch (err) {
-                console.error("Erro ao logar/taggear no OneSignal:", err);
+                console.error("Erro no login/tag OneSignal:", err);
             }
         }
     });
