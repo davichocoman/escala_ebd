@@ -1,9 +1,12 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/static/(.*)", "destination": "/static/$1" },
+    { "source": "/OneSignalSDKWorker.js", "destination": "/static/sw.js" },
+    { "source": "/OneSignalSDK.sw.js", "destination": "/static/sw.js" },
     { "source": "/sw.js", "destination": "/static/sw.js" },
     { "source": "/manifest.json", "destination": "/static/manifest.json" },
+    { "source": "/static/(.*)", "destination": "/static/$1" },
+    
     { "source": "/login", "destination": "/templates/login.html" },
     { "source": "/admin.html", "destination": "/templates/admin.html" },
     { "source": "/membro", "destination": "/templates/painel-membro.html" },
@@ -12,6 +15,7 @@
     { "source": "/ebd", "destination": "/templates/index.html" },
     { "source": "/agenda", "destination": "/templates/agenda.html" },
     { "source": "/reservas", "destination": "/templates/reservas.html" },
+    
     { "source": "/(.*)", "destination": "/templates/login.html" }
   ]
 }
