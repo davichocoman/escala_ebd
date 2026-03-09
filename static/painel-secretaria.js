@@ -151,21 +151,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Taggear o usuário logado (para poder enviar notificações segmentadas depois)
         if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
             try {
-                // Força string pura, remove tudo que não é número
-                const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').trim();
+                // Força string e completa com zeros à esquerda até 11 dígitos
+                let cpfRaw = String(SISTEMA.usuario.CPF).replace(/\D/g, '').trim();
+                const cpfLimpo = cpfRaw.padStart(11, '0');  // <--- ESSA LINHA RESOLVE!
         
-                if (!cpfLimpo || cpfLimpo.length < 11) {
-                    console.warn("CPF inválido para OneSignal:", SISTEMA.usuario.CPF);
+                if (cpfLimpo.length !== 11) {
+                    console.warn("CPF inválido (não tem 11 dígitos) para OneSignal:", SISTEMA.usuario.CPF);
                     return;
                 }
         
-                // Login com external ID (obrigatório string)
+                // Login com external ID
                 await OneSignal.login(cpfLimpo);
         
-                // Alias para busca (opcional, mas ajuda na segmentação)
+                // Alias
                 await OneSignal.addAlias("cpf", cpfLimpo);
         
-                // Tags normais
+                // Tags
                 await OneSignal.sendTag("cpf", cpfLimpo);
                 await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
                 await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
