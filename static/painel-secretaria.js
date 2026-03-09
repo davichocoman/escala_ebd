@@ -151,25 +151,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Login e tags simples (sem addAlias, que pode não existir na sua versão)
     if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
         try {
-            // Completa com zeros à esquerda até 11 dígitos
             const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
     
-            if (cpfLimpo.length !== 11) {
-                console.warn("CPF inválido (não 11 dígitos):", SISTEMA.usuario.CPF);
-                return;
+            if (cpfLimpo.length === 11) {
+                // No OneSignal v16+, usamos User.addTag e User.setExternalId
+                await OneSignal.login(cpfLimpo);
+                
+                // Syntax correta para Tags na v16:
+                await OneSignal.User.addTags({
+                    "cpf": cpfLimpo,
+                    "funcao": SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
+                    "nome": SISTEMA.usuario.NOME || ""
+                });
+    
+                console.log("OneSignal: Login e tags OK!");
             }
-    
-            // Login com CPF como external ID
-            await OneSignal.login(cpfLimpo);
-    
-            // Tags (ainda suportadas)
-            await OneSignal.sendTag("cpf", cpfLimpo);
-            await OneSignal.sendTag("funcao", SISTEMA.usuario.PERFIL?.toLowerCase() || "membro");
-            await OneSignal.sendTag("nome", SISTEMA.usuario.NOME || "");
-    
-            console.log("OneSignal: Login e tags OK! CPF:", cpfLimpo);
         } catch (err) {
-            console.error("Erro no login/tag OneSignal:", err);
+            console.error("Erro ao processar tags OneSignal:", err);
         }
     }
 })});
