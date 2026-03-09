@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error("Erro no login/tag OneSignal:", err);
         }
     }
-});
+})});
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
 // ============================================================
@@ -1447,7 +1447,3 @@ window.iniciarInstalacao = async () => {
         deferredPrompt = null;
     }
 };
-
-
-
-
