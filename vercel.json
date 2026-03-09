@@ -1,7 +1,5 @@
 {
   "rewrites": [
-    { "source": "/sw.js", "destination": "/static/sw.js" },
-    { "source": "/manifest.json", "destination": "/static/manifest.json" },
     { "source": "/static/(.*)", "destination": "/static/$1" },
 
     { "source": "/OneSignalSDKWorker.js", "destination": "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js" },
@@ -34,4 +32,3 @@
     }
   ]
 }
-
