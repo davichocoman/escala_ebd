@@ -1,9 +1,15 @@
 {
   "rewrites": [
+    // Serve sw.js e manifest do static (já tinha algo parecido)
     { "source": "/sw.js", "destination": "/static/sw.js" },
     { "source": "/manifest.json", "destination": "/static/manifest.json" },
     { "source": "/static/(.*)", "destination": "/static/$1" },
-    
+
+    // NOVO: Serve o OneSignal SDK Worker como arquivo estático (evita fallback HTML)
+    { "source": "/OneSignalSDKWorker.js", "destination": "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js" },
+    { "source": "/OneSignalSDK.sw.js", "destination": "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js" },
+
+    // Suas rotas SPA existentes (templates)
     { "source": "/login", "destination": "/templates/login.html" },
     { "source": "/admin.html", "destination": "/templates/admin.html" },
     { "source": "/membro", "destination": "/templates/painel-membro.html" },
@@ -12,7 +18,24 @@
     { "source": "/ebd", "destination": "/templates/index.html" },
     { "source": "/agenda", "destination": "/templates/agenda.html" },
     { "source": "/reservas", "destination": "/templates/reservas.html" },
-    
+
+    // Fallback para SPA (último!)
     { "source": "/(.*)", "destination": "/templates/login.html" }
+  ],
+
+  // Opcional: Força MIME correto para JS (boa prática)
+  "headers": [
+    {
+      "source": "/OneSignalSDKWorker.js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    },
+    {
+      "source": "/OneSignalSDK.sw.js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    }
   ]
 }
