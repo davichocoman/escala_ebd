@@ -1,21 +1,18 @@
 {
   "rewrites": [
+    { "source": "/sw.js", "destination": "/static/sw.js" },
+    { "source": "/manifest.json", "destination": "/static/manifest.json" },
     { "source": "/static/(.*)", "destination": "/static/$1" },
-    { "source": "/admin.html", "destination": "/templates/admin.html" },
-    { "source": "/login", "destination": "/templates/login.html" },
     
+    { "source": "/login", "destination": "/templates/login.html" },
+    { "source": "/admin.html", "destination": "/templates/admin.html" },
     { "source": "/membro", "destination": "/templates/painel-membro.html" },
     { "source": "/pastor", "destination": "/templates/painel-pastor.html" },
     { "source": "/secretaria", "destination": "/templates/painel-secretaria.html" },
     { "source": "/ebd", "destination": "/templates/index.html" },
-    
     { "source": "/agenda", "destination": "/templates/agenda.html" },
     { "source": "/reservas", "destination": "/templates/reservas.html" },
     
-    { "source": "/(.*)", "destination": "/templates/login.html" },
-    { "source": "/sw.js", "destination": "/static/sw.js" },
-    { "source": "/manifest.json", "destination": "/static/manifest.json" }
+    { "source": "/(.*)", "destination": "/templates/login.html" }
   ]
 }
-
-
