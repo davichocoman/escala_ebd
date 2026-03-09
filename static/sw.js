@@ -1,4 +1,4 @@
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
+importScripts('https://cdn.onesignal.com/sdks/OneSignalSDKWorker.js');
 
 const CACHE_NAME = 'ad-rodovia-v3'; // Mudei a versão para forçar atualização
 const OFFLINE_URL = '/static/offline.html';
