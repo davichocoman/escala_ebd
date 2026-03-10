@@ -154,18 +154,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
     
             if (cpfLimpo.length === 11) {
-                // No OneSignal v16+, usamos User.addTag e User.setExternalId
-                await OneSignal.login(cpfLimpo);
-                
-                // Syntax correta para Tags na v16:
+    
+                const currentId = await OneSignal.User.getExternalId();
+    
+                if (currentId !== cpfLimpo) {
+                    await OneSignal.login(cpfLimpo);
+                }
+    
                 await OneSignal.User.addTags({
-                    "cpf": cpfLimpo,
-                    "funcao": SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
-                    "nome": SISTEMA.usuario.NOME || ""
+                    cpf: cpfLimpo,
+                    funcao: SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
+                    nome: SISTEMA.usuario.NOME || ""
                 });
     
                 console.log("OneSignal: Login e tags OK!");
             }
+    
         } catch (err) {
             console.error("Erro ao processar tags OneSignal:", err);
         }
@@ -1376,12 +1380,11 @@ const installBanner = document.getElementById('pwa-install-banner');
 const btnInstall = document.getElementById('btn-pwa-install');
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Impede o Chrome de mostrar o prompt automático
     e.preventDefault();
-    // Salva o evento para ser disparado depois
     deferredPrompt = e;
-    // Mostra o nosso banner personalizado
-    installBanner.classList.remove('hidden');
+
+    installBanner?.classList.remove('hidden');
+    document.getElementById('item-instalar')?.classList.remove('hidden');
 });
 
 if (btnInstall) {
@@ -1410,12 +1413,6 @@ window.addEventListener('appinstalled', () => {
     console.log('PWA: Aplicativo instalado com sucesso!');
 });
 
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    // No Android/PC, mostra o botão de instalar
-    document.getElementById('item-instalar')?.classList.remove('hidden');
-});
 
 // Detecta se é iOS para mostrar o guia manual
 const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
