@@ -149,29 +149,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("OneSignal inicializado com sucesso!");
     
     // Login e tags simples (sem addAlias, que pode não existir na sua versão)
+    // Login e tags compatível com OneSignal v16
     if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
         try {
             const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
     
             if (cpfLimpo.length === 11) {
+                // No v16, o login já define o External ID automaticamente
+                await OneSignal.login(cpfLimpo);
     
-                const currentId = await OneSignal.User.getExternalId();
-    
-                if (currentId !== cpfLimpo) {
-                    await OneSignal.login(cpfLimpo);
-                }
-    
+                // Tags agora são dentro de OneSignal.User
                 await OneSignal.User.addTags({
-                    cpf: cpfLimpo,
-                    funcao: SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
-                    nome: SISTEMA.usuario.NOME || ""
+                    "cpf": cpfLimpo,
+                    "perfil": SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
+                    "nome": SISTEMA.usuario.NOME || ""
                 });
     
                 console.log("OneSignal: Login e tags OK!");
             }
-    
         } catch (err) {
-            console.error("Erro ao processar tags OneSignal:", err);
+            console.error("Erro ao processar OneSignal:", err);
         }
     }
 })});
@@ -190,7 +187,7 @@ async function carregarTudoDoBanco() {
     const headers = {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-        'x-admin-token': SISTEMA.token
+        'x-token': SISTEMA.token
     };
     try {
         const [resMembros, resPastor, resDash] = await Promise.all([
@@ -908,7 +905,7 @@ window.deletarItem = async function(id, endpoint) {
             try {
                 await fetch(`${API_BASE}/${endpoint}/${id}`, {
                     method: 'DELETE',
-                    headers: { 'x-admin-token': SISTEMA.token }
+                    headers: { 'x-token': SISTEMA.token }
                 });
                 await carregarTudoDoBanco();
                 Swal.fire({
@@ -965,7 +962,7 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             method,
             headers: {
                 'Content-Type': 'application/json',
-                'x-admin-token': SISTEMA.token
+                'x-token': SISTEMA.token
             },
             body: JSON.stringify(payload)
         });
