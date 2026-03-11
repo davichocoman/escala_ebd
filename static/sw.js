@@ -1,5 +1,13 @@
 importScripts('https://cdn.onesignal.com/sdks/OneSignalSDKWorker.js');
 
+self.addEventListener('install', (event) => {
+    self.skipWaiting(); // Força a ativação imediata
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim()); // Assume o controle da página na hora
+});
+
 const CACHE_NAME = 'ad-rodovia-v3'; // Mudei a versão para forçar atualização
 const OFFLINE_URL = '/static/offline.html';
 
