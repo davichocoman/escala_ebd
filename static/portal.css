@@ -780,3 +780,49 @@ body {
 }
 
 .hidden { display: none !important; }
+
+/* Cooperadores */
+/* Estilo dos Badges de Status */
+.badge-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Estilo da Linha do Tempo de Aprovação */
+.approval-history p {
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #475569;
+}
+
+/* Botões pequenos para ações rápidas */
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+    margin-right: 5px;
+    transition: 0.2s;
+}
+
+.btn-success { background: #dcfce7; color: #15803d; }
+.btn-danger { background: #fee2e2; color: #b91c1c; }
+.btn-primary { background: #dbeafe; color: #1d4ed8; }
+
+.btn-small:hover { filter: brightness(0.9); }
+
+#lista-liderados-modal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    padding: 10px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
