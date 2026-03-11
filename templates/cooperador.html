@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <title>Cooperadores - AD Rodovia A</title>
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">...</nav>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2>Gestão de Cooperadores</h2>
+                <button id="btn-novo-depto" class="btn btn-primary hidden" onclick="abrirModalDepto()">+ Novo Departamento</button>
+            </div>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('deptos')">Departamentos</button>
+                <button class="tab-btn" onclick="switchTab('progs')">Programações</button>
+            </div>
+
+            <div id="tab-deptos" class="tab-content">
+                <div id="lista-deptos" class="card-list">
+                    </div>
+            </div>
+
+            <div id="tab-progs" class="tab-content hidden">
+                <button id="btn-nova-prog" class="btn btn-secondary hidden" onclick="abrirModalProg()">+ Sugerir Programação</button>
+                
+                <div id="lista-progs" class="card-list">
+                    </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalProg" class="modal-overlay hidden">
+    <div class="panel-card modal-card" style="max-width: 650px;">
+        <div class="panel-title">
+            <span>Sugerir Programação de Departamento</span>
+            <button onclick="fecharModal('modalProg')" class="btn-close-modal">&times;</button>
+        </div>
+        <form id="formProg" onsubmit="salvarProgramacao(event)">
+            <input type="hidden" id="prog_id">
+            
+            <div class="form-group">
+                <label>Departamento *</label>
+                <select id="prog_dept_id" class="form-input" required></select>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Data do Evento *</label>
+                    <input type="date" id="prog_data" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="prog_tipo" class="form-input" required>
+                        <option value="CULTO">Culto</option>
+                        <option value="EVENTO ESPECIAL">Evento Especial</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section-title section-title-bar">Consagração (Opcional)</div>
+            <div class="form-group">
+                <label>Terá Consagração?</label>
+                <select id="prog_consag_sn" class="form-input" onchange="toggleConsag(this.value)">
+                    <option value="N">Não</option>
+                    <option value="S">Sim</option>
+                </select>
+            </div>
+            <div id="campos-consag" class="hidden">
+                <div class="form-grid-2">
+                    <div class="form-group"><label>Dirigente (Manhã)</label><input type="text" id="prog_consag_dir" class="form-input"></div>
+                    <div class="form-group"><label>Pregador (Manhã)</label><input type="text" id="prog_consag_pre" class="form-input"></div>
+                </div>
+            </div>
+
+            <div class="form-section-title section-title-bar">Culto Oficial (Noite)</div>
+            <div class="form-group">
+                <label>Tema do Culto</label>
+                <input type="text" id="prog_tema" class="form-input" placeholder="Ex: Santidade ao Senhor">
+            </div>
+            <div class="form-grid-3">
+                <div class="form-group"><label>Dirigente *</label><input type="text" id="prog_noite_dir" class="form-input" required></div>
+                <div class="form-group"><label>Pregador *</label><input type="text" id="prog_noite_pre" class="form-input" required></div>
+                <div class="form-group"><label>Cantor/Levita *</label><input type="text" id="prog_noite_can" class="form-input" required></div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Instagram do Pregador</label>
+                    <div class="input-with-icon">
+                        <span class="material-icons">camera_alt</span>
+                        <input type="text" id="prog_insta_pre" class="form-input" placeholder="@usuario">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Instagram do Cantor</label>
+                    <div class="input-with-icon">
+                        <span class="material-icons">audiotrack</span>
+                        <input type="text" id="prog_insta_can" class="form-input" placeholder="@usuario">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:15px;">Enviar para Análise</button>
+        </form>
+    </div>
+</div>
+
+    <script src="../static/painel-cooperador.js"></script>
+</body>
+</html>
