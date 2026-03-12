@@ -400,7 +400,21 @@ window.verLiderados = async function(nomeDepartamento) {
         container.innerHTML = liderados.map(m => {
             const fone = String(getVal(m, 'CONTATO') || "").replace(/\D/g, "");
             const endereco = encodeURIComponent(getVal(m, 'ENDERECO') || "");
-            const foto = recuperarFoto(m) || '../static/logo.png';
+            const foto = recuperarFoto(m) || '../static/icons/ios/32.png';
+            const pai = String(getVal(m, 'PAI') || "");
+            const mae = String(getVal(m, 'MAE') || "");
+
+            if(pai !== "" && mae !== ""){
+                const pais = `${pai} e ${mae}`
+            } else if (pai !== "" && mae === ""){
+                const pais = `${pai}`
+            }  else if (pai === "" && mae === ""){
+                const pais = `${mae}`
+            } else{
+                const pais = "N/A"
+            }
+
+
             return `
             <div class="member-card" style="text-align: left; border-left: 5px solid var(--accent, #3b82f6);">
                 <div style="display:flex; align-items:center; gap:15px;">
@@ -408,8 +422,9 @@ window.verLiderados = async function(nomeDepartamento) {
                     <div><strong>${getVal(m, 'NOME')}</strong><br><small>${getVal(m, 'CARGO') || 'Membro'}</small></div>
                 </div>
                 <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
+                    <p><b>👨‍👩‍👧‍👦 Pais:</b> ${pais}</p>
+                    <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL')}/p>
                     <p><b>📍 Endereço:</b> ${getVal(m, 'ENDERECO')}</p>
-                    <p><b>👨‍👩‍👧‍👦 Pais:</b> ${getVal(m, 'PAI')} e ${getVal(m, 'MAE')}</p>
                 </div>
                 <div class="card-actions" style="justify-content: flex-start; gap: 10px; margin-top:10px;">
                     <a href="https://wa.me/55${fone}" target="_blank" class="btn-small btn-success" style="text-decoration:none;"><span class="material-icons" style="font-size:16px;">whatsapp</span> Mensagem</a>
