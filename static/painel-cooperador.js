@@ -5,81 +5,32 @@ SISTEMA.programacoes = [];
 // ============================================================
 // 1. CARREGAMENTO DE DADOS (READ)
 // ============================================================
-function obterToken() {
-    return SISTEMA.token || sessionStorage.getItem('token_sistema');
-}
-
-// Atualize a carregarDadosIniciais para usar o token garantido
-window.carregarDadosIniciais = async function () {
-    const token = obterToken();
-    if (!token) return;
+window.carregarDadosIniciais = async function() {
+    const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
+    
+    // Libera botão de criar departamento para Secretaria
+    if (['ADMIN', 'SECRETARIA'].includes(perfil)) {
+        document.getElementById('btn-novo-depto')?.classList.remove('hidden');
+    }
 
     try {
-        const headers = {
-            "Content-Type": "application/json",
-            "x-token": token
-        };
-
-        const [resDeptos, resProgs] = await Promise.all([
-            fetch(`${API_BASE}/cooperador/meus-departamentos`, { headers }),
-            fetch(`${API_BASE}/cooperador/programacoes`, { headers })
-        ]);
-
-        const deptos = await resDeptos.json();
-        const progs = await resProgs.json();
-
-        renderizarDepartamentos(deptos);
-        renderizarProgramacoes(progs);
-
-    } catch (erro) {
-
-        console.error("Erro ao carregar cooperadores:", erro);
-
-        Swal.fire({
-            icon: "error",
-            title: "Erro",
-            text: "Não foi possível carregar os dados."
+        const res = await fetch(`${API_BASE}/cooperador/meus-departamentos`, {
+            headers: { 'x-token': SISTEMA.token }
         });
-
+        
+        if (res.ok) {
+            SISTEMA.meusDepts = await res.json();
+            renderizarDeptos();
+            
+            // Se for líder, libera sugerir programação
+            if (SISTEMA.meusDepts.length > 0) {
+                document.getElementById('btn-nova-prog')?.classList.remove('hidden');
+            }
+        }
+    } catch (e) {
+        console.error("Erro ao carregar departamentos:", e);
     }
 };
-
-function renderizarDepartamentos(lista) {
-
-    const container = document.getElementById("lista-deptos");
-
-    if (!lista || lista.length === 0) {
-        container.innerHTML = "<p>Nenhum departamento encontrado.</p>";
-        return;
-    }
-
-    container.innerHTML = lista.map(d => `
-        <div class="card">
-            <h3>${d.NOME}</h3>
-            <p>Membros: ${d.QTD_MEMBROS || 0}</p>
-        </div>
-    `).join("");
-
-}
-
-function renderizarProgramacoes(lista) {
-
-    const container = document.getElementById("lista-progs");
-
-    if (!lista || lista.length === 0) {
-        container.innerHTML = "<p>Nenhuma programação encontrada.</p>";
-        return;
-    }
-
-    container.innerHTML = lista.map(p => `
-        <div class="card">
-            <strong>${p.TEMA_NOITE || "Programação"}</strong>
-            <p>Data: ${p.DATA}</p>
-            <p>Status: ${p.STATUS}</p>
-        </div>
-    `).join("");
-
-}
 
 window.carregarProgramacoes = async function() {
     try {
@@ -98,18 +49,21 @@ window.carregarProgramacoes = async function() {
 // ============================================================
 // 2. CONTROLE DE ABAS INTERNAS
 // ============================================================
-window.switchCooperadorTab = function(tab, btn) {
+window.switchCooperadorTab = function(tabId, btnElement) {
+    // Esconde conteúdos
+    document.getElementById('tab-deptos').classList.add('hidden');
+    document.getElementById('tab-progs').classList.add('hidden');
+    
+    // Remove "active" de todos os botões e adiciona no clicado
+    document.querySelectorAll('.tabs-container .tab-btn').forEach(b => b.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
 
-    document.querySelectorAll('#sec-cooperadores .nav-button')
-        .forEach(b => b.classList.remove('active'));
-
-    btn.classList.add('active');
-
-    document.querySelectorAll('#sec-cooperadores .tab-content')
-        .forEach(t => t.classList.add('hidden'));
-
-    document.getElementById('tab-' + tab)
-        .classList.remove('hidden');
+    // Mostra a aba correta
+    document.getElementById('tab-' + tabId).classList.remove('hidden');
+    
+    // Busca dados no servidor conforme a aba
+    if (tabId === 'progs') carregarProgramacoes();
+    if (tabId === 'deptos') carregarDadosIniciais();
 };
 
 // ============================================================
@@ -299,30 +253,20 @@ window.filtrarLideres = function() {
 window.salvarDepto = async function(e) {
     e.preventDefault();
     const nome = document.getElementById('depto_nome').value.trim();
-    const token = obterToken();
-
+    
+    // Pega todos os CPFs que o secretário marcou
     const checkboxes = document.querySelectorAll('input[name="lider_depto_cb"]:checked');
     const lideresCpf = Array.from(checkboxes).map(cb => cb.value).join(', ');
     
     const payload = {
         NOME: nome,
-        LIDERES: lideresCpf // Verifique se no main.py está item.get("LIDERES") ou "LIDERES_CPF"
+        LIDERES_CPF: lideresCpf
     };
 
-    // Use o token recuperado manualmente para evitar erro de undefined
-    const res = await fetch(`${API_BASE}/admin/departamentos`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'x-token': token 
-        },
-        body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-        Swal.fire('Sucesso', 'Departamento criado!', 'success');
+    const sucesso = await enviarDados(`${API_BASE}/admin/departamentos`, null, payload, 'formDepto');
+    if (sucesso) {
         fecharModal('modalDepto');
-        carregarDadosIniciais();
+        carregarDadosIniciais(); // Recarrega a tela para atualizar a contagem e as listas
     }
 };
 
@@ -515,7 +459,3 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
-
-
-
-
