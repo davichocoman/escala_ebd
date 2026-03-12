@@ -218,7 +218,7 @@ async function iniciarOneSignal() {
             } else {
                 console.log("Nenhum usuário logado ou CPF ausente. Pulando configuração de tags.");
             }
-        });
+        
     } catch (err) {
         console.error("Falha grave na inicialização do OneSignal:", err);
     }
