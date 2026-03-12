@@ -63,7 +63,7 @@ async function carregarTudo() {
 
     const headers = { 
         'Content-Type': 'application/json', 
-        'x-admin-token': SISTEMA.token 
+        'token': SISTEMA.token 
     };
 
     try {
@@ -557,7 +557,7 @@ async function ativarNotificacoes() {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'x-admin-token': SISTEMA.token 
+                'x-token': SISTEMA.token 
             },
             body: JSON.stringify({ 
                 cpf: getVal(SISTEMA.usuario, 'CPF'), 
