@@ -203,6 +203,23 @@ function renderizarMeusDados() {
         </div>
     `;
 
+    // Verifica se o membro é líder de algum departamento para liberar o menu
+    try {
+        const resDepts = await fetch(`${API_BASE}/cooperador/meus-departamentos`, {
+            headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token }
+        });
+        
+        if (resDepts.ok) {
+            const depts = await resDepts.json();
+            // Se ele for líder de pelo menos 1 departamento, mostra a aba
+            if (depts.length > 0) {
+                document.getElementById('item-menu-cooperadores')?.classList.remove('hidden');
+            }
+        }
+    } catch (e) {
+        console.error('Erro ao verificar liderança:', e);
+    }
+
     // --- DEFINIÇÃO DAS SEÇÕES ---
     const secoes = [
         {
@@ -389,22 +406,22 @@ function debounce(func, wait) {
 
 // Atualizar função mostrarTela para incluir o dashboard
 window.mostrarTela = function(telaId, btn) {
-    ['dashboard', 'meus-dados', 'agenda-geral', 'reservas'].forEach(id => {
+    // Esconde todas as seções (adicionei cooperadores na lista)
+    const secoes = ['dashboard', 'meus-dados', 'agenda-geral', 'reservas', 'cooperadores'];
+    secoes.forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
 
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-
+    
     const alvo = document.getElementById('sec-' + telaId);
     if (alvo) alvo.classList.remove('hidden');
+    if (btn) btn.classList.add('active');
 
-    // Se for mobile, fecha sidebar
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar && window.innerWidth < 768) {
-        sidebar.classList.remove('open');
-        document.getElementById('sidebar-overlay').style.display = 'none';
+    // Se ele clicar em cooperadores, carrega os dados
+    if (telaId === 'cooperadores' && typeof carregarDadosIniciais === 'function') {
+        carregarDadosIniciais();
     }
 };
 
