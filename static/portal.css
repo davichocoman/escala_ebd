@@ -826,3 +826,15 @@ body {
     max-height: 70vh;
     overflow-y: auto;
 }
+
+/* Ajuste para botões ativos quando o fundo é claro */
+.nav-container .nav-button.active {
+    background: var(--primary-dark);
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.nav-button {
+    color: var(--primary-dark); /* Cor do texto não-ativo */
+    font-weight: 600;
+}
