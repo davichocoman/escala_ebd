@@ -5,30 +5,32 @@ SISTEMA.programacoes = [];
 // ============================================================
 // 1. CARREGAMENTO DE DADOS (READ)
 // ============================================================
-window.carregarDadosIniciais = async function() {
-    const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
-    
-    // Libera botão de criar departamento para Secretaria
-    if (['ADMIN', 'SECRETARIA'].includes(perfil)) {
-        document.getElementById('btn-novo-depto')?.classList.remove('hidden');
-    }
-
+window.carregarDadosIniciais = async function () {
     try {
-        const res = await fetch(`${API_BASE}/cooperador/meus-departamentos`, {
-            headers: { 'x-token': SISTEMA.token }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-token': SISTEMA.token
+        };
+
+        const [resDeptos, resProgs] = await Promise.all([
+            fetch(`${API_BASE}/cooperadores/departamentos`, { headers }),
+            fetch(`${API_BASE}/cooperadores/programacoes`, { headers })
+        ]);
+
+        const deptos = await resDeptos.json();
+        const progs = await resProgs.json();
+
+        renderizarDepartamentos(deptos);
+        renderizarProgramacoes(progs);
+
+    } catch (err) {
+        console.error("Erro ao carregar cooperadores:", err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao carregar',
+            text: 'Não foi possível carregar os dados de cooperadores.'
         });
-        
-        if (res.ok) {
-            SISTEMA.meusDepts = await res.json();
-            renderizarDeptos();
-            
-            // Se for líder, libera sugerir programação
-            if (SISTEMA.meusDepts.length > 0) {
-                document.getElementById('btn-nova-prog')?.classList.remove('hidden');
-            }
-        }
-    } catch (e) {
-        console.error("Erro ao carregar departamentos:", e);
     }
 };
 
@@ -49,21 +51,18 @@ window.carregarProgramacoes = async function() {
 // ============================================================
 // 2. CONTROLE DE ABAS INTERNAS
 // ============================================================
-window.switchCooperadorTab = function(tabId, btnElement) {
-    // Esconde conteúdos
-    document.getElementById('tab-deptos').classList.add('hidden');
-    document.getElementById('tab-progs').classList.add('hidden');
-    
-    // Remove "active" de todos os botões e adiciona no clicado
-    document.querySelectorAll('.tabs-container .tab-btn').forEach(b => b.classList.remove('active'));
-    if (btnElement) btnElement.classList.add('active');
+window.switchCooperadorTab = function(tab, btn) {
 
-    // Mostra a aba correta
-    document.getElementById('tab-' + tabId).classList.remove('hidden');
-    
-    // Busca dados no servidor conforme a aba
-    if (tabId === 'progs') carregarProgramacoes();
-    if (tabId === 'deptos') carregarDadosIniciais();
+    document.querySelectorAll('#sec-cooperadores .nav-button')
+        .forEach(b => b.classList.remove('active'));
+
+    btn.classList.add('active');
+
+    document.querySelectorAll('#sec-cooperadores .tab-content')
+        .forEach(t => t.classList.add('hidden'));
+
+    document.getElementById('tab-' + tab)
+        .classList.remove('hidden');
 };
 
 // ============================================================
@@ -459,3 +458,4 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
