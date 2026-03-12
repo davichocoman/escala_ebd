@@ -439,8 +439,8 @@ window.verLiderados = async function(nomeDepartamento) {
 
                 <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
                     <p><b>👨‍👩‍👧‍👦 Pais:</b> ${pais}</p>
-                    <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL')}</p>
-                    <p><b>📍 Endereço:</b> ${getVal(m, 'ENDERECO')}</p>
+                    <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL') || "N/A"}</p>
+                    <p><b>📍 Endereço:</b> ${getVal(m, 'ENDERECO') || "N/A"}</p>
                 </div>
 
                 <div class="card-actions" style="justify-content: flex-start; gap: 10px; margin-top:10px;">
