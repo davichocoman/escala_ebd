@@ -123,6 +123,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarBotoes();
     
     await carregarTudoDoBanco();
+    console.log("Antes de chamar iniciarOneSignal");
+    await iniciarOneSignal();
+    console.log("Depois de iniciarOneSignal");
     
     // Inicialização do OneSignal
     window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -179,6 +182,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 })});
+
+async function iniciarOneSignal() {
+    console.log("iniciarOneSignal começou");
+    if (typeof OneSignal === 'undefined') {
+        console.warn("OneSignal SDK ainda não carregou. Aguardando...");
+        return;
+    }
+
+    try {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+                appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
+                safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
+                notifyButton: { enable: false },
+                promptOptions: {
+                    slidedown: {
+                        enabled: true,
+                        autoPrompt: true,
+                        timeDelay: 10,
+                        pageViews: 1,
+                        actionMessage: "Receba avisos da igreja no seu celular!",
+                        acceptButtonText: "Permitir",
+                        cancelButtonText: "Cancelar",
+                        mainTitle: "Notificações AD Rodovia A",
+                        mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
+                    }
+                }
+            });
+
+            console.log("OneSignal inicializado com sucesso!");
+
+            if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
+                try {
+                    const cpfLimpo = String(SISTEMA.usuario.CPF)
+                        .replace(/\D/g, '')
+                        .padStart(11, '0');
+
+                    if (cpfLimpo.length === 11) {
+                        const atual = await OneSignal.User.getExternalId();
+                        if (atual !== cpfLimpo) {
+                            await OneSignal.login(cpfLimpo);
+                        }
+                        await OneSignal.User.addTags({
+                            cpf: cpfLimpo,
+                            perfil: SISTEMA.usuario.PERFIL?.toUpperCase(),
+                            nome: SISTEMA.usuario.NOME
+                        });
+                        console.log("OneSignal: Login e tags aplicados");
+                    }
+                } catch (err) {
+                    console.error("Erro ao configurar usuário no OneSignal:", err);
+                }
+            }
+        });
+    } catch (err) {
+        console.error("Falha grave na inicialização do OneSignal:", err);
+    }
+    console.log("iniciarOneSignal terminou");
+}
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
 // ============================================================
