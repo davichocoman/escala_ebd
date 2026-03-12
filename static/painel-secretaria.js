@@ -191,20 +191,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 3. CARREGAMENTO CENTRAL
 // ============================================================
 // Função auxiliar para tratar 401 em qualquer fetch
+let logoutEmAndamento = false; 
+
 async function fetchComLogout401(url, options = {}) {
     const res = await fetch(url, options);
     
     if (res.status === 401) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Sessão expirada',
-            text: 'O servidor reiniciou ou sua sessão expirou. Você será redirecionado para o login.',
-            timer: 4000,
-            showConfirmButton: false
-        }).then(() => {
-            sessionStorage.clear();
-            window.location.href = '/login';
-        });
+        // Só mostra o alerta se ainda não estivermos redirecionando
+        if (!logoutEmAndamento) {
+            logoutEmAndamento = true; // Ativa a trava
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Sessão expirada',
+                text: 'Sua sessão expirou. Você será redirecionado para o login.',
+                timer: 4000,
+                showConfirmButton: false
+            }).then(() => {
+                sessionStorage.clear();
+                window.location.href = '/login';
+            });
+        }
+        // Joga o erro para parar a execução da função que chamou
         throw new Error('401 detectado – logout automático');
     }
     
@@ -935,25 +943,14 @@ window.deletarItem = async function(id, endpoint) {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                // ← Novo: detecta 401 em qualquer uma das requisições
-                if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Sessão expirada',
-                        text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
-                        timer: 4000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        sessionStorage.clear();
-                        window.location.href = '/login';
-                    });
-                    return;
-                }
-                await fetch(`${API_BASE}/${endpoint}/${id}`, {
+                // Aqui usamos o fetchComLogout401! Se der 401, ele já redireciona sozinho.
+                await fetchComLogout401(`${API_BASE}/${endpoint}/${id}`, {
                     method: 'DELETE',
                     headers: { 'x-admin-token': SISTEMA.token }
                 });
+
                 await carregarTudoDoBanco();
+                
                 Swal.fire({
                     icon: 'success',
                     title: 'Excluído!',
@@ -962,6 +959,10 @@ window.deletarItem = async function(id, endpoint) {
                     showConfirmButton: false
                 });
             } catch (e) {
+                // Se o erro foi 401, a fetchComLogout401 já lidou com isso, então não fazemos nada.
+                if (e.message.includes('401 detectado')) return; 
+                
+                // Se foi outro tipo de erro, mostramos um alerta
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro ao excluir',
