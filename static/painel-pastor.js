@@ -63,7 +63,7 @@ async function carregarTudo() {
 
     const headers = { 
         'Content-Type': 'application/json', 
-        'token': SISTEMA.token 
+        'x-token': SISTEMA.token 
     };
 
     try {
