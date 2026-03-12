@@ -116,127 +116,77 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     SISTEMA.usuario = JSON.parse(userStr);
+
+    const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
+
+    // Mostra a aba Cooperadores só para quem tem permissão
+    const itemCooperadores = document.querySelector('.menu-item[onclick*="cooperadores"]');
+    if (itemCooperadores) {
+        if (['ADMIN', 'SECRETARIA', 'PASTOR', 'COOPERADOR'].includes(perfil)) {
+            itemCooperadores.classList.remove('hidden');
+        } else {
+            itemCooperadores.classList.add('hidden');
+        }
+    }
     
     // Chama a atualização visual inicial
     atualizarSidebar();
     
     configurarBotoes();
-    
     await carregarTudoDoBanco();
-    console.log("Antes de chamar iniciarOneSignal");
-    await iniciarOneSignal();
-    console.log("Depois de iniciarOneSignal");
     
-});
-
-async function iniciarOneSignal() {
-    console.log("iniciarOneSignal começou");
-
-    if (typeof OneSignal === 'undefined' || !OneSignalDeferred) {
-        console.warn("OneSignal SDK ainda não carregou. Tente novamente em alguns segundos.");
-        return;
-    }
-
-    // Logs detalhados (opcional – pode remover depois de testar)
-    OneSignalDeferred.push(function(OneSignal) {
-        OneSignal.Debug.setLogLevel('trace');
+    // Inicialização do OneSignal
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+        appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
+        safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
+        notifyButton: { enable: false },
+        promptOptions: {
+            slidedown: {
+                enabled: true,
+                autoPrompt: true,
+                timeDelay: 10,
+                pageViews: 1,
+                // TEXTOS EM PORTUGUÊS (personalizados)
+                actionMessage: "Receba avisos da igreja no seu celular!",
+                acceptButtonText: "Permitir",
+                cancelButtonText: "Cancelar",
+                mainTitle: "Notificações AD Rodovia A",
+                mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
+            }
+        }
     });
-
-    try {
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-
-        OneSignalDeferred.push(async function(OneSignal) {
-            // 1. Inicializa o SDK (se ainda não foi feito)
-            if (OneSignal.__IS_INITIALIZED) {
-                console.log("OneSignal já inicializado. Pulando init.");
-            } else {
-                await OneSignal.init({
-                    appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
-                    safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
-                    notifyButton: { enable: false },
-                    promptOptions: {
-                        slidedown: {
-                            enabled: true,
-                            autoPrompt: true,
-                            timeDelay: 10,
-                            pageViews: 1,
-                            actionMessage: "Receba avisos da igreja no seu celular!",
-                            acceptButtonText: "Permitir",
-                            cancelButtonText: "Cancelar",
-                            mainTitle: "Notificações AD Rodovia A",
-                            mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
-                        }
-                    }
-                });
-                console.log("OneSignal inicializado com sucesso!");
-            }
-
-            // 2. Agora sim, verifica se o usuário já está subscrito
-            let isSubscribed = false;
-            try {
-                // Pequeno delay para o SDK atualizar o estado interno
-                await new Promise(resolve => setTimeout(resolve, 500)); 
-                isSubscribed = await OneSignal.User.pushSubscription.optedIn;
-                console.log("Usuário já subscrito?", isSubscribed);
-            } catch (subErr) {
-                console.warn("Não conseguiu verificar optedIn ainda:", subErr.message);
-                // Continua sem problema — autoPrompt só aparece na primeira permissão
-            }
-
-            if (isSubscribed) {
-                console.log("Já subscrito → não precisa mostrar prompt novamente");
-            }
-
-            // 4. Configuração do usuário (tags + external ID)
-            if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
-                try {
-                    const cpfLimpo = String(SISTEMA.usuario.CPF)
-                        .replace(/\D/g, '')
-                        .padStart(11, '0');
-
-                    if (cpfLimpo.length !== 11) {
-                        console.warn("CPF inválido após limpeza:", cpfLimpo);
-                        return;
-                    }
-
-                    const externalIdAtual = OneSignal.User.externalId;
-                    console.log("External ID atual:", externalIdAtual);
-
-                    if (externalIdAtual !== cpfLimpo) {
-                        console.log(`Atualizando external_id de "${externalIdAtual || 'null'}" → "${cpfLimpo}"`);
-                        try {
-                            await OneSignal.login(cpfLimpo);
-                            console.log("Login realizado!");
-                        } catch (loginErr) {
-                            if (loginErr.message?.includes('409') || loginErr.status === 409) {
-                                console.warn("409 Conflict: External ID já associado em outro dispositivo – ignorando.");
-                            } else {
-                                console.error("Erro no login:", loginErr);
-                            }
-                        }
-                    } else {
-                        console.log("External ID já está correto.");
-                    }
-
-                    // Tags sempre
-                    await OneSignal.User.addTags({
-                        cpf: cpfLimpo,
-                        perfil: SISTEMA.usuario.PERFIL?.toUpperCase() || 'MEMBRO',
-                        nome: SISTEMA.usuario.NOME || 'Usuário'
-                    });
-
-                    console.log("OneSignal: Tags aplicadas com sucesso!");
-                } catch (userErr) {
-                    console.error("Erro ao configurar usuário:", userErr);
+    
+    console.log("OneSignal inicializado com sucesso!");
+    
+    // Login e tags simples (sem addAlias, que pode não existir na sua versão)
+    if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
+        try {
+            const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
+    
+            if (cpfLimpo.length === 11) {
+    
+                const currentId = await OneSignal.User.getExternalId();
+    
+                if (currentId !== cpfLimpo) {
+                    await OneSignal.login(cpfLimpo);
                 }
+    
+                await OneSignal.User.addTags({
+                    cpf: cpfLimpo,
+                    funcao: SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
+                    nome: SISTEMA.usuario.NOME || ""
+                });
+    
+                console.log("OneSignal: Login e tags OK!");
             }
-        });
-    } catch (err) {
-        console.error("Falha grave na inicialização do OneSignal:", err);
+    
+        } catch (err) {
+            console.error("Erro ao processar tags OneSignal:", err);
+        }
     }
-
-    console.log("iniciarOneSignal terminou");
-}
+})});
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
 // ============================================================
@@ -252,7 +202,7 @@ async function carregarTudoDoBanco() {
     const headers = {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-        'x-token': SISTEMA.token
+        'x-admin-token': SISTEMA.token
     };
     try {
         const [resMembros, resPastor, resDash] = await Promise.all([
@@ -722,19 +672,31 @@ function configurarBotoes() {
     });
 }
 window.mostrarTela = function(telaId, btn) {
-    ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas'].forEach(id => {
+    // Esconde todas as seções
+    ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas', 'cooperadores'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
+
+    // Remove active de todos os itens do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+
+    // Mostra a tela desejada
     const alvo = document.getElementById('sec-' + telaId);
     if (alvo) alvo.classList.remove('hidden');
+
+    // Marca o botão como ativo
     if (btn) btn.classList.add('active');
+
     // Gatilhos de renderização
     if (telaId === 'dashboard') renderizarDashboard();
     if (telaId === 'membros') renderizarMembros();
-    if (telaId === 'agenda-geral') renderizarAgendaGeralCards(); // Nova
-    if (telaId === 'reservas') renderizarReservasCards(); // Nova
+    if (telaId === 'agenda-geral') renderizarAgendaGeralCards();
+    if (telaId === 'reservas') renderizarReservasCards();
+    if (telaId === 'cooperadores') {
+        // Chama a função de inicialização da aba cooperadores
+        carregarDadosIniciais();   // ← função que já existe no painel-cooperador.js
+    }
 };
 window.logout = function() {
     Swal.fire({
@@ -970,9 +932,8 @@ window.deletarItem = async function(id, endpoint) {
             try {
                 await fetch(`${API_BASE}/${endpoint}/${id}`, {
                     method: 'DELETE',
-                    headers: { 'x-token': SISTEMA.token }
+                    headers: { 'x-admin-token': SISTEMA.token }
                 });
-                
                 await carregarTudoDoBanco();
                 Swal.fire({
                     icon: 'success',
@@ -1028,7 +989,7 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             method,
             headers: {
                 'Content-Type': 'application/json',
-                'x-token': SISTEMA.token
+                'x-admin-token': SISTEMA.token
             },
             body: JSON.stringify(payload)
         });
@@ -1039,7 +1000,6 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             throw new Error(data.detail || 'Falha na API');
         }
 
-        
         await carregarTudoDoBanco(); // Atualiza a tela
 
         // Sucesso
