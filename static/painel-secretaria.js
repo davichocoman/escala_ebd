@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     atualizarSidebar();
     
     configurarBotoes();
-    await iniciarOneSignal();
+    
     await carregarTudoDoBanco();
     
     // Inicialização do OneSignal
@@ -914,7 +914,7 @@ window.deletarItem = async function(id, endpoint) {
                     method: 'DELETE',
                     headers: { 'x-token': SISTEMA.token }
                 });
-                await iniciarOneSignal();
+                
                 await carregarTudoDoBanco();
                 Swal.fire({
                     icon: 'success',
@@ -981,7 +981,7 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             throw new Error(data.detail || 'Falha na API');
         }
 
-        await iniciarOneSignal();
+        
         await carregarTudoDoBanco(); // Atualiza a tela
 
         // Sucesso
