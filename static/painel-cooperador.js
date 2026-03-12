@@ -81,7 +81,12 @@ window.renderizarDeptos = function() {
     container.innerHTML = SISTEMA.meusDepts.map(d => `
         <div class="member-card">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <strong>${d.NOME}</strong>
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <strong>${d.NOME}</strong>
+                    <span class="badge-perfil" style="background:#3b82f6; color:white; font-size:0.7rem; padding:3px 8px; border-radius:12px;">
+                        ${d.QTD_MEMBROS || 0} membro(s)
+                    </span>
+                </div>
                 ${['SECRETARIA', 'ADMIN'].includes(perfil) ? `<button class="btn-icon delete" onclick="excluirDepto('${d.ID}')">🗑️</button>` : ''}
             </div>
             <div class="card-body" style="margin-top:10px;">
@@ -174,20 +179,62 @@ function gerarBotoesAcao(prog, perfil) {
 // 5. AÇÕES DO SISTEMA (POST, PUT, DELETE)
 // ============================================================
 
-window.abrirModalDepto = function() {
-    Swal.fire({
-        title: 'Novo Departamento',
-        input: 'text',
-        inputPlaceholder: 'Ex: Jovens, Crianças...',
-        showCancelButton: true,
-        confirmButtonText: 'Salvar',
-        cancelButtonText: 'Cancelar'
-    }).then(async (result) => {
-        if (result.isConfirmed && result.value) {
-            const sucesso = await enviarDados(`${API_BASE}/admin/departamentos`, null, { NOME: result.value });
-            if (sucesso) carregarDadosIniciais();
+window.abrirModalDepto = async function() {
+    document.getElementById('formDepto')?.reset();
+    
+    const container = document.getElementById('container-lideres-depto');
+    if (container) {
+        container.innerHTML = '<span style="color:#999; font-size:0.8rem;">Carregando membros...</span>';
+        
+        try {
+            // Pega a lista de membros já salva no painel ou busca da API
+            let membros = SISTEMA.dados?.membros || [];
+            
+            if (membros.length === 0) {
+                const res = await fetch(`${API_BASE}/admin/membros-disponiveis`, { headers: { 'x-token': SISTEMA.token } });
+                const data = await res.json();
+                // Padroniza as chaves caso venha minúsculo da rota disponível
+                membros = data.map(m => ({ NOME: m.nome || m.NOME, CPF: m.cpf || m.CPF }));
+            }
+            
+            // Ordena alfabeticamente
+            membros.sort((a,b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
+            
+            // Cria os checkboxes
+            container.innerHTML = membros.map(m => `
+                <label class="checkbox-item" style="padding: 5px 0;">
+                    <input type="checkbox" name="lider_depto_cb" value="${getVal(m, 'CPF')}">
+                    ${getVal(m, 'NOME')}
+                </label>
+            `).join('');
+            
+        } catch(e) {
+            container.innerHTML = '<span style="color:red; font-size:0.8rem;">Erro ao carregar membros.</span>';
         }
-    });
+    }
+    
+    document.getElementById('modalDepto')?.classList.remove('hidden');
+};
+
+// --- 3. SALVAR DEPARTAMENTO COM OS LÍDERES ---
+window.salvarDepto = async function(e) {
+    e.preventDefault();
+    const nome = document.getElementById('depto_nome').value.trim();
+    
+    // Pega todos os CPFs que o secretário marcou
+    const checkboxes = document.querySelectorAll('input[name="lider_depto_cb"]:checked');
+    const lideresCpf = Array.from(checkboxes).map(cb => cb.value).join(', ');
+    
+    const payload = {
+        NOME: nome,
+        LIDERES_CPF: lideresCpf
+    };
+
+    const sucesso = await enviarDados(`${API_BASE}/admin/departamentos`, null, payload, 'formDepto');
+    if (sucesso) {
+        fecharModal('modalDepto');
+        carregarDadosIniciais(); // Recarrega a tela para atualizar a contagem e as listas
+    }
 };
 
 window.excluirDepto = async function(id) {
