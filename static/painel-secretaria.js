@@ -693,34 +693,24 @@ function configurarBotoes() {
         });
     });
 }
-
 window.mostrarTela = function(telaId, btn) {
-    // Esconde ABSOLUTAMENTE todas as seções que começam com sec-
-    document.querySelectorAll('main > div[id^="sec-"]').forEach(sec => {
-        sec.classList.add('hidden');
+    // Adicione 'cooperadores' na lista de limpeza
+    ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas', 'cooperadores'].forEach(id => {
+        const el = document.getElementById('sec-' + id);
+        if (el) el.classList.add('hidden');
     });
 
-    // Remove active de todos os itens do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-
-    // Mostra a tela desejada
+    
     const alvo = document.getElementById('sec-' + telaId);
-    if (alvo) {
-        alvo.classList.remove('hidden');
-    } else {
-        console.error("Tela não encontrada: sec-" + telaId);
-    }
-
+    if (alvo) alvo.classList.remove('hidden');
     if (btn) btn.classList.add('active');
 
-    // Gatilho específico para a tela de Cooperadores
+    // Gatilho: Se a tela for cooperadores, carrega os dados automaticamente
     if (telaId === 'cooperadores') {
-        if (typeof carregarDadosIniciais === 'function') {
-            carregarDadosIniciais();
-        }
+        carregarDadosIniciais(); // Função do painel-cooperador.js
     }
 };
-
 window.logout = function() {
     Swal.fire({
         icon: 'question',
