@@ -5,13 +5,19 @@ SISTEMA.programacoes = [];
 // ============================================================
 // 1. CARREGAMENTO DE DADOS (READ)
 // ============================================================
+function obterToken() {
+    return SISTEMA.token || sessionStorage.getItem('token_sistema');
+}
+
+// Atualize a carregarDadosIniciais para usar o token garantido
 window.carregarDadosIniciais = async function () {
+    const token = obterToken();
+    if (!token) return;
 
     try {
-
         const headers = {
             "Content-Type": "application/json",
-            "x-token": SISTEMA.token
+            "x-token": token
         };
 
         const [resDeptos, resProgs] = await Promise.all([
@@ -499,5 +505,6 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
 
 
