@@ -299,20 +299,30 @@ window.filtrarLideres = function() {
 window.salvarDepto = async function(e) {
     e.preventDefault();
     const nome = document.getElementById('depto_nome').value.trim();
-    
-    // Pega todos os CPFs que o secretário marcou
+    const token = obterToken();
+
     const checkboxes = document.querySelectorAll('input[name="lider_depto_cb"]:checked');
     const lideresCpf = Array.from(checkboxes).map(cb => cb.value).join(', ');
     
     const payload = {
         NOME: nome,
-        LIDERES_CPF: lideresCpf
+        LIDERES: lideresCpf // Verifique se no main.py está item.get("LIDERES") ou "LIDERES_CPF"
     };
 
-    const sucesso = await enviarDados(`${API_BASE}/admin/departamentos`, null, payload, 'formDepto');
-    if (sucesso) {
+    // Use o token recuperado manualmente para evitar erro de undefined
+    const res = await fetch(`${API_BASE}/admin/departamentos`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'x-token': token 
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        Swal.fire('Sucesso', 'Departamento criado!', 'success');
         fecharModal('modalDepto');
-        carregarDadosIniciais(); // Recarrega a tela para atualizar a contagem e as listas
+        carregarDadosIniciais();
     }
 };
 
@@ -505,6 +515,7 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
 
 
 
