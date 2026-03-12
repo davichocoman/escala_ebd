@@ -6,16 +6,17 @@ SISTEMA.programacoes = [];
 // 1. CARREGAMENTO DE DADOS (READ)
 // ============================================================
 window.carregarDadosIniciais = async function () {
+
     try {
 
         const headers = {
-            'Content-Type': 'application/json',
-            'x-token': SISTEMA.token
+            "Content-Type": "application/json",
+            "x-token": SISTEMA.token
         };
 
         const [resDeptos, resProgs] = await Promise.all([
-            fetch(`${API_BASE}/cooperadores/departamentos`, { headers }),
-            fetch(`${API_BASE}/cooperadores/programacoes`, { headers })
+            fetch(`${API_BASE}/cooperador/meus-departamentos`, { headers }),
+            fetch(`${API_BASE}/cooperador/programacoes`, { headers })
         ]);
 
         const deptos = await resDeptos.json();
@@ -24,15 +25,55 @@ window.carregarDadosIniciais = async function () {
         renderizarDepartamentos(deptos);
         renderizarProgramacoes(progs);
 
-    } catch (err) {
-        console.error("Erro ao carregar cooperadores:", err);
+    } catch (erro) {
+
+        console.error("Erro ao carregar cooperadores:", erro);
+
         Swal.fire({
-            icon: 'error',
-            title: 'Erro ao carregar',
-            text: 'Não foi possível carregar os dados de cooperadores.'
+            icon: "error",
+            title: "Erro",
+            text: "Não foi possível carregar os dados."
         });
+
     }
 };
+
+function renderizarDepartamentos(lista) {
+
+    const container = document.getElementById("lista-deptos");
+
+    if (!lista || lista.length === 0) {
+        container.innerHTML = "<p>Nenhum departamento encontrado.</p>";
+        return;
+    }
+
+    container.innerHTML = lista.map(d => `
+        <div class="card">
+            <h3>${d.NOME}</h3>
+            <p>Membros: ${d.QTD_MEMBROS || 0}</p>
+        </div>
+    `).join("");
+
+}
+
+function renderizarProgramacoes(lista) {
+
+    const container = document.getElementById("lista-progs");
+
+    if (!lista || lista.length === 0) {
+        container.innerHTML = "<p>Nenhuma programação encontrada.</p>";
+        return;
+    }
+
+    container.innerHTML = lista.map(p => `
+        <div class="card">
+            <strong>${p.TEMA_NOITE || "Programação"}</strong>
+            <p>Data: ${p.DATA}</p>
+            <p>Status: ${p.STATUS}</p>
+        </div>
+    `).join("");
+
+}
 
 window.carregarProgramacoes = async function() {
     try {
@@ -458,4 +499,5 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
 
