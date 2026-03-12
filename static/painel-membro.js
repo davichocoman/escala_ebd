@@ -176,7 +176,7 @@ function renderizarDashboard() {
 }
 
 // --- Meus Dados ---
-function renderizarMeusDados() {
+async function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
     if (!div || !SISTEMA.usuario) return;
 
@@ -575,5 +575,55 @@ window.iniciarInstalacao = async () => {
             document.getElementById('item-instalar').classList.add('hidden');
         }
         deferredPrompt = null;
+    }
+};
+
+// Função para enviar os dados para o Backend (Utilizada pelo Cooperador)
+window.enviarDados = async function(urlBase, id, payload, formId = null) {
+    const url = id ? `${urlBase}/${id}` : urlBase;
+    const method = id ? 'PUT' : 'POST';
+
+    let btnSubmit = null;
+    let textoOriginal = 'Salvar';
+
+    if (formId) {
+        const form = document.getElementById(formId);
+        if (form) btnSubmit = form.querySelector('button[type="submit"]');
+    }
+
+    if (btnSubmit) {
+        textoOriginal = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = 'Processando...';
+    }
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'x-token': SISTEMA.token
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.detail || 'Falha na API');
+        }
+
+        Swal.fire({ icon: 'success', title: 'Sucesso!', timer: 1500 });
+        return true;
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire({ icon: 'error', title: 'Erro', text: e.message });
+        return false;
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = textoOriginal;
+        }
     }
 };
