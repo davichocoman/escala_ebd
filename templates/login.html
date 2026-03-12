@@ -17,7 +17,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/ios/16.png">
 
     <!-- Estilos -->
-    <link rel="stylesheet" href="../static/portal.css">
+    <link rel="stylesheet" href="portal.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -207,21 +207,6 @@ const hint = document.getElementById("passHint");
 const loginInput = document.getElementById("login");
 const perfilLabel = document.getElementById("perfilDetectado");
 
-loginInput.addEventListener("input", () => {
-    const valor = loginInput.value.trim();
-    if (/[a-zA-Z]/.test(valor)) {
-        perfilLabel.innerText = "Perfil detectado: Administração";
-        passInput.placeholder = "Senha do sistema";
-        return;
-    }
-    if (/^\d+$/.test(valor) && valor.length >= 6) {
-        perfilLabel.innerText = "Perfil detectado: Membro/Pastor";
-        passInput.placeholder = "Senha ou Nascimento";
-        return;
-    }
-    perfilLabel.innerText = "";
-});
-
 passInput.addEventListener("input", (e) => {
     let v = e.target.value;
     
@@ -231,10 +216,14 @@ passInput.addEventListener("input", (e) => {
         if (/^\d/.test(v)) {
             // É número (Data de Nascimento), então exibe o texto
             passInput.type = "text";
+            perfilLabel.innerText = "Perfil detectado: Membro";
         } else {
             // É letra (Senha Admin), então oculta
             passInput.type = "password";
+            perfilLabel.innerText = "Perfil detectado: Administração da Igreja";
         }
+    } else {
+        perfilLabel.innerText = "";
     }
 
     // --- LÓGICA DE MÁSCARA E HINT ---
@@ -244,9 +233,9 @@ passInput.addEventListener("input", (e) => {
     }
     
     hint.innerText = "Membros: data de nascimento";
-    v = v.replace(/\D/g, ""); // Remove tudo que não é número
-    
-    // Aplica a máscara de data DD/MM/AAAA
+    v = v.replace(/\D/g, "");
+
+    // Máscara DD/MM/AAAA
     if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
     else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
     
