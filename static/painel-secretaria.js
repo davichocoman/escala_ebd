@@ -145,31 +145,32 @@ async function iniciarOneSignal() {
     try {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
 
-        OneSignalDeferred.push(async function(OneSignal) {
-            // Evita re-init se já feito
-            if (OneSignal.__IS_INITIALIZED) {
-                console.log("OneSignal já estava inicializado. Pulando init.");
-            } else {
-                await OneSignal.init({
-                    appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
-                    safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
-                    notifyButton: { enable: false },
-                    promptOptions: {
-                        slidedown: {
-                            enabled: true,
-                            autoPrompt: true,
-                            timeDelay: 10,
-                            pageViews: 1,
-                            actionMessage: "Receba avisos da igreja no seu celular!",
-                            acceptButtonText: "Permitir",
-                            cancelButtonText: "Cancelar",
-                            mainTitle: "Notificações AD Rodovia A",
-                            mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
-                        }
+        const isSubscribed = await OneSignal.User.pushSubscription.optedIn;
+        if (isSubscribed) {
+            console.log("Usuário já está subscrito → desativando auto-prompt");
+            // Desativa o slidedown auto se já permitido
+            await OneSignal.showSlidedownPrompt({ force: false, autoPrompt: false });
+        } else {
+            await OneSignal.init({
+                appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
+                safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
+                notifyButton: { enable: false },
+                promptOptions: {
+                    slidedown: {
+                        enabled: true,
+                        autoPrompt: true,
+                        timeDelay: 10,
+                        pageViews: 1,
+                        actionMessage: "Receba avisos da igreja no seu celular!",
+                        acceptButtonText: "Permitir",
+                        cancelButtonText: "Cancelar",
+                        mainTitle: "Notificações AD Rodovia A",
+                        mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
                     }
-                });
-                console.log("OneSignal inicializado com sucesso!");
-            }
+                }
+            });
+            console.log("OneSignal inicializado com sucesso!");
+        }
 
             // Parte de usuário (só se tiver CPF válido)
             if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
@@ -190,10 +191,17 @@ async function iniciarOneSignal() {
 
                     if (externalIdAtual !== cpfLimpo) {
                         console.log(`Atualizando external_id de "${externalIdAtual || 'null'}" para "${cpfLimpo}"`);
-                        await OneSignal.login(cpfLimpo);
-                        console.log("Login com external_id realizado!");
-                    } else {
-                        console.log("External ID já está correto. Pulando login.");
+                        try {
+                            await OneSignal.login(cpfLimpo);
+                            console.log("Login com external_id realizado!");
+                        } catch (loginErr) {
+                            if (loginErr.message?.includes('409') || loginErr.status === 409) {
+                                console.warn("External ID já associado em outro dispositivo (409 Conflict) – continuando normalmente.");
+                                // Continua, pois as tags ainda podem ser atualizadas
+                            } else {
+                                throw loginErr; // outros erros reais
+                            }
+                        }
                     }
 
                     // Tags sempre atualizadas
