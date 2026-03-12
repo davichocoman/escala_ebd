@@ -68,6 +68,11 @@
                 <div class="menu-item" onclick="mostrarTela('reservas', this)">
                     <span class="material-icons menu-icon">vpn_key</span> Reservas
                 </div>
+
+                <div class="menu-item hidden" id="item-menu-cooperadores" onclick="mostrarTela('cooperadores', this)">
+                    <span class="material-icons menu-icon">groups</span> Cooperadores
+                </div>
+                
             </div>
             <div id="item-instalar" class="menu-item hidden" onclick="iniciarInstalacao()">
                 <span class="material-icons">download_for_offline</span> Instalar Aplicativo
@@ -130,10 +135,109 @@
                 </div>
                 <div id="lista-reservas-cards"></div>
             </div>
+
+            <div id="sec-cooperadores" class="hidden">
+                <div class="page-header">
+                    <h2>Área do Cooperador</h2>
+                </div>
+            
+                <nav class="nav-cooperador">
+                    <div class="nav-container-cooperador">
+                        <button class="nav-btn-cooperador active" id="btn-tab-deptos" onclick="switchCooperadorTab('deptos', this)">
+                            <span class="material-icons" style="font-size: 18px; vertical-align: text-bottom; margin-right: 4px;">account_tree</span> Departamento(s)
+                        </button>
+                        <button class="nav-btn-cooperador" id="btn-tab-progs" onclick="switchCooperadorTab('progs', this)">
+                            <span class="material-icons" style="font-size: 18px; vertical-align: text-bottom; margin-right: 4px;">event</span> Programações
+                        </button>
+                    </div>
+                </nav>
+            
+                <div id="tab-deptos" class="tab-content">
+                    <div id="lista-deptos" class="card-list"></div>
+                </div>
+            
+                <div id="tab-progs" class="tab-content hidden">
+                    <button id="btn-nova-prog" class="btn btn-secondary hidden" onclick="abrirModalProg()" style="margin-bottom: 1.5rem;">+ Sugerir Programação</button>
+                    <div id="lista-progs" class="card-list"></div>
+                </div>
+            </div>
+            
         </main>
     </div>
 
+    <div id="modalProg" class="modal-overlay hidden">
+        <div class="panel-card modal-card" style="max-width: 650px;">
+            <div class="panel-title">
+                <span>Sugerir Programação de Departamento</span>
+                <button onclick="fecharModal('modalProg')" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="formProg" onsubmit="salvarProgramacao(event)">
+                <input type="hidden" id="prog_id">
+                
+                <div class="form-group">
+                    <label>Departamento *</label>
+                    <select id="prog_dept_id" class="form-input" required></select>
+                </div>
+    
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Data do Evento *</label>
+                        <input type="date" id="prog_data" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo *</label>
+                        <select id="prog_tipo" class="form-input" required>
+                            <option value="CULTO">Culto</option>
+                            <option value="EVENTO ESPECIAL">Evento Especial</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <div class="form-section-title section-title-bar">Consagração (Opcional)</div>
+                <div class="form-group">
+                    <label>Terá Consagração?</label>
+                    <select id="prog_consag_sn" class="form-input" onchange="toggleConsag(this.value)">
+                        <option value="N">Não</option>
+                        <option value="S">Sim</option>
+                    </select>
+                </div>
+                <div id="campos-consag" class="hidden">
+                    <div class="form-grid-2">
+                        <div class="form-group"><label>Dirigente (Manhã)</label><input type="text" id="prog_consag_dir" class="form-input"></div>
+                        <div class="form-group"><label>Pregador (Manhã)</label><input type="text" id="prog_consag_pre" class="form-input"></div>
+                    </div>
+                </div>
+    
+                <div class="form-section-title section-title-bar">Culto Oficial (Noite)</div>
+                <div class="form-group">
+                    <label>Tema do Culto</label>
+                    <input type="text" id="prog_tema" class="form-input" placeholder="Ex: Santidade ao Senhor">
+                </div>
+                <div class="form-grid-3">
+                    <div class="form-group"><label>Dirigente *</label><input type="text" id="prog_noite_dir" class="form-input" required></div>
+                    <div class="form-group"><label>Pregador *</label><input type="text" id="prog_noite_pre" class="form-input" required></div>
+                    <div class="form-group"><label>Cantor/Levita *</label><input type="text" id="prog_noite_can" class="form-input" required></div>
+                </div>
+    
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Insta Pregador</label>
+                        <input type="text" id="prog_insta_pre" class="form-input" placeholder="@usuario">
+                    </div>
+                    <div class="form-group">
+                        <label>Insta Cantor</label>
+                        <input type="text" id="prog_insta_can" class="form-input" placeholder="@usuario">
+                    </div>
+                </div>
+    
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:15px;">Enviar para Análise</button>
+            </form>
+        </div>
+    </div>
+
+
     <div id="sidebar-overlay"></div>
     <script src="../static/painel-membro.js"></script>
+    <script src="../static/painel-cooperador.js"></script>
 </body>
 </html>
