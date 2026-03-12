@@ -225,7 +225,7 @@ async function carregarTudoDoBanco() {
     const headers = {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-        'x-admin-token': SISTEMA.token   // ou 'x-token' – use o que seu backend espera
+        'x-token': SISTEMA.token   // ou 'x-token' – use o que seu backend espera
     };
 
     try {
@@ -946,7 +946,7 @@ window.deletarItem = async function(id, endpoint) {
                 // Aqui usamos o fetchComLogout401! Se der 401, ele já redireciona sozinho.
                 await fetchComLogout401(`${API_BASE}/${endpoint}/${id}`, {
                     method: 'DELETE',
-                    headers: { 'x-admin-token': SISTEMA.token }
+                    headers: { 'x-token': SISTEMA.token }
                 });
 
                 await carregarTudoDoBanco();
@@ -1002,7 +1002,7 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             method,
             headers: {
                 'Content-Type': 'application/json',
-                'x-admin-token': SISTEMA.token   // ou x-token
+                'x-token': SISTEMA.token   // ou x-token
             },
             body: JSON.stringify(payload)
         });
