@@ -211,6 +211,21 @@ async function carregarTudoDoBanco() {
             fetch(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
 
+        // ← Novo: detecta 401 em qualquer uma das requisições
+        if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sessão expirada',
+                text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
+                timer: 4000,
+                showConfirmButton: false
+            }).then(() => {
+                sessionStorage.clear();
+                window.location.href = '/login';
+            });
+            return;
+        }
+
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
         
         // --- LOGICA DE SINCRONIZAÇÃO DA FOTO ---
@@ -921,6 +936,20 @@ window.deletarItem = async function(id, endpoint) {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
+                // ← Novo: detecta 401 em qualquer uma das requisições
+                if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sessão expirada',
+                        text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
+                        timer: 4000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        sessionStorage.clear();
+                        window.location.href = '/login';
+                    });
+                    return;
+                }
                 await fetch(`${API_BASE}/${endpoint}/${id}`, {
                     method: 'DELETE',
                     headers: { 'x-admin-token': SISTEMA.token }
@@ -976,6 +1005,34 @@ async function enviarDados(urlBase, id, payload, formId = null) {
     }
 
     try {
+        // ← Novo: detecta 401 em qualquer uma das requisições
+        if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sessão expirada',
+                text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
+                timer: 4000,
+                showConfirmButton: false
+            }).then(() => {
+                sessionStorage.clear();
+                window.location.href = '/login';
+            });
+            return;
+        }
+        // ← Novo: detecta 401 em qualquer uma das requisições
+        if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sessão expirada',
+                text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
+                timer: 4000,
+                showConfirmButton: false
+            }).then(() => {
+                sessionStorage.clear();
+                window.location.href = '/login';
+            });
+            return;
+        }
         const res = await fetch(url, {
             method,
             headers: {
