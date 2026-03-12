@@ -174,17 +174,17 @@ async function iniciarOneSignal() {
             // 2. Agora sim, verifica se o usuário já está subscrito
             let isSubscribed = false;
             try {
+                // Pequeno delay para o SDK atualizar o estado interno
+                await new Promise(resolve => setTimeout(resolve, 500)); 
                 isSubscribed = await OneSignal.User.pushSubscription.optedIn;
                 console.log("Usuário já subscrito?", isSubscribed);
             } catch (subErr) {
-                console.warn("Erro ao verificar optedIn (provavelmente SDK ainda carregando):", subErr);
+                console.warn("Não conseguiu verificar optedIn ainda:", subErr.message);
+                // Continua sem problema — autoPrompt só aparece na primeira permissão
             }
 
-            // 3. Se já subscrito → desativa auto-prompt (evita erro "already subscribed")
             if (isSubscribed) {
-                console.log("Usuário já subscrito → desativando auto-prompt");
-                // Não precisa chamar showSlidedownPrompt com autoPrompt: false, basta não ativar
-                // O init já cuida disso se já tiver permissão
+                console.log("Já subscrito → não precisa mostrar prompt novamente");
             }
 
             // 4. Configuração do usuário (tags + external ID)
