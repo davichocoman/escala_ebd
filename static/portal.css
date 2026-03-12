@@ -838,3 +838,42 @@ body {
     color: var(--primary-dark); /* Cor do texto não-ativo */
     font-weight: 600;
 }
+
+/* --- NAVEGAÇÃO ESTILO EBD (Unificada) --- */
+.nav-cooperador {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.nav-container-cooperador {
+    background: rgba(15, 23, 42, 0.05); /* Cinza bem clarinho translúcido */
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.35rem;
+    display: flex;
+    gap: 5px;
+}
+
+.nav-btn-cooperador {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    padding: 0.6rem 1.4rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.nav-btn-cooperador:hover {
+    background: rgba(15, 23, 42, 0.1);
+}
+
+/* Botão Ativo: Fundo escuro e texto branco */
+.nav-btn-cooperador.active {
+    background: var(--primary-dark);
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
