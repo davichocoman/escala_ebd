@@ -50,20 +50,22 @@ window.carregarProgramacoes = async function() {
 // 2. CONTROLE DE ABAS INTERNAS
 // ============================================================
 window.switchCooperadorTab = function(tabId, btnElement) {
-    // Esconde conteúdos
-    document.getElementById('tab-deptos').classList.add('hidden');
-    document.getElementById('tab-progs').classList.add('hidden');
-    
-    // Remove "active" de todos os botões e adiciona no clicado
-    document.querySelectorAll('.tabs-container .tab-btn').forEach(b => b.classList.remove('active'));
+    // 1. Esconde todos os conteúdos de Cooperadores
+    document.querySelectorAll('#sec-cooperadores .tab-content').forEach(t => t.classList.add('hidden'));
+
+    // 2. Remove a classe 'active' de todos os botões desse menu
+    document.querySelectorAll('#sec-cooperadores .nav-button').forEach(b => b.classList.remove('active'));
+
+    // 3. Mostra o conteúdo selecionado e ativa o botão
+    document.getElementById('tab-' + tabId).classList.remove('hidden');
     if (btnElement) btnElement.classList.add('active');
 
-    // Mostra a aba correta
-    document.getElementById('tab-' + tabId).classList.remove('hidden');
-    
-    // Busca dados no servidor conforme a aba
-    if (tabId === 'progs') carregarProgramacoes();
-    if (tabId === 'deptos') carregarDadosIniciais();
+    // 4. Carrega os dados específicos
+    if (tabId === 'progs') {
+        carregarProgramacoes();
+    } else {
+        carregarDadosIniciais();
+    }
 };
 
 // ============================================================
@@ -459,3 +461,4 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
