@@ -178,22 +178,34 @@ function gerarBotoesAcao(prog, perfil) {
 // ============================================================
 // 5. AÇÕES DO SISTEMA (POST, PUT, DELETE)
 // ============================================================
-
 window.abrirModalDepto = async function() {
+    console.log("Abrindo modal de departamento..."); // <-- Adicionei isso pra você ver no F12
+    
+    // Reseta o formulário
     document.getElementById('formDepto')?.reset();
+    
+    // Mostra o modal (Tirei a classe hidden)
+    const modal = document.getElementById('modalDepto');
+    if(modal) modal.classList.remove('hidden');
     
     const container = document.getElementById('container-lideres-depto');
     if (container) {
         container.innerHTML = '<span style="color:#999; font-size:0.8rem;">Carregando membros...</span>';
         
         try {
-            // Pega a lista de membros já salva no painel ou busca da API
-            let membros = SISTEMA.dados?.membros || [];
+            // Tenta pegar a lista de membros já carregada pelo painel-secretaria
+            let membros = [];
+            if (SISTEMA && SISTEMA.dados && SISTEMA.dados.membros) {
+                membros = SISTEMA.dados.membros;
+            }
             
+            // Se a lista local falhar, bate na API
             if (membros.length === 0) {
-                const res = await fetch(`${API_BASE}/admin/membros-disponiveis`, { headers: { 'x-token': SISTEMA.token } });
+                console.log("Buscando membros da API...");
+                const res = await fetch(`${API_BASE}/admin/membros-disponiveis`, { 
+                    headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') } 
+                });
                 const data = await res.json();
-                // Padroniza as chaves caso venha minúsculo da rota disponível
                 membros = data.map(m => ({ NOME: m.nome || m.NOME, CPF: m.cpf || m.CPF }));
             }
             
@@ -209,11 +221,10 @@ window.abrirModalDepto = async function() {
             `).join('');
             
         } catch(e) {
+            console.error("Erro ao popular lista de lideres:", e);
             container.innerHTML = '<span style="color:red; font-size:0.8rem;">Erro ao carregar membros.</span>';
         }
     }
-    
-    document.getElementById('modalDepto')?.classList.remove('hidden');
 };
 
 // --- 3. SALVAR DEPARTAMENTO COM OS LÍDERES ---
