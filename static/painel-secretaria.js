@@ -190,41 +190,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ============================================================
 // 3. CARREGAMENTO CENTRAL
 // ============================================================
+// Função auxiliar para tratar 401 em qualquer fetch
+async function fetchComLogout401(url, options = {}) {
+    const res = await fetch(url, options);
+    
+    if (res.status === 401) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Sessão expirada',
+            text: 'O servidor reiniciou ou sua sessão expirou. Você será redirecionado para o login.',
+            timer: 4000,
+            showConfirmButton: false
+        }).then(() => {
+            sessionStorage.clear();
+            window.location.href = '/login';
+        });
+        throw new Error('401 detectado – logout automático');
+    }
+    
+    return res;
+}
+
 async function carregarTudoDoBanco() {
     console.log("🔄 Baixando todos os dados da API...");
-    // Feedback visual
-    const igrejaEl = document.getElementById('list-dash-igreja');
-    const membrosEl = document.getElementById('lista-membros'); // atualizado para card-list
-    const pastorEl = document.getElementById('lista-agenda-pastor');
-    if (igrejaEl) igrejaEl.innerHTML = '<li>Carregando...</li>';
-    if (membrosEl) membrosEl.innerHTML = '<div class="empty-msg">Atualizando...</div>';
-    if (pastorEl) pastorEl.innerHTML = '<div class="empty-msg">Atualizando...</div>';
+    
     const headers = {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-        'x-admin-token': SISTEMA.token
+        'x-admin-token': SISTEMA.token   // ou 'x-token' – use o que seu backend espera
     };
+
     try {
         const [resMembros, resPastor, resDash] = await Promise.all([
-            fetch(`${API_BASE}/membros`, { headers }),
-            fetch(`${API_BASE}/agenda-pastor`, { headers }),
-            fetch(`${API_BASE}/patrimonio/dados`, { headers })
+            fetchComLogout401(`${API_BASE}/membros`, { headers }),
+            fetchComLogout401(`${API_BASE}/agenda-pastor`, { headers }),
+            fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
-
-        // ← Novo: detecta 401 em qualquer uma das requisições
-        if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sessão expirada',
-                text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
-                timer: 4000,
-                showConfirmButton: false
-            }).then(() => {
-                sessionStorage.clear();
-                window.location.href = '/login';
-            });
-            return;
-        }
 
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
         
@@ -251,17 +252,15 @@ async function carregarTudoDoBanco() {
         renderizarReservasCards();
         renderizarMeusDados();
     } catch (erro) {
+        if (erro.message.includes('401 detectado')) return; // Já tratado acima
         console.error("Erro fatal ao carregar:", erro);
         Swal.fire({
             icon: 'error',
             title: 'Falha na conexão',
-            text: 'Não foi possível carregar os dados. Verifique sua internet ou credenciais.',
-            confirmButtonText: 'Tentar novamente',
-            confirmButtonColor: '#3b82f6'
+            text: 'Não foi possível carregar os dados. Verifique sua internet.',
+            confirmButtonText: 'Tentar novamente'
         }).then((result) => {
-            if (result.isConfirmed) {
-                carregarTudoDoBanco();
-            }
+            if (result.isConfirmed) carregarTudoDoBanco();
         });
     }
 }
@@ -983,61 +982,26 @@ async function enviarDados(urlBase, id, payload, formId = null) {
     const url = id ? `${urlBase}/${id}` : urlBase;
     const method = id ? 'PUT' : 'POST';
 
-    // 1. Tenta achar o botão de submit específico do formulário
     let btnSubmit = null;
     let textoOriginal = 'Salvar';
 
     if (formId) {
-        // Busca o botão dentro do formulário específico
         const form = document.getElementById(formId);
         if (form) btnSubmit = form.querySelector('button[type="submit"]');
-    } else {
-        // Fallback: Busca o botão do formulário visível (lógica antiga)
-        btnSubmit = document.querySelector('form:not(.hidden) button[type="submit"]');
     }
 
-    // 2. Se achou o botão, bloqueia ele
     if (btnSubmit) {
         textoOriginal = btnSubmit.innerHTML;
         btnSubmit.disabled = true;
-        // Adiciona um efeito visual simples
-        btnSubmit.innerHTML = '<span class="material-icons spin" style="font-size:16px; vertical-align:middle; margin-right:5px;">sync</span> Processando...';
+        btnSubmit.innerHTML = '<span class="material-icons spin">sync</span> Processando...';
     }
 
     try {
-        // ← Novo: detecta 401 em qualquer uma das requisições
-        if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sessão expirada',
-                text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
-                timer: 4000,
-                showConfirmButton: false
-            }).then(() => {
-                sessionStorage.clear();
-                window.location.href = '/login';
-            });
-            return;
-        }
-        // ← Novo: detecta 401 em qualquer uma das requisições
-        if (resMembros.status === 401 || resPastor.status === 401 || resDash.status === 401) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sessão expirada',
-                text: 'O servidor reiniciou ou sua sessão expirou. Faça login novamente.',
-                timer: 4000,
-                showConfirmButton: false
-            }).then(() => {
-                sessionStorage.clear();
-                window.location.href = '/login';
-            });
-            return;
-        }
-        const res = await fetch(url, {
+        const res = await fetchComLogout401(url, {
             method,
             headers: {
                 'Content-Type': 'application/json',
-                'x-admin-token': SISTEMA.token
+                'x-admin-token': SISTEMA.token   // ou x-token
             },
             body: JSON.stringify(payload)
         });
@@ -1048,29 +1012,16 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             throw new Error(data.detail || 'Falha na API');
         }
 
-        await carregarTudoDoBanco(); // Atualiza a tela
-
-        // Sucesso
-        Swal.fire({
-            icon: 'success',
-            title: 'Salvo com sucesso!',
-            timer: 1500,
-            showConfirmButton: false
-        });
-
-        return true; // Retorna true para indicar sucesso
+        await carregarTudoDoBanco();
+        Swal.fire({ icon: 'success', title: 'Salvo com sucesso!', timer: 1500 });
+        return true;
 
     } catch (e) {
+        if (e.message.includes('401 detectado')) return false; // Já tratado
         console.error(e);
-        Swal.fire({
-            icon: 'error',
-            title: 'Erro ao salvar',
-            text: e.message
-        });
-        return false; // Retorna false em caso de erro
-
+        Swal.fire({ icon: 'error', title: 'Erro ao salvar', text: e.message });
+        return false;
     } finally {
-        // 3. SEMPRE Reabilita o botão no final (seja sucesso ou erro)
         if (btnSubmit) {
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = textoOriginal;
