@@ -604,7 +604,7 @@ function eventoValido(item, keyTitulo, keyData) {
     return d >= hoje;
 }
 
-function mostrarTela(telaId, btn) {
+window.mostrarTela = function(telaId, btn) {
     // Adicionamos 'cooperadores' na lista de painéis a serem escondidos
     ['dashboard', 'minha-agenda', 'agenda-geral', 'reservas', 'membros', 'meus-dados', 'cooperadores'].forEach(id => {
         const el = document.getElementById('sec-' + id);
@@ -618,21 +618,28 @@ function mostrarTela(telaId, btn) {
     
     if(btn) btn.classList.add('active');
 
-    if(window.innerWidth < 768) toggleSidebar();
+    if(window.innerWidth < 768) window.toggleSidebar();
     
     // ATIVAÇÃO: Se a tela escolhida for cooperadores, carrega os dados automaticamente
     if (telaId === 'cooperadores') {
         if (typeof carregarDadosIniciais === 'function') carregarDadosIniciais();
     }
-}
+};
 
 // Helpers Comuns (GetVal, Debounce, Dates, SidebarToggle, Logout)
 // Copiar exatamente as mesmas funções do painel-secretaria.js ou painel-membro.js
 function getVal(obj, k) { if(!obj) return ''; const u=k.toUpperCase(); for(let i in obj) if(i.toUpperCase()===u) return obj[i]||''; return ''; }
 function dataParaObj(s) { if(!s) return new Date(0); const p=s.split('/'); return p.length===3?new Date(p[2],p[1]-1,p[0]):new Date(0); }
 function debounce(f,w) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>f.apply(this,a),w); }; }
-function toggleSidebar(){ const s=document.querySelector('.sidebar'); if(s) s.classList.toggle('open'); }
-function logout(){ sessionStorage.clear(); window.location.href='/login'; }
+window.toggleSidebar = function() { 
+    const s = document.querySelector('.sidebar'); 
+    if(s) s.classList.toggle('open'); 
+};
+
+window.logout = function() { 
+    sessionStorage.clear(); 
+    window.location.href='/login'; 
+};
 
 function getAniversariantesProximos(listaMembros) {
     const hoje = new Date();
@@ -838,5 +845,54 @@ window.iniciarInstalacao = async () => {
             document.getElementById('item-instalar').classList.add('hidden');
         }
         deferredPrompt = null;
+    }
+};
+
+window.enviarDados = async function(urlBase, id, payload, formId = null) {
+    const url = id ? `${urlBase}/${id}` : urlBase;
+    const method = id ? 'PUT' : 'POST';
+
+    let btnSubmit = null;
+    let textoOriginal = 'Salvar';
+
+    if (formId) {
+        const form = document.getElementById(formId);
+        if (form) btnSubmit = form.querySelector('button[type="submit"]');
+    }
+
+    if (btnSubmit) {
+        textoOriginal = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = 'Processando...';
+    }
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'x-token': SISTEMA.token
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.detail || 'Falha na API');
+        }
+
+        Swal.fire({ icon: 'success', title: 'Sucesso!', timer: 1500 });
+        return true;
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire({ icon: 'error', title: 'Erro', text: e.message });
+        return false;
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = textoOriginal;
+        }
     }
 };
