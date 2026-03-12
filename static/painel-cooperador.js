@@ -360,24 +360,49 @@ window.toggleConsag = function(val) {
 
 // Outras funções (encaminharParaPastor, decidirPastor, verLiderados) permanecem com as mesmas rotas e lógicas...
 window.encaminharParaPastor = async function(idProg) {
-    const membros = await fetch(`${API_BASE}/admin/membros-disponiveis`, { headers: { 'x-token': SISTEMA.token } }).then(r => r.json());
-    const pastores = membros.filter(m => String(m.perfil).toUpperCase() === 'PASTOR');
+    // Usa a lista já carregada na memória, filtrando quem é pastor pelo perfil, cargo ou nome
+    const pastores = SISTEMA.dados.membros.filter(m => {
+        const cargo = getVal(m, 'CARGO').toUpperCase();
+        const perfil = getVal(m, 'PERFIL').toUpperCase();
+        const nome = getVal(m, 'NOME').toUpperCase();
+        
+        return cargo.includes('PASTOR') || perfil === 'PASTOR' || nome.startsWith('PR.');
+    });
     
+    // Monta a lista de opções para o Modal
     const options = {};
-    pastores.forEach(p => { options[p.nome] = p.nome; });
+    pastores.forEach(p => { 
+        const nomePastor = getVal(p, 'NOME');
+        options[nomePastor] = nomePastor; 
+    });
+
+    // Se não achar nenhum pastor, avisa (evita o modal vazio do seu print)
+    if (Object.keys(options).length === 0) {
+        Swal.fire('Aviso', 'Nenhum Pastor encontrado no cadastro. Verifique a lista de membros.', 'warning');
+        return;
+    }
 
     const { value: pastorEscolhido } = await Swal.fire({
-        title: 'Escolha o Pastor', input: 'select', inputOptions: options, showCancelButton: true
+        title: 'Escolha o Pastor', 
+        input: 'select', 
+        inputOptions: options,
+        inputPlaceholder: 'Selecione o pastor...',
+        showCancelButton: true
     });
 
     if (pastorEscolhido) {
+        const token = SISTEMA.token || sessionStorage.getItem('token_sistema');
         const res = await fetch(`${API_BASE}/admin/programacoes/${idProg}/vincular-pastor`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token },
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json', 'x-token': token },
             body: JSON.stringify({ PASTOR_NOME: pastorEscolhido })
         });
+        
         if (res.ok) {
             Swal.fire('Enviado!', `Atribuído ao ${pastorEscolhido}`, 'success');
-            carregarProgramacoes();
+            carregarProgramacoes(); // Atualiza a aba instantaneamente
+        } else {
+            Swal.fire('Erro', 'Não foi possível enviar ao pastor.', 'error');
         }
     }
 };
@@ -470,5 +495,6 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
 
 
