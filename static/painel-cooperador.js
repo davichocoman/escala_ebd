@@ -50,24 +50,33 @@ window.carregarProgramacoes = async function() {
 // 2. CONTROLE DE ABAS INTERNAS
 // ============================================================
 window.switchCooperadorTab = function(tabId, btnElement) {
-    // 1. Esconde todos os conteúdos de Cooperadores
-    document.querySelectorAll('#sec-cooperadores .tab-content').forEach(t => t.classList.add('hidden'));
+    // 1. Esconde as abas de conteúdo
+    document.getElementById('tab-deptos').classList.add('hidden');
+    document.getElementById('tab-progs').classList.add('hidden');
+    
+    // 2. Remove a classe 'active' de TODOS os botões de navegação de cooperadores
+    document.querySelectorAll('.nav-btn-cooperador').forEach(btn => {
+        btn.classList.remove('active');
+    });
 
-    // 2. Remove a classe 'active' de todos os botões desse menu
-    document.querySelectorAll('#sec-cooperadores .nav-button').forEach(b => b.classList.remove('active'));
+    // 3. Adiciona 'active' apenas no botão que foi clicado
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
 
-    // 3. Mostra o conteúdo selecionado e ativa o botão
-    document.getElementById('tab-' + tabId).classList.remove('hidden');
-    if (btnElement) btnElement.classList.add('active');
-
-    // 4. Carrega os dados específicos
+    // 4. Mostra o conteúdo da aba selecionada
+    const abaAlvo = document.getElementById('tab-' + tabId);
+    if (abaAlvo) {
+        abaAlvo.classList.remove('hidden');
+    }
+    
+    // 5. Carrega os dados (se necessário)
     if (tabId === 'progs') {
-        carregarProgramacoes();
+        if (typeof carregarProgramacoes === 'function') carregarProgramacoes();
     } else {
-        carregarDadosIniciais();
+        if (typeof carregarDadosIniciais === 'function') carregarDadosIniciais();
     }
 };
-
 // ============================================================
 // 3. RENDERIZAÇÃO NA TELA
 // ============================================================
@@ -461,4 +470,5 @@ window.verLiderados = async function(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 };
+
 
