@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     atualizarSidebar();
     
     configurarBotoes();
+    await iniciarOneSignal();
     await carregarTudoDoBanco();
     
     // Inicialização do OneSignal
@@ -152,17 +153,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Login e tags compatível com OneSignal v16
     if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
         try {
-            const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
+            const cpfLimpo = String(SISTEMA.usuario.CPF)
+                .replace(/\D/g, '')
+                .padStart(11, '0');
     
             if (cpfLimpo.length === 11) {
     
-                // Garante sessão limpa
-                await OneSignal.logout();
+                const atual = await OneSignal.User.getExternalId();
     
-                // Login
-                await OneSignal.login(cpfLimpo);
+                if (atual !== cpfLimpo) {
+                    await OneSignal.login(cpfLimpo);
+                }
     
-                // Tags
                 await OneSignal.User.addTags({
                     cpf: cpfLimpo,
                     perfil: SISTEMA.usuario.PERFIL?.toUpperCase(),
@@ -171,6 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
                 console.log("OneSignal: Login e tags OK!");
             }
+    
         } catch (err) {
             console.error("Erro ao processar OneSignal:", err);
         }
@@ -911,6 +914,7 @@ window.deletarItem = async function(id, endpoint) {
                     method: 'DELETE',
                     headers: { 'x-token': SISTEMA.token }
                 });
+                await iniciarOneSignal();
                 await carregarTudoDoBanco();
                 Swal.fire({
                     icon: 'success',
@@ -977,6 +981,7 @@ async function enviarDados(urlBase, id, payload, formId = null) {
             throw new Error(data.detail || 'Falha na API');
         }
 
+        await iniciarOneSignal();
         await carregarTudoDoBanco(); // Atualiza a tela
 
         // Sucesso
