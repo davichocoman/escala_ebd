@@ -695,21 +695,29 @@ function configurarBotoes() {
 }
 
 window.mostrarTela = function(telaId, btn) {
-
-    document.querySelectorAll('[id^="sec-"]').forEach(sec => {
+    // Esconde ABSOLUTAMENTE todas as seções que começam com sec-
+    document.querySelectorAll('main > div[id^="sec-"]').forEach(sec => {
         sec.classList.add('hidden');
     });
 
-    document.querySelectorAll('.menu-item')
-        .forEach(el => el.classList.remove('active'));
+    // Remove active de todos os itens do menu
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
+    // Mostra a tela desejada
     const alvo = document.getElementById('sec-' + telaId);
-    if (alvo) alvo.classList.remove('hidden');
+    if (alvo) {
+        alvo.classList.remove('hidden');
+    } else {
+        console.error("Tela não encontrada: sec-" + telaId);
+    }
 
     if (btn) btn.classList.add('active');
 
-    if (telaId === 'cooperadores' && typeof carregarDadosIniciais === 'function') {
-        carregarDadosIniciais();
+    // Gatilho específico para a tela de Cooperadores
+    if (telaId === 'cooperadores') {
+        if (typeof carregarDadosIniciais === 'function') {
+            carregarDadosIniciais();
+        }
     }
 };
 
