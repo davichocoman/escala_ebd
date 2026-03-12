@@ -137,42 +137,57 @@ async function iniciarOneSignal() {
         return;
     }
 
-    // Ativa logs detalhados (opcional, mas ajuda no debug)
+    // Logs detalhados (opcional – pode remover depois de testar)
     OneSignalDeferred.push(function(OneSignal) {
-        OneSignal.Debug.setLogLevel('trace');  // ou 'debug' para menos verboso
+        OneSignal.Debug.setLogLevel('trace');
     });
 
     try {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
 
-        const isSubscribed = await OneSignal.User.pushSubscription.optedIn;
-        if (isSubscribed) {
-            console.log("Usuário já está subscrito → desativando auto-prompt");
-            // Desativa o slidedown auto se já permitido
-            await OneSignal.showSlidedownPrompt({ force: false, autoPrompt: false });
-        } else {
-            await OneSignal.init({
-                appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
-                safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
-                notifyButton: { enable: false },
-                promptOptions: {
-                    slidedown: {
-                        enabled: true,
-                        autoPrompt: true,
-                        timeDelay: 10,
-                        pageViews: 1,
-                        actionMessage: "Receba avisos da igreja no seu celular!",
-                        acceptButtonText: "Permitir",
-                        cancelButtonText: "Cancelar",
-                        mainTitle: "Notificações AD Rodovia A",
-                        mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
+        OneSignalDeferred.push(async function(OneSignal) {
+            // 1. Inicializa o SDK (se ainda não foi feito)
+            if (OneSignal.__IS_INITIALIZED) {
+                console.log("OneSignal já inicializado. Pulando init.");
+            } else {
+                await OneSignal.init({
+                    appId: "d6fdf3da-61c7-462c-b00c-87fc3cffcf4d",
+                    safari_web_id: "web.onesignal.auto.21eb64f1-a307-4b53-9fa9-5af0b410a31b",
+                    notifyButton: { enable: false },
+                    promptOptions: {
+                        slidedown: {
+                            enabled: true,
+                            autoPrompt: true,
+                            timeDelay: 10,
+                            pageViews: 1,
+                            actionMessage: "Receba avisos da igreja no seu celular!",
+                            acceptButtonText: "Permitir",
+                            cancelButtonText: "Cancelar",
+                            mainTitle: "Notificações AD Rodovia A",
+                            mainText: "Fique por dentro de aniversariantes, eventos e agenda em tempo real!"
+                        }
                     }
-                }
-            });
-            console.log("OneSignal inicializado com sucesso!");
-        }
+                });
+                console.log("OneSignal inicializado com sucesso!");
+            }
 
-            // Parte de usuário (só se tiver CPF válido)
+            // 2. Agora sim, verifica se o usuário já está subscrito
+            let isSubscribed = false;
+            try {
+                isSubscribed = await OneSignal.User.pushSubscription.optedIn;
+                console.log("Usuário já subscrito?", isSubscribed);
+            } catch (subErr) {
+                console.warn("Erro ao verificar optedIn (provavelmente SDK ainda carregando):", subErr);
+            }
+
+            // 3. Se já subscrito → desativa auto-prompt (evita erro "already subscribed")
+            if (isSubscribed) {
+                console.log("Usuário já subscrito → desativando auto-prompt");
+                // Não precisa chamar showSlidedownPrompt com autoPrompt: false, basta não ativar
+                // O init já cuida disso se já tiver permissão
+            }
+
+            // 4. Configuração do usuário (tags + external ID)
             if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
                 try {
                     const cpfLimpo = String(SISTEMA.usuario.CPF)
@@ -184,41 +199,38 @@ async function iniciarOneSignal() {
                         return;
                     }
 
-                    // Forma correta de pegar o external ID atual (propriedade, não método!)
                     const externalIdAtual = OneSignal.User.externalId;
-
-                    console.log("External ID atual no OneSignal:", externalIdAtual);  // ← log para debug
+                    console.log("External ID atual:", externalIdAtual);
 
                     if (externalIdAtual !== cpfLimpo) {
-                        console.log(`Atualizando external_id de "${externalIdAtual || 'null'}" para "${cpfLimpo}"`);
+                        console.log(`Atualizando external_id de "${externalIdAtual || 'null'}" → "${cpfLimpo}"`);
                         try {
                             await OneSignal.login(cpfLimpo);
-                            console.log("Login com external_id realizado!");
+                            console.log("Login realizado!");
                         } catch (loginErr) {
                             if (loginErr.message?.includes('409') || loginErr.status === 409) {
-                                console.warn("External ID já associado em outro dispositivo (409 Conflict) – continuando normalmente.");
-                                // Continua, pois as tags ainda podem ser atualizadas
+                                console.warn("409 Conflict: External ID já associado em outro dispositivo – ignorando.");
                             } else {
-                                throw loginErr; // outros erros reais
+                                console.error("Erro no login:", loginErr);
                             }
                         }
+                    } else {
+                        console.log("External ID já está correto.");
                     }
 
-                    // Tags sempre atualizadas
+                    // Tags sempre
                     await OneSignal.User.addTags({
                         cpf: cpfLimpo,
                         perfil: SISTEMA.usuario.PERFIL?.toUpperCase() || 'MEMBRO',
                         nome: SISTEMA.usuario.NOME || 'Usuário'
                     });
 
-                    console.log("OneSignal: Login e tags aplicados com sucesso!");
-                } catch (err) {
-                    console.error("Erro ao configurar usuário no OneSignal:", err);
+                    console.log("OneSignal: Tags aplicadas com sucesso!");
+                } catch (userErr) {
+                    console.error("Erro ao configurar usuário:", userErr);
                 }
-            } else {
-                console.log("Nenhum usuário logado ou CPF ausente. Pulando configuração de tags.");
             }
-        
+        });
     } catch (err) {
         console.error("Falha grave na inicialização do OneSignal:", err);
     }
