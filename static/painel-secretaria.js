@@ -155,14 +155,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
     
             if (cpfLimpo.length === 11) {
-                // No v16, o login já define o External ID automaticamente
+    
+                // Garante sessão limpa
+                await OneSignal.logout();
+    
+                // Login
                 await OneSignal.login(cpfLimpo);
+    
+                // Tags
                 await OneSignal.User.addTags({
-                    "cpf": cpfLimpo,
-                    "perfil": SISTEMA.usuario.PERFIL?.toUpperCase(),
-                    "nome": SISTEMA.usuario.NOME
+                    cpf: cpfLimpo,
+                    perfil: SISTEMA.usuario.PERFIL?.toUpperCase(),
+                    nome: SISTEMA.usuario.NOME
                 });
-                    
+    
                 console.log("OneSignal: Login e tags OK!");
             }
         } catch (err) {
