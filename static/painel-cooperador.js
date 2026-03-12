@@ -183,7 +183,10 @@ window.abrirModalDepto = async function() {
     
     // Reseta o formulário
     document.getElementById('formDepto')?.reset();
-    
+
+    const busca = document.getElementById('buscaLider');
+    if (busca) busca.value = '';
+        
     // Mostra o modal (Tirei a classe hidden)
     const modal = document.getElementById('modalDepto');
     if(modal) modal.classList.remove('hidden');
@@ -225,6 +228,25 @@ window.abrirModalDepto = async function() {
             container.innerHTML = '<span style="color:red; font-size:0.8rem;">Erro ao carregar membros.</span>';
         }
     }
+};
+
+window.filtrarLideres = function() {
+    const termo = document.getElementById('buscaLider').value.toLowerCase();
+    const container = document.getElementById('container-lideres-depto');
+
+    if (!container) return;
+
+    const itens = container.querySelectorAll('label.checkbox-item');
+
+    itens.forEach(item => {
+        const nome = item.textContent.toLowerCase();
+
+        if (nome.includes(termo)) {
+            item.style.display = "block";
+        } else {
+            item.style.display = "none";
+        }
+    });
 };
 
 // --- 3. SALVAR DEPARTAMENTO COM OS LÍDERES ---
