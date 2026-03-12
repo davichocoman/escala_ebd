@@ -157,14 +157,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (cpfLimpo.length === 11) {
                 // No v16, o login já define o External ID automaticamente
                 await OneSignal.login(cpfLimpo);
-    
-                // Tags agora são dentro de OneSignal.User
                 await OneSignal.User.addTags({
                     "cpf": cpfLimpo,
-                    "perfil": SISTEMA.usuario.PERFIL?.toLowerCase() || "membro",
-                    "nome": SISTEMA.usuario.NOME || ""
+                    "perfil": SISTEMA.usuario.PERFIL?.toUpperCase(),
+                    "nome": SISTEMA.usuario.NOME
                 });
-    
+                    
                 console.log("OneSignal: Login e tags OK!");
             }
         } catch (err) {
