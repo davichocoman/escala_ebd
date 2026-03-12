@@ -605,15 +605,25 @@ function eventoValido(item, keyTitulo, keyData) {
 }
 
 function mostrarTela(telaId, btn) {
-    ['dashboard', 'minha-agenda', 'agenda-geral', 'reservas', 'membros', 'meus-dados'].forEach(id => {
-        document.getElementById('sec-' + id).classList.add('hidden');
+    // Adicionamos 'cooperadores' na lista de painéis a serem escondidos
+    ['dashboard', 'minha-agenda', 'agenda-geral', 'reservas', 'membros', 'meus-dados', 'cooperadores'].forEach(id => {
+        const el = document.getElementById('sec-' + id);
+        if (el) el.classList.add('hidden');
     });
+    
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     
-    document.getElementById('sec-' + telaId).classList.remove('hidden');
+    const alvo = document.getElementById('sec-' + telaId);
+    if(alvo) alvo.classList.remove('hidden');
+    
     if(btn) btn.classList.add('active');
 
     if(window.innerWidth < 768) toggleSidebar();
+    
+    // ATIVAÇÃO: Se a tela escolhida for cooperadores, carrega os dados automaticamente
+    if (telaId === 'cooperadores') {
+        if (typeof carregarDadosIniciais === 'function') carregarDadosIniciais();
+    }
 }
 
 // Helpers Comuns (GetVal, Debounce, Dates, SidebarToggle, Logout)
