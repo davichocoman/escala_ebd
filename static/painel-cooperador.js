@@ -282,3 +282,18 @@ async function verLiderados(nomeDepartamento) {
         document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
     }
 }
+
+function switchCooperadorTab(tabId) {
+    // Esconde os conteúdos
+    document.getElementById('tab-deptos').classList.add('hidden');
+    document.getElementById('tab-progs').classList.add('hidden');
+    
+    // Remove active dos botões
+    document.querySelectorAll('.tabs-container .tab-btn').forEach(b => b.classList.remove('active'));
+
+    // Mostra o selecionado
+    document.getElementById('tab-' + tabId).classList.remove('hidden');
+    
+    // Adiciona active no botão clicado (precisa mapear o botão ou usar event)
+    if (tabId === 'progs') carregarProgramacoes(); // Busca as progs no back
+}
