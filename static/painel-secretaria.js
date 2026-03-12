@@ -694,8 +694,9 @@ function configurarBotoes() {
     });
 }
 window.mostrarTela = function(telaId, btn) {
-    // Adicione 'cooperadores' na lista de limpeza
-    ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas', 'cooperadores'].forEach(id => {
+    // Esconde todas as seções possíveis
+    const secoes = ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas', 'cooperadores'];
+    secoes.forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
@@ -706,9 +707,8 @@ window.mostrarTela = function(telaId, btn) {
     if (alvo) alvo.classList.remove('hidden');
     if (btn) btn.classList.add('active');
 
-    // Gatilho: Se a tela for cooperadores, carrega os dados automaticamente
     if (telaId === 'cooperadores') {
-        carregarDadosIniciais(); // Função do painel-cooperador.js
+        carregarDadosIniciais();
     }
 };
 window.logout = function() {
