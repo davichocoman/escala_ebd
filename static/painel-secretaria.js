@@ -132,20 +132,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function iniciarOneSignal() {
     console.log("iniciarOneSignal começou");
 
-    // Aguarda o SDK carregar (se ainda não estiver pronto)
     if (typeof OneSignal === 'undefined' || !OneSignalDeferred) {
         console.warn("OneSignal SDK ainda não carregou. Tente novamente em alguns segundos.");
         return;
     }
+
+    // Ativa logs detalhados (opcional, mas ajuda no debug)
     OneSignalDeferred.push(function(OneSignal) {
-        OneSignal.Debug.setLogLevel('trace');  // ou 'debug'
+        OneSignal.Debug.setLogLevel('trace');  // ou 'debug' para menos verboso
     });
 
     try {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
 
         OneSignalDeferred.push(async function(OneSignal) {
-            // Só inicializa se ainda não foi feito
+            // Evita re-init se já feito
             if (OneSignal.__IS_INITIALIZED) {
                 console.log("OneSignal já estava inicializado. Pulando init.");
             } else {
@@ -170,24 +171,32 @@ async function iniciarOneSignal() {
                 console.log("OneSignal inicializado com sucesso!");
             }
 
-            // Parte de usuário (só executa se tiver CPF)
+            // Parte de usuário (só se tiver CPF válido)
             if (SISTEMA.usuario && SISTEMA.usuario.CPF) {
                 try {
                     const cpfLimpo = String(SISTEMA.usuario.CPF)
                         .replace(/\D/g, '')
                         .padStart(11, '0');
 
-                    if (cpfLimpo.length !== 11) return;
-
-                    // Pega o external_id atual (método correto na v16+)
-                    const externalIdAtual = await OneSignal.User.getProperty("external_id");
-
-                    if (externalIdAtual !== cpfLimpo) {
-                        console.log(`Atualizando external_id de ${externalIdAtual} para ${cpfLimpo}`);
-                        await OneSignal.login(cpfLimpo);
+                    if (cpfLimpo.length !== 11) {
+                        console.warn("CPF inválido após limpeza:", cpfLimpo);
+                        return;
                     }
 
-                    // Adiciona tags (sempre atualiza)
+                    // Forma correta de pegar o external ID atual (propriedade, não método!)
+                    const externalIdAtual = OneSignal.User.externalId;
+
+                    console.log("External ID atual no OneSignal:", externalIdAtual);  // ← log para debug
+
+                    if (externalIdAtual !== cpfLimpo) {
+                        console.log(`Atualizando external_id de "${externalIdAtual || 'null'}" para "${cpfLimpo}"`);
+                        await OneSignal.login(cpfLimpo);
+                        console.log("Login com external_id realizado!");
+                    } else {
+                        console.log("External ID já está correto. Pulando login.");
+                    }
+
+                    // Tags sempre atualizadas
                     await OneSignal.User.addTags({
                         cpf: cpfLimpo,
                         perfil: SISTEMA.usuario.PERFIL?.toUpperCase() || 'MEMBRO',
@@ -198,6 +207,8 @@ async function iniciarOneSignal() {
                 } catch (err) {
                     console.error("Erro ao configurar usuário no OneSignal:", err);
                 }
+            } else {
+                console.log("Nenhum usuário logado ou CPF ausente. Pulando configuração de tags.");
             }
         });
     } catch (err) {
