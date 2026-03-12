@@ -386,11 +386,22 @@ window.decidirPastor = async function(idProg, decisao) {
 };
 
 window.verLiderados = async function(nomeDepartamento) {
-    Swal.fire({ title: `Liderados: ${nomeDepartamento}`, html: '<div id="lista-liderados-modal" class="card-list">Carregando...</div>', width: '90%', showConfirmButton: false, showCloseButton: true });
+    Swal.fire({
+        title: `Liderados: ${nomeDepartamento}`,
+        html: '<div id="lista-liderados-modal" class="card-list">Carregando...</div>',
+        width: '90%',
+        showConfirmButton: false,
+        showCloseButton: true
+    });
+
     try {
-        const res = await fetch(`${API_BASE}/cooperador/membros-por-departamento/${nomeDepartamento}`, { headers: { 'x-token': SISTEMA.token } });
+        const res = await fetch(`${API_BASE}/cooperador/membros-por-departamento/${nomeDepartamento}`, {
+            headers: { 'x-token': SISTEMA.token }
+        });
+
         const liderados = await res.json();
         const container = document.getElementById('lista-liderados-modal');
+        if(!container) return;
 
         if (liderados.length === 0) {
             container.innerHTML = '<p class="empty-msg">Nenhum membro encontrado.</p>';
@@ -398,39 +409,53 @@ window.verLiderados = async function(nomeDepartamento) {
         }
 
         container.innerHTML = liderados.map(m => {
+
             const fone = String(getVal(m, 'CONTATO') || "").replace(/\D/g, "");
             const endereco = encodeURIComponent(getVal(m, 'ENDERECO') || "");
             const foto = recuperarFoto(m) || '../static/icons/ios/32.png';
+
             const pai = String(getVal(m, 'PAI') || "");
             const mae = String(getVal(m, 'MAE') || "");
 
-            if(pai !== "" && mae !== ""){
-                const pais = `${pai} e ${mae}`
-            } else if (pai !== "" && mae === ""){
-                const pais = `${pai}`
-            }  else if (pai === "" && mae === ""){
-                const pais = `${mae}`
-            } else{
-                const pais = "N/A"
-            }
+            let pais = "N/A";
 
+            if(pai && mae){
+                pais = `${pai} e ${mae}`;
+            } else if(pai){
+                pais = pai;
+            } else if(mae){
+                pais = mae;
+            }
 
             return `
             <div class="member-card" style="text-align: left; border-left: 5px solid var(--accent, #3b82f6);">
                 <div style="display:flex; align-items:center; gap:15px;">
                     <img src="${foto}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                    <div><strong>${getVal(m, 'NOME')}</strong><br><small>${getVal(m, 'CARGO') || 'Membro'}</small></div>
+                    <div>
+                        <strong>${getVal(m, 'NOME')}</strong><br>
+                        <small>${getVal(m, 'CARGO') || 'Membro'}</small>
+                    </div>
                 </div>
+
                 <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
                     <p><b>👨‍👩‍👧‍👦 Pais:</b> ${pais}</p>
-                    <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL')}/p>
+                    <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL')}</p>
                     <p><b>📍 Endereço:</b> ${getVal(m, 'ENDERECO')}</p>
                 </div>
+
                 <div class="card-actions" style="justify-content: flex-start; gap: 10px; margin-top:10px;">
-                    <a href="https://wa.me/55${fone}" target="_blank" class="btn-small btn-success" style="text-decoration:none;"><span class="material-icons" style="font-size:16px;">whatsapp</span> Mensagem</a>
-                    <a href="https://www.google.com/maps/search/?api=1&query=$${endereco}" target="_blank" class="btn-small btn-primary" style="text-decoration:none;"><span class="material-icons" style="font-size:16px;">directions</span> Mapa</a>
+                    <a href="https://wa.me/55${fone}" target="_blank" class="btn-small btn-success" style="text-decoration:none;">
+                        <span class="material-icons" style="font-size:16px;">whatsapp</span> Mensagem
+                    </a>
+
+                    <a href="https://www.google.com/maps/search/?api=1&query=${endereco}" target="_blank" class="btn-small btn-primary" style="text-decoration:none;">
+                        <span class="material-icons" style="font-size:16px;">directions</span> Mapa
+                    </a>
                 </div>
             </div>`;
         }).join('');
-    } catch (e) { document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.'; }
+
+    } catch (e) {
+        document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
+    }
 };
