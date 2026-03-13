@@ -1,82 +1,109 @@
-// ATENÇÃO: Não declaramos "const SISTEMA" aqui, pois já vem do painel principal.
 SISTEMA.meusDepts = [];
 SISTEMA.programacoes = [];
+SISTEMA.deptoAtivo = null; // Guarda o departamento que está aberto na tela
 
 // ============================================================
 // 1. CARREGAMENTO DE DADOS (READ)
 // ============================================================
 window.carregarDadosIniciais = async function() {
     const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
+    const token = SISTEMA.token || sessionStorage.getItem('token_sistema');
     
-    // Libera botão de criar departamento para Secretaria
     if (['ADMIN', 'SECRETARIA'].includes(perfil)) {
         document.getElementById('btn-novo-depto')?.classList.remove('hidden');
     }
 
     try {
-        const res = await fetch(`${API_BASE}/cooperador/meus-departamentos`, {
-            headers: { 'x-token': SISTEMA.token }
-        });
+        const [resDepts, resProgs] = await Promise.all([
+            fetch(`${API_BASE}/cooperador/meus-departamentos`, { headers: { 'x-token': token } }),
+            fetch(`${API_BASE}/cooperador/programacoes`, { headers: { 'x-token': token } })
+        ]);
         
-        if (res.ok) {
-            SISTEMA.meusDepts = await res.json();
-            renderizarDeptos();
+        if (resDepts.ok && resProgs.ok) {
+            SISTEMA.meusDepts = await resDepts.json();
+            SISTEMA.programacoes = await resProgs.json();
             
-            // Se for líder, libera sugerir programação
-            if (SISTEMA.meusDepts.length > 0) {
-                document.getElementById('btn-nova-prog')?.classList.remove('hidden');
+            // --- O ATALHO MÁGICO DO LÍDER ÚNICO ---
+            if (perfil === 'MEMBRO' && SISTEMA.meusDepts.length === 1) {
+                abrirDepto(SISTEMA.meusDepts[0].ID);
+                document.getElementById('btn-voltar-deptos')?.classList.add('hidden'); // Esconde o "Voltar"
+            } else {
+                voltarParaListaDeptos(); // Garante que a tela A esteja visível
+                renderizarDeptos();
             }
         }
     } catch (e) {
-        console.error("Erro ao carregar departamentos:", e);
+        console.error("Erro ao carregar dados dos departamentos:", e);
     }
 };
 
 window.carregarProgramacoes = async function() {
+    const token = SISTEMA.token || sessionStorage.getItem('token_sistema');
     try {
-        const res = await fetch(`${API_BASE}/cooperador/programacoes`, {
-            headers: { 'x-token': SISTEMA.token }
-        });
+        const res = await fetch(`${API_BASE}/cooperador/programacoes`, { headers: { 'x-token': token } });
         if (res.ok) {
             SISTEMA.programacoes = await res.json();
-            renderizarProgramacoesCards();
+            renderizarProgramacoesAtuais(); // Re-renderiza a aba interna
         }
-    } catch (e) {
-        console.error("Erro ao carregar programações:", e);
-    }
+    } catch (e) { console.error(e); }
 };
 
 // ============================================================
-// 2. CONTROLE DE ABAS INTERNAS
+// 2. NAVEGAÇÃO MASTER-DETAIL (A MÁGICA DA TELA DUPLA)
 // ============================================================
-window.switchCooperadorTab = function(tabId, btnElement) {
-    // 1. Esconde as abas de conteúdo
-    document.getElementById('tab-deptos').classList.add('hidden');
+window.voltarParaListaDeptos = function() {
+    SISTEMA.deptoAtivo = null;
+    document.getElementById('view-detalhes-depto').classList.add('hidden');
+    document.getElementById('view-lista-deptos').classList.remove('hidden');
+};
+
+window.abrirDepto = function(idDepto) {
+    const depto = SISTEMA.meusDepts.find(d => d.ID == idDepto);
+    if(!depto) return;
+
+    SISTEMA.deptoAtivo = depto;
+
+    // Muda as Telas
+    document.getElementById('view-lista-deptos').classList.add('hidden');
+    document.getElementById('view-detalhes-depto').classList.remove('hidden');
+    document.getElementById('titulo-depto-ativo').innerText = depto.NOME;
+
+    // Define Permissão: Ele é líder DESTE grupo?
+    const souLiderAqui = checarSeSouLider(depto);
+
+    if (souLiderAqui) {
+        document.getElementById('btn-nova-prog')?.classList.remove('hidden');
+    } else {
+        document.getElementById('btn-nova-prog')?.classList.add('hidden');
+    }
+
+    // Carrega Aba 1 (Equipe) por padrão
+    switchDeptoTab('equipe', document.getElementById('btn-tab-equipe'));
+};
+
+window.switchDeptoTab = function(tabId, btnElement) {
+    document.getElementById('tab-equipe').classList.add('hidden');
     document.getElementById('tab-progs').classList.add('hidden');
     
-    // 2. Remove a classe 'active' de TODOS os botões de navegação de cooperadores
-    document.querySelectorAll('.nav-btn-cooperador').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    document.querySelectorAll('.nav-btn-cooperador').forEach(btn => btn.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
 
-    // 3. Adiciona 'active' apenas no botão que foi clicado
-    if (btnElement) {
-        btnElement.classList.add('active');
-    }
-
-    // 4. Mostra o conteúdo da aba selecionada
-    const abaAlvo = document.getElementById('tab-' + tabId);
-    if (abaAlvo) {
-        abaAlvo.classList.remove('hidden');
-    }
+    document.getElementById('tab-' + tabId).classList.remove('hidden');
     
-    // 5. Carrega os dados (se necessário)
     if (tabId === 'progs') {
-        if (typeof carregarProgramacoes === 'function') carregarProgramacoes();
+        renderizarProgramacoesAtuais();
     } else {
-        if (typeof carregarDadosIniciais === 'function') carregarDadosIniciais();
+        carregarLideradosDoPainel(); // Busca a equipe no banco
     }
 };
+
+// Função Auxiliar de Permissão
+function checarSeSouLider(depto) {
+    if (!depto || !depto.LIDERES_CPF) return false;
+    const meuCpf = String(SISTEMA.usuario.CPF);
+    return String(depto.LIDERES_CPF).includes(meuCpf);
+}
+
 // ============================================================
 // 3. RENDERIZAÇÃO NA TELA
 // ============================================================
@@ -90,35 +117,87 @@ window.renderizarDeptos = function() {
     }
 
     container.innerHTML = SISTEMA.meusDepts.map(d => `
-        <div class="member-card">
+        <div class="member-card" style="cursor:pointer;" onclick="abrirDepto('${d.ID}')">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; align-items:center; gap: 10px;">
-                    <strong>${d.NOME}</strong>
-                    <span class="badge-perfil" style="background:#3b82f6; color:white; font-size:0.7rem; padding:3px 8px; border-radius:12px;">
-                        ${d.QTD_MEMBROS || 0} membro(s)
-                    </span>
+                    <span class="material-icons" style="color:var(--accent);">account_tree</span>
+                    <strong style="font-size:1.2rem;">${d.NOME}</strong>
                 </div>
-                ${['SECRETARIA', 'ADMIN'].includes(perfil) ? `<button class="btn-icon delete" onclick="excluirDepto('${d.ID}')">🗑️</button>` : ''}
             </div>
-            <div class="card-body" style="margin-top:10px;">
-                <button class="btn-small btn-primary" onclick="verLiderados('${d.NOME}')" style="display:flex; align-items:center; gap:5px;">
-                    <span class="material-icons" style="font-size:16px;">groups</span> Ver Liderados
-                </button>
+            <div class="card-body">
+                <p>Clique para gerenciar equipe e programações.</p>
             </div>
         </div>
     `).join('');
 };
 
-window.renderizarProgramacoesCards = function() {
-    const container = document.getElementById('lista-progs');
-    if (SISTEMA.programacoes.length === 0) {
-        container.innerHTML = '<p class="empty-msg">Nenhuma programação encontrada.</p>';
-        return;
+window.carregarLideradosDoPainel = async function() {
+    const deptoNome = SISTEMA.deptoAtivo.NOME;
+    const container = document.getElementById('lista-liderados-painel');
+    container.innerHTML = '<p style="padding:10px;">Buscando membros...</p>';
+
+    try {
+        const res = await fetch(`${API_BASE}/cooperador/membros-por-departamento/${deptoNome}`, {
+            headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
+        });
+        const liderados = await res.json();
+
+        if (liderados.length === 0) {
+            container.innerHTML = '<p class="empty-msg">Nenhum membro cadastrado neste departamento.</p>';
+            return;
+        }
+
+        container.innerHTML = liderados.map(m => {
+            const fone = String(getVal(m, 'CONTATO') || "").replace(/\D/g, "");
+            const foto = recuperarFoto(m) || '../static/icons/ios/32.png';
+            return `
+            <div class="member-card" style="border-left: 5px solid var(--accent);">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <img src="${foto}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                    <div>
+                        <strong>${getVal(m, 'NOME')}</strong><br>
+                        <small>${getVal(m, 'CARGO') || 'Membro'}</small>
+                    </div>
+                </div>
+                <div class="card-actions" style="justify-content: flex-start; gap: 10px; margin-top:10px;">
+                    <a href="https://wa.me/55${fone}" target="_blank" class="btn-small btn-success" style="text-decoration:none;">
+                        <span class="material-icons" style="font-size:16px;">whatsapp</span> Contato
+                    </a>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = '<p class="empty-msg" style="color:red;">Erro ao buscar equipe.</p>';
     }
-    container.innerHTML = SISTEMA.programacoes.map(p => renderizarCardProgramacao(p)).join('');
 };
 
-window.renderizarCardProgramacao = function(prog) {
+window.renderizarProgramacoesAtuais = function() {
+    const container = document.getElementById('lista-progs-depto');
+    const depto = SISTEMA.deptoAtivo;
+    if(!depto) return;
+
+    // Filtra as programações apenas deste departamento
+    let progs = SISTEMA.programacoes.filter(p => String(p.DEPT_ID) === String(depto.ID));
+
+    // Filtro do Select (Status)
+    const filtro = document.getElementById('filtro-status-prog').value;
+    if (filtro === 'PENDENTE') {
+        progs = progs.filter(p => p.STATUS.includes('PENDENTE') || p.STATUS.includes('ANALISE'));
+    } else if (filtro !== 'TODAS') {
+        progs = progs.filter(p => p.STATUS === filtro);
+    }
+
+    if (progs.length === 0) {
+        container.innerHTML = '<p class="empty-msg">Nenhuma programação encontrada para este filtro.</p>';
+        return;
+    }
+
+    // Renderiza passando se o cara logado é líder ou não (para mostrar os botões certos)
+    const souLider = checarSeSouLider(depto);
+    container.innerHTML = progs.map(p => renderizarCardProgramacao(p, souLider)).join('');
+};
+
+window.renderizarCardProgramacao = function(prog, souLider) {
     const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
     const status = getVal(prog, 'STATUS');
     
@@ -134,24 +213,24 @@ window.renderizarCardProgramacao = function(prog) {
     <div class="member-card" style="border-left: 5px solid ${cores[status] || '#ccc'}">
         <div class="card-header" style="display:flex; justify-content:space-between;">
             <strong>${getVal(prog, 'TEMA_NOITE') || getVal(prog, 'TIPO')}</strong>
-            <span class="badge-perfil" style="background:${cores[status]}; color:white;">${status}</span>
+            <span class="badge-perfil" style="background:${cores[status]}; color:white;">${status.replace('_', ' ')}</span>
         </div>
         
         <div class="card-body">
             <div><span class="material-icons" style="font-size:16px; vertical-align:middle;">calendar_today</span> <strong>Data:</strong> ${getVal(prog, 'DATA')}</div>
-            <div><strong>🎤 Pregador:</strong> ${getVal(prog, 'PREGADOR_NOITE')} (${getVal(prog, 'INSTA_PREGADOR')})</div>
+            <div><strong>🎤 Pregador:</strong> ${getVal(prog, 'PREGADOR_NOITE')}</div>
             <div><strong>🎵 Cantor:</strong> ${getVal(prog, 'CANTOR_NOITE')}</div>
             
             <div class="approval-history" style="background: #f8fafc; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem; border:1px solid #e2e8f0;">
-                <div style="color:#1e293b;"><strong>✅ Visto dos Líderes:</strong> ${getVal(prog, 'APROVACOES_LIDERES') || 'Aguardando...'}</div>
+                <div style="color:#1e293b;"><strong>✅ Vistos dos Líderes:</strong> ${getVal(prog, 'APROVACOES_LIDERES') || 'Nenhum...'}</div>
                 ${getVal(prog, 'SECRETARIO_REVISOR') ? `<div style="color:#3b82f6; margin-top:4px;"><strong>🔍 Revisado por:</strong> ${getVal(prog, 'SECRETARIO_REVISOR')}</div>` : ''}
-                ${getVal(prog, 'PASTOR_RESP') ? `<div style="color:#8b5cf6; margin-top:4px;"><strong>⏳ Atribuído ao:</strong> ${getVal(prog, 'PASTOR_RESP')}</div>` : ''}
+                ${getVal(prog, 'PASTOR_RESP') ? `<div style="color:#8b5cf6; margin-top:4px;"><strong>⏳ Atribuído ao Pr.:</strong> ${getVal(prog, 'PASTOR_RESP')}</div>` : ''}
                 ${getVal(prog, 'PASTOR_APROVADOR') ? `<div style="color:#15803d; margin-top:4px;"><strong>🏆 Decisão Final:</strong> ${getVal(prog, 'PASTOR_APROVADOR')} em ${getVal(prog, 'DATA_HORA_APROVACAO')}</div>` : ''}
             </div>
         </div>
 
         <div class="card-actions" style="margin-top:15px; justify-content:flex-start;">
-            ${gerarBotoesAcao(prog, perfil)}
+            ${gerarBotoesAcao(prog, perfil, souLider)}
         </div>
     </div>`;
 };
@@ -159,12 +238,13 @@ window.renderizarCardProgramacao = function(prog) {
 // ============================================================
 // 4. LÓGICA DE BOTÕES E PERMISSÕES
 // ============================================================
-function gerarBotoesAcao(prog, perfil) {
+function gerarBotoesAcao(prog, perfil, souLider) {
     const status = getVal(prog, 'STATUS');
     const id = getVal(prog, 'ID');
     let html = '';
 
-    if (status === 'PENDENTE_LIDER') {
+    // Só mostra se for líder DESTE depto
+    if (status === 'PENDENTE_LIDER' && souLider) {
         const aprovados = (getVal(prog, 'APROVACOES_LIDERES') || "").split(", ");
         if (!aprovados.includes(SISTEMA.usuario.NOME)) {
             html += `<button class="btn-small btn-success" onclick="aprovarComoLider('${id}')">✅ Dar meu Visto</button>`;
@@ -187,131 +267,16 @@ function gerarBotoesAcao(prog, perfil) {
 }
 
 // ============================================================
-// 5. AÇÕES DO SISTEMA (POST, PUT, DELETE)
+// 5. AÇÕES (CADASTRO, APROVAÇÃO, ETC)
 // ============================================================
-window.abrirModalDepto = async function() {
-    console.log("Abrindo modal de departamento..."); // <-- Adicionei isso pra você ver no F12
-    
-    // Reseta o formulário
-    document.getElementById('formDepto')?.reset();
-
-    const busca = document.getElementById('buscaLider');
-    if (busca) busca.value = '';
-        
-    // Mostra o modal (Tirei a classe hidden)
-    const modal = document.getElementById('modalDepto');
-    if(modal) modal.classList.remove('hidden');
-    
-    const container = document.getElementById('container-lideres-depto');
-    if (container) {
-        container.innerHTML = '<span style="color:#999; font-size:0.8rem;">Carregando membros...</span>';
-        
-        try {
-            // Tenta pegar a lista de membros já carregada pelo painel-secretaria
-            let membros = [];
-            if (SISTEMA && SISTEMA.dados && SISTEMA.dados.membros) {
-                membros = SISTEMA.dados.membros;
-            }
-            
-            // Se a lista local falhar, bate na API
-            if (membros.length === 0) {
-                console.log("Buscando membros da API...");
-                const res = await fetch(`${API_BASE}/admin/membros-disponiveis`, { 
-                    headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') } 
-                });
-                const data = await res.json();
-                membros = data.map(m => ({ NOME: m.nome || m.NOME, CPF: m.cpf || m.CPF }));
-            }
-            
-            // Ordena alfabeticamente
-            membros.sort((a,b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
-            
-            // Cria os checkboxes
-            container.innerHTML = membros.map(m => `
-                <label class="checkbox-item" style="padding: 5px 0;">
-                    <input type="checkbox" name="lider_depto_cb" value="${getVal(m, 'CPF')}">
-                    ${getVal(m, 'NOME')}
-                </label>
-            `).join('');
-            
-        } catch(e) {
-            console.error("Erro ao popular lista de lideres:", e);
-            container.innerHTML = '<span style="color:red; font-size:0.8rem;">Erro ao carregar membros.</span>';
-        }
-    }
-};
-
-window.filtrarLideres = function() {
-    const termo = document.getElementById('buscaLider').value.toLowerCase();
-    const container = document.getElementById('container-lideres-depto');
-
-    if (!container) return;
-
-    const itens = container.querySelectorAll('label.checkbox-item');
-
-    itens.forEach(item => {
-        const nome = item.textContent.toLowerCase();
-
-        if (nome.includes(termo)) {
-            item.style.display = "block";
-        } else {
-            item.style.display = "none";
-        }
-    });
-};
-
-// --- 3. SALVAR DEPARTAMENTO COM OS LÍDERES ---
-window.salvarDepto = async function(e) {
-    e.preventDefault();
-    const nome = document.getElementById('depto_nome').value.trim();
-    
-    // Pega todos os CPFs que o secretário marcou
-    const checkboxes = document.querySelectorAll('input[name="lider_depto_cb"]:checked');
-    const lideresCpf = Array.from(checkboxes).map(cb => cb.value).join(', ');
-    
-    const payload = {
-        NOME: nome,
-        LIDERES_CPF: lideresCpf
-    };
-
-    const sucesso = await enviarDados(`${API_BASE}/admin/departamentos`, null, payload, 'formDepto');
-    if (sucesso) {
-        fecharModal('modalDepto');
-        carregarDadosIniciais(); // Recarrega a tela para atualizar a contagem e as listas
-    }
-};
-
-window.excluirDepto = async function(id) {
-    const conf = await Swal.fire({ title: 'Tem certeza?', text: "Excluir departamento?", icon: 'warning', showCancelButton: true });
-    if(conf.isConfirmed) {
-        try {
-            await fetch(`${API_BASE}/admin/departamentos/${id}`, { method: 'DELETE', headers: { 'x-token': SISTEMA.token } });
-            Swal.fire('Excluído!', '', 'success');
-            carregarDadosIniciais();
-        } catch (e) {
-            Swal.fire('Erro', 'Não foi possível excluir.', 'error');
-        }
-    }
-};
-
-window.aprovarComoLider = async function(idProg) {
-    try {
-        const res = await fetch(`${API_BASE}/cooperador/programacoes/${idProg}/aprovar-lider`, {
-            method: 'PUT', headers: { 'x-token': SISTEMA.token }
-        });
-        if (res.ok) {
-            Swal.fire('Visto Registrado!', 'Aprovação confirmada.', 'success');
-            carregarProgramacoes();
-        }
-    } catch(e) { console.error(e); }
-};
-
 window.abrirModalProg = function() {
     document.getElementById('formProg')?.reset();
     
-    // Preenche a lista de departamentos que a pessoa lidera
+    // Opcional: Se já estamos no departamento, bloqueia o select para o ID correto
     const select = document.getElementById('prog_dept_id');
-    select.innerHTML = SISTEMA.meusDepts.map(d => `<option value="${d.ID}">${d.NOME}</option>`).join('');
+    if (select && SISTEMA.deptoAtivo) {
+        select.innerHTML = `<option value="${SISTEMA.deptoAtivo.ID}">${SISTEMA.deptoAtivo.NOME}</option>`;
+    }
     
     document.getElementById('campos-consag').classList.add('hidden');
     document.getElementById('modalProg')?.classList.remove('hidden');
@@ -331,8 +296,12 @@ window.salvarProgramacao = async function(e) {
         if (!confirm.isConfirmed) return;
     }
 
+    const selectDept = document.getElementById('prog_dept_id');
+    const nomeDept = selectDept.options[selectDept.selectedIndex].text;
+
     const payload = {
-        DEPT_ID: document.getElementById('prog_dept_id').value,
+        DEPT_ID: selectDept.value,
+        NOME_DEPT: nomeDept,
         DATA: dataBr(dataAlvo), 
         TIPO: document.getElementById('prog_tipo').value,
         CONSAGRACAO: document.getElementById('prog_consag_sn').value,
@@ -343,66 +312,71 @@ window.salvarProgramacao = async function(e) {
         PREGADOR_NOITE: document.getElementById('prog_noite_pre').value,
         CANTOR_NOITE: document.getElementById('prog_noite_can').value,
         INSTA_PREGADOR: document.getElementById('prog_insta_pre').value,
-        INSTA_CANTOR: document.getElementById('prog_insta_can').value,
-        NOME_DEPT: document.getElementById('prog_dept_id').options[document.getElementById('prog_dept_id').selectedIndex].text
+        INSTA_CANTOR: document.getElementById('prog_insta_can').value
     };
 
-    const sucesso = await enviarDados(`${API_BASE}/cooperador/programacoes`, null, payload, 'formProg');
-    if (sucesso) {
-        fecharModal('modalProg');
-        carregarProgramacoes();
-    }
+    const token = SISTEMA.token || sessionStorage.getItem('token_sistema');
+    const btnSubmit = document.querySelector('#formProg button[type="submit"]');
+    if(btnSubmit) btnSubmit.innerText = "Enviando...";
+
+    try {
+        const res = await fetch(`${API_BASE}/cooperador/programacoes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-token': token },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            Swal.fire('Sucesso', 'Programação enviada para análise.', 'success');
+            fecharModal('modalProg');
+            carregarProgramacoes(); // Atualiza a lista na hora
+        } else {
+            const err = await res.json();
+            Swal.fire('Aviso', err.detail || 'Erro ao salvar.', 'warning');
+        }
+    } catch(e) { console.error(e); }
+    if(btnSubmit) btnSubmit.innerText = "Enviar para Análise";
 };
 
-window.toggleConsag = function(val) {
-    document.getElementById('campos-consag').classList.toggle('hidden', val === 'N');
+// Funções de Aprovação da cadeia
+window.aprovarComoLider = async function(idProg) {
+    try {
+        const res = await fetch(`${API_BASE}/cooperador/programacoes/${idProg}/aprovar-lider`, {
+            method: 'PUT', headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
+        });
+        if (res.ok) {
+            Swal.fire('Visto Registrado!', 'Aprovação confirmada.', 'success');
+            carregarProgramacoes();
+        }
+    } catch(e) { console.error(e); }
 };
 
-// Outras funções (encaminharParaPastor, decidirPastor, verLiderados) permanecem com as mesmas rotas e lógicas...
 window.encaminharParaPastor = async function(idProg) {
-    // Usa a lista já carregada na memória, filtrando quem é pastor pelo perfil, cargo ou nome
     const pastores = SISTEMA.dados.membros.filter(m => {
         const cargo = getVal(m, 'CARGO').toUpperCase();
         const perfil = getVal(m, 'PERFIL').toUpperCase();
         const nome = getVal(m, 'NOME').toUpperCase();
-        
         return cargo.includes('PASTOR') || perfil === 'PASTOR' || nome.startsWith('PR.');
     });
     
-    // Monta a lista de opções para o Modal
     const options = {};
-    pastores.forEach(p => { 
-        const nomePastor = getVal(p, 'NOME');
-        options[nomePastor] = nomePastor; 
-    });
+    pastores.forEach(p => { options[getVal(p, 'NOME')] = getVal(p, 'NOME'); });
 
-    // Se não achar nenhum pastor, avisa (evita o modal vazio do seu print)
     if (Object.keys(options).length === 0) {
-        Swal.fire('Aviso', 'Nenhum Pastor encontrado no cadastro. Verifique a lista de membros.', 'warning');
-        return;
+        Swal.fire('Aviso', 'Nenhum Pastor encontrado no cadastro.', 'warning'); return;
     }
 
     const { value: pastorEscolhido } = await Swal.fire({
-        title: 'Escolha o Pastor', 
-        input: 'select', 
-        inputOptions: options,
-        inputPlaceholder: 'Selecione o pastor...',
-        showCancelButton: true
+        title: 'Escolha o Pastor', input: 'select', inputOptions: options, showCancelButton: true
     });
 
     if (pastorEscolhido) {
-        const token = SISTEMA.token || sessionStorage.getItem('token_sistema');
         const res = await fetch(`${API_BASE}/admin/programacoes/${idProg}/vincular-pastor`, {
-            method: 'PUT', 
-            headers: { 'Content-Type': 'application/json', 'x-token': token },
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') },
             body: JSON.stringify({ PASTOR_NOME: pastorEscolhido })
         });
-        
         if (res.ok) {
             Swal.fire('Enviado!', `Atribuído ao ${pastorEscolhido}`, 'success');
-            carregarProgramacoes(); // Atualiza a aba instantaneamente
-        } else {
-            Swal.fire('Erro', 'Não foi possível enviar ao pastor.', 'error');
+            carregarProgramacoes();
         }
     }
 };
@@ -411,7 +385,7 @@ window.decidirPastor = async function(idProg, decisao) {
     const confirm = await Swal.fire({ title: `Confirmar ${decisao}?`, icon: 'question', showCancelButton: true });
     if (confirm.isConfirmed) {
         const res = await fetch(`${API_BASE}/pastor/programacoes/${idProg}/decidir`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token },
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') },
             body: JSON.stringify({ STATUS: decisao })
         });
         if (res.ok) {
@@ -421,80 +395,4 @@ window.decidirPastor = async function(idProg, decisao) {
     }
 };
 
-window.verLiderados = async function(nomeDepartamento) {
-    Swal.fire({
-        title: `Liderados: ${nomeDepartamento}`,
-        html: '<div id="lista-liderados-modal" class="card-list">Carregando...</div>',
-        width: '90%',
-        showConfirmButton: false,
-        showCloseButton: true
-    });
-
-    try {
-        const res = await fetch(`${API_BASE}/cooperador/membros-por-departamento/${nomeDepartamento}`, {
-            headers: { 'x-token': SISTEMA.token }
-        });
-
-        const liderados = await res.json();
-        const container = document.getElementById('lista-liderados-modal');
-        if(!container) return;
-
-        if (liderados.length === 0) {
-            container.innerHTML = '<p class="empty-msg">Nenhum membro encontrado.</p>';
-            return;
-        }
-
-        container.innerHTML = liderados.map(m => {
-
-            const fone = String(getVal(m, 'CONTATO') || "").replace(/\D/g, "");
-            const endereco = encodeURIComponent(getVal(m, 'ENDERECO') || "");
-            const foto = recuperarFoto(m) || '../static/icons/ios/32.png';
-
-            const pai = String(getVal(m, 'PAI') || "");
-            const mae = String(getVal(m, 'MAE') || "");
-
-            let pais = "N/A";
-
-            if(pai && mae){
-                pais = `${pai} e ${mae}`;
-            } else if(pai){
-                pais = pai;
-            } else if(mae){
-                pais = mae;
-            }
-
-            return `
-            <div class="member-card" style="text-align: left; border-left: 5px solid var(--accent, #3b82f6);">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <img src="${foto}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                    <div>
-                        <strong>${getVal(m, 'NOME')}</strong><br>
-                        <small>${getVal(m, 'CARGO') || 'Membro'}</small>
-                    </div>
-                </div>
-
-                <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
-                    <p><b>👨‍👩‍👧‍👦 Pais:</b> ${pais}</p>
-                    <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL') || "N/A"}</p>
-                    <p><b>📍 Endereço:</b> ${getVal(m, 'ENDERECO') || "N/A"}</p>
-                </div>
-
-                <div class="card-actions" style="justify-content: flex-start; gap: 10px; margin-top:10px;">
-                    <a href="https://wa.me/55${fone}" target="_blank" class="btn-small btn-success" style="text-decoration:none;">
-                        <span class="material-icons" style="font-size:16px;">whatsapp</span> Mensagem
-                    </a>
-
-                    <a href="https://www.google.com/maps/search/?api=1&query=${endereco}" target="_blank" class="btn-small btn-primary" style="text-decoration:none;">
-                        <span class="material-icons" style="font-size:16px;">directions</span> Mapa
-                    </a>
-                </div>
-            </div>`;
-        }).join('');
-
-    } catch (e) {
-        document.getElementById('lista-liderados-modal').innerHTML = 'Erro ao carregar membros.';
-    }
-};
-
-
-
+window.toggleConsag = function(val) { document.getElementById('campos-consag').classList.toggle('hidden', val === 'N'); };
