@@ -612,6 +612,11 @@ window.iniciarInstalacao = async () => {
     }
 };
 
+window.fecharModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('hidden');
+};
+
 // Função para enviar os dados para o Backend (Utilizada pelo Cooperador)
 window.enviarDados = async function(urlBase, id, payload, formId = null) {
     const url = id ? `${urlBase}/${id}` : urlBase;
