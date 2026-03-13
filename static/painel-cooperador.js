@@ -201,21 +201,22 @@ window.carregarLideradosDoPainel = async function() {
             headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
         });
         
-        let equipeUnificada = await res.json();
+        // Recebe os dados já filtrados e mastigados pelo Backend!
+        SISTEMA.equipeAtual = await res.json();
         
         let nomesLideres = [];
         let qtdLideres = 0;
         let qtdComponents = 0;
 
-        SISTEMA.equipeAtual = equipeUnificada.map(m => {
+        // Faz a contagem usando a marcação que o Backend mandou
+        SISTEMA.equipeAtual.forEach(m => {
             if (m.isLider) {
                 qtdLideres++;
-                const primNome = getVal(m, 'NOME').split(' ')[0];
-                if (!nomesLideres.includes(primNome)) nomesLideres.push(primNome);
+                // Pega só o primeiro nome do líder para não quebrar o layout
+                nomesLideres.push(getVal(m, 'NOME').split(' ')[0]); 
             } else {
                 qtdComponents++;
             }
-            return m;
         });
 
         // Ordena: Líderes primeiro, depois alfabético
@@ -225,12 +226,13 @@ window.carregarLideradosDoPainel = async function() {
             return getVal(a, 'NOME').localeCompare(getVal(b, 'NOME'));
         });
 
-        // Atualiza a Dashboard do Departamento
+        // Atualiza os números no card do topo (Não tem duplicata no Total)
         document.getElementById('nomes-lideres-depto').innerText = nomesLideres.length > 0 ? nomesLideres.join(', ') : 'Nenhum cadastrado';
         document.getElementById('qtd-lideres').innerText = qtdLideres;
         document.getElementById('qtd-componentes').innerText = qtdComponents;
         document.getElementById('qtd-total').innerText = SISTEMA.equipeAtual.length;
 
+        // Manda desenhar os cards!
         renderizarEquipeHTML(SISTEMA.equipeAtual);
 
     } catch (e) {
@@ -586,6 +588,7 @@ window.excluirDepto = async function(id) {
         carregarDadosIniciais();
     }
 };
+
 
 
 
