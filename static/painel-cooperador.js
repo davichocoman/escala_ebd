@@ -384,7 +384,7 @@ window.renderizarCardProgramacao = function(prog, souLider) {
             <div><strong>🎤 Pregador:</strong> ${getVal(prog, 'PREGADOR_NOITE')}</div>
             <div>
               <strong>
-                <a href="https://www.instagram.com{getVal(prog, 'INSTA_PREGADOR')}/" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.instagram.com/${getVal(prog, 'INSTA_PREGADOR')}/" target="_blank" rel="noopener noreferrer">
                   📸 Instagram Pregador
                 </a>
               </strong>
@@ -393,7 +393,7 @@ window.renderizarCardProgramacao = function(prog, souLider) {
             <div><strong>🎵 Cantor:</strong> ${getVal(prog, 'CANTOR_NOITE')}</div>
             <div>
               <strong>
-                <a href="https://www.instagram.com{getVal(prog, 'INSTA_CANTOR')}/" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.instagram.com/${getVal(prog, 'INSTA_CANTOR')}/" target="_blank" rel="noopener noreferrer">
                   📸 Instagram Cantor
                 </a>
               </strong>
