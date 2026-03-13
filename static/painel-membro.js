@@ -419,6 +419,14 @@ window.mostrarTela = function(telaId, btn) {
     if (alvo) alvo.classList.remove('hidden');
     if (btn) btn.classList.add('active');
 
+    // 👇 MUDANÇA AQUI: Fecha a sidebar no celular após clicar em uma aba
+    if (window.innerWidth < 768) {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            window.toggleSidebar();
+        }
+    }
+
     // Se ele clicar em cooperadores, carrega os dados
     if (telaId === 'cooperadores' && typeof carregarDadosIniciais === 'function') {
         carregarDadosIniciais();
@@ -475,7 +483,23 @@ window.toggleSidebar = function() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
     const isOpen = sidebar.classList.toggle('open');
+    
     let overlay = document.getElementById('sidebar-overlay');
+    
+    // Se o overlay existe, mas está sem estilo, aplicamos o estilo e o clique nele
+    if (overlay && !overlay.style.position) {
+        overlay.style.cssText = `
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 990;
+            display: none;
+            transition: opacity 0.28s ease;
+            opacity: 0;
+        `;
+        // O pulo do gato: quando clicar fora (no fundo escuro), fecha o menu
+        overlay.addEventListener('click', window.toggleSidebar);
+    }
+
     if (isOpen) {
         overlay.style.display = 'block';
         setTimeout(() => { overlay.style.opacity = '1'; }, 10);
@@ -484,6 +508,16 @@ window.toggleSidebar = function() {
         setTimeout(() => { overlay.style.display = 'none'; }, 280);
     }
 };
+
+// Fechar também ao apertar o botão 'Voltar' ou a tecla 'ESC'
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            window.toggleSidebar();
+        }
+    }
+});
 
 window.logout = function() {
     Swal.fire({
