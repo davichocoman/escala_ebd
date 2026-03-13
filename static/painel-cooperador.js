@@ -365,7 +365,7 @@ window.renderizarCardProgramacao = function(prog, souLider) {
             <div><strong>🎤 Pregador:</strong> ${getVal(prog, 'PREGADOR_NOITE')}</div>
             <div>
               <strong>
-                <a href="https://www.instagram.com{getVal(prog, 'INSTA_PREGADOR')}">
+                <a href="https://www.instagram.com{getVal(prog, 'INSTA_PREGADOR')}/" target="_blank" rel="noopener noreferrer">
                   📸 Instagram Pregador
                 </a>
               </strong>
@@ -374,11 +374,12 @@ window.renderizarCardProgramacao = function(prog, souLider) {
             <div><strong>🎵 Cantor:</strong> ${getVal(prog, 'CANTOR_NOITE')}</div>
             <div>
               <strong>
-                <a href="https://www.instagram.com{getVal(prog, 'INSTA_CANTOR')}">
+                <a href="https://www.instagram.com{getVal(prog, 'INSTA_CANTOR')}/" target="_blank" rel="noopener noreferrer">
                   📸 Instagram Cantor
                 </a>
               </strong>
             </div>
+
             
             <div class="approval-history" style="background: #f8fafc; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem; border:1px solid #e2e8f0;">
                 <div style="color:#1e293b;"><strong>✅ Vistos dos Líderes:</strong> ${getVal(prog, 'APROVACOES_LIDERES') || 'Nenhum...'}</div>
