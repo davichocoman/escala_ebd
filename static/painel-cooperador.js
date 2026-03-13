@@ -181,27 +181,47 @@ window.renderizarDeptos = function() {
 window.carregarLideradosDoPainel = async function() {
     const depto = SISTEMA.deptoAtivo;
     const container = document.getElementById('lista-liderados-painel');
-    container.innerHTML = '<p style="padding:10px;">Buscando membros na base de dados...</p>';
+    container.innerHTML = '<p style="padding:10px;">Buscando equipe...</p>';
 
     try {
         const res = await fetch(`${API_BASE}/cooperador/membros-por-departamento/${depto.NOME}`, {
             headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
         });
-        const liderados = await res.json();
+        const lideradosAPI = await res.json();
         
-        // Separa quem é líder e quem é componente usando o CPF do depto.LIDERES_CPF
-        const lideresCpfs = String(depto.LIDERES_CPF || "").split(',').map(c => c.trim().replace(/\D/g, ''));
+        const lideresCpfs = String(depto.LIDERES_CPF || "").split(',').map(c => c.trim().replace(/\D/g, '')).filter(c => c);
         
+        let equipeUnificada = [...lideradosAPI];
+        let nomesLideres = [];
         let qtdLideres = 0;
         let qtdComponents = 0;
-        let nomesLideres = [];
 
-        SISTEMA.equipeAtual = liderados.map(m => {
+        // INTELIGÊNCIA: Se a Secretaria/Pastor está acessando, nós temos TODOS os membros salvos em memória.
+        // Vamos varrer os CPFs dos líderes e, se eles não vieram na API (porque a coluna Depto tá diferente), a gente insere eles à força!
+        if (SISTEMA.dados && SISTEMA.dados.membros) {
+            lideresCpfs.forEach(cpf => {
+                const liderEncontrado = SISTEMA.dados.membros.find(m => String(getVal(m, 'CPF')).replace(/\D/g, '') === cpf);
+                if (liderEncontrado) {
+                    nomesLideres.push(getVal(liderEncontrado, 'NOME').split(' ')[0]);
+                    
+                    // Verifica se a API já trouxe ele. Se não trouxe, coloca no array.
+                    const jaEstaNaLista = equipeUnificada.find(m => String(getVal(m, 'CPF')).replace(/\D/g, '') === cpf);
+                    if (!jaEstaNaLista) {
+                        equipeUnificada.push(liderEncontrado);
+                    }
+                }
+            });
+        }
+
+        SISTEMA.equipeAtual = equipeUnificada.map(m => {
             const cpfLimpo = String(getVal(m, 'CPF')).replace(/\D/g, '');
             const isLider = lideresCpfs.includes(cpfLimpo);
+            
             if (isLider) {
                 qtdLideres++;
-                nomesLideres.push(getVal(m, 'NOME').split(' ')[0]); // Pega só o primeiro nome pra não ficar gigante
+                // Para líderes (Membros comuns) que não passaram pelo IF de cima:
+                const primNome = getVal(m, 'NOME').split(' ')[0];
+                if (!nomesLideres.includes(primNome)) nomesLideres.push(primNome);
             } else {
                 qtdComponents++;
             }
@@ -209,15 +229,22 @@ window.carregarLideradosDoPainel = async function() {
             return m;
         });
 
-        // Atualiza a Dashbord do Departamento
+        // Ordena: Líderes primeiro, depois alfabético
+        SISTEMA.equipeAtual.sort((a, b) => {
+            if (a.isLider && !b.isLider) return -1;
+            if (!a.isLider && b.isLider) return 1;
+            return getVal(a, 'NOME').localeCompare(getVal(b, 'NOME'));
+        });
+
         document.getElementById('nomes-lideres-depto').innerText = nomesLideres.length > 0 ? nomesLideres.join(', ') : 'Nenhum cadastrado';
         document.getElementById('qtd-lideres').innerText = qtdLideres;
         document.getElementById('qtd-componentes').innerText = qtdComponents;
-        document.getElementById('qtd-total').innerText = SISTEMA.equipeAtual.length; // Aqui não tem duplicata!
+        document.getElementById('qtd-total').innerText = SISTEMA.equipeAtual.length;
 
         renderizarEquipeHTML(SISTEMA.equipeAtual);
 
     } catch (e) {
+        console.error(e);
         container.innerHTML = '<p class="empty-msg" style="color:red;">Erro ao buscar equipe.</p>';
     }
 };
@@ -239,7 +266,20 @@ window.renderizarEquipeHTML = function(lista) {
         const fone = String(getVal(m, 'CONTATO') || "").replace(/\D/g, "");
         const endereco = getVal(m, 'ENDERECO') || "";
         const linkMaps = endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}` : '#';
-        const foto = m.FOTO && m.FOTO.length > 20 ? m.FOTO : '../static/icons/ios/32.png';
+        const foto = recuperarFoto(m) || '../static/icons/ios/32.png';
+
+        const pai = String(getVal(m, 'PAI') || "");
+        const mae = String(getVal(m, 'MAE') || "");
+
+        let pais = "N/A";
+
+        if(pai && mae){
+            pais = `${pai} e ${mae}`;
+        } else if(pai){
+            pais = pai;
+        } else if(mae){
+            pais = mae;
+        }
         
         // Se for líder, bota uma borda dourada/amarela, se for componente azul
         const bordaCor = m.isLider ? '#f59e0b' : 'var(--accent)';
@@ -253,6 +293,11 @@ window.renderizarEquipeHTML = function(lista) {
                     <strong>${getVal(m, 'NOME')}</strong> ${tagLider}<br>
                     <small style="color: #64748b;">${getVal(m, 'CARGO') || 'Membro'}</small>
                 </div>
+            </div>
+
+            <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
+                <p><b>👨‍👩‍👧‍👦 Pais:</b> ${pais}</p>
+                <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL') || "N/A"}</p>
             </div>
             
             <div style="margin-top:10px; font-size:0.85rem; color:#475569;">
@@ -434,3 +479,80 @@ window.decidirPastor = async function(idProg, decisao) {
 };
 
 window.toggleConsag = function(val) { document.getElementById('campos-consag').classList.toggle('hidden', val === 'N'); };
+
+// ============================================================
+// MODAIS E CRUD DE DEPARTAMENTOS (RESTAURO)
+// ============================================================
+window.abrirModalDepto = async function() {
+    document.getElementById('formDepto')?.reset();
+    const busca = document.getElementById('buscaLider');
+    if (busca) busca.value = '';
+        
+    const modal = document.getElementById('modalDepto');
+    if(modal) modal.classList.remove('hidden');
+    
+    const container = document.getElementById('container-lideres-depto');
+    if (container) {
+        container.innerHTML = '<span style="color:#999; font-size:0.8rem;">Carregando membros...</span>';
+        
+        try {
+            let membros = [];
+            if (SISTEMA.dados && SISTEMA.dados.membros && SISTEMA.dados.membros.length > 0) {
+                membros = SISTEMA.dados.membros;
+            } else {
+                const res = await fetch(`${API_BASE}/admin/membros-disponiveis`, { 
+                    headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') } 
+                });
+                if(res.ok) membros = await res.json();
+            }
+            
+            membros.sort((a,b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
+            
+            container.innerHTML = membros.map(m => `
+                <label class="checkbox-item" style="padding: 5px 0;">
+                    <input type="checkbox" name="lider_depto_cb" value="${getVal(m, 'CPF') || m.cpf}">
+                    ${getVal(m, 'NOME') || m.nome}
+                </label>
+            `).join('');
+        } catch(e) {
+            container.innerHTML = '<span style="color:red; font-size:0.8rem;">Erro ao carregar membros.</span>';
+        }
+    }
+};
+
+window.filtrarLideres = function() {
+    const termo = document.getElementById('buscaLider').value.toLowerCase();
+    document.querySelectorAll('#container-lideres-depto label').forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(termo) ? "block" : "none";
+    });
+};
+
+window.salvarDepto = async function(e) {
+    e.preventDefault();
+    const nome = document.getElementById('depto_nome').value.trim();
+    const lideresCpf = Array.from(document.querySelectorAll('input[name="lider_depto_cb"]:checked')).map(cb => cb.value).join(', ');
+    
+    const res = await fetch(`${API_BASE}/admin/departamentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') },
+        body: JSON.stringify({ NOME: nome, LIDERES_CPF: lideresCpf })
+    });
+
+    if (res.ok) {
+        Swal.fire('Sucesso', 'Departamento salvo!', 'success');
+        fecharModal('modalDepto');
+        carregarDadosIniciais(); 
+    }
+};
+
+window.excluirDepto = async function(id) {
+    const conf = await Swal.fire({ title: 'Excluir departamento?', icon: 'warning', showCancelButton: true });
+    if(conf.isConfirmed) {
+        await fetch(`${API_BASE}/admin/departamentos/${id}`, { 
+            method: 'DELETE', headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') } 
+        });
+        Swal.fire('Excluído!', '', 'success');
+        carregarDadosIniciais();
+    }
+};
+
