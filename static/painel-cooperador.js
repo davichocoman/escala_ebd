@@ -200,50 +200,21 @@ window.carregarLideradosDoPainel = async function() {
         const res = await fetch(`${API_BASE}/cooperador/membros-por-departamento/${depto.NOME}`, {
             headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
         });
-        const lideradosAPI = await res.json();
         
-        const lideresCpfs = String(depto.LIDERES_CPF || "").split(',').map(c => c.trim().replace(/\D/g, '')).filter(c => c);
-        
-        // O USO DO MAP GARANTE QUE NÃO HAVERÁ DUPLICATAS
-        let equipeMap = new Map();
-
-        // 1. Adiciona os membros encontrados pela API (Membros que estão vinculados ao departamento)
-        lideradosAPI.forEach(m => {
-            const cpfLimpo = String(getVal(m, 'CPF')).replace(/\D/g, '');
-            equipeMap.set(cpfLimpo, m);
-        });
-
-        // 2. Adiciona os LÍDERES (Mesmo que na planilha o departamento deles esteja como outro)
-        if (SISTEMA.dados && SISTEMA.dados.membros) {
-            lideresCpfs.forEach(cpf => {
-                if (cpf && !equipeMap.has(cpf)) {
-                    const liderEncontrado = SISTEMA.dados.membros.find(m => String(getVal(m, 'CPF')).replace(/\D/g, '') === cpf);
-                    if (liderEncontrado) {
-                        equipeMap.set(cpf, liderEncontrado);
-                    }
-                }
-            });
-        }
-
-        // Transforma o Map de volta em Lista Única
-        let equipeUnificada = Array.from(equipeMap.values());
+        let equipeUnificada = await res.json();
         
         let nomesLideres = [];
         let qtdLideres = 0;
         let qtdComponents = 0;
 
         SISTEMA.equipeAtual = equipeUnificada.map(m => {
-            const cpfLimpo = String(getVal(m, 'CPF')).replace(/\D/g, '');
-            const isLider = lideresCpfs.includes(cpfLimpo);
-            
-            if (isLider) {
+            if (m.isLider) {
                 qtdLideres++;
                 const primNome = getVal(m, 'NOME').split(' ')[0];
                 if (!nomesLideres.includes(primNome)) nomesLideres.push(primNome);
             } else {
                 qtdComponents++;
             }
-            m.isLider = isLider;
             return m;
         });
 
@@ -254,6 +225,7 @@ window.carregarLideradosDoPainel = async function() {
             return getVal(a, 'NOME').localeCompare(getVal(b, 'NOME'));
         });
 
+        // Atualiza a Dashboard do Departamento
         document.getElementById('nomes-lideres-depto').innerText = nomesLideres.length > 0 ? nomesLideres.join(', ') : 'Nenhum cadastrado';
         document.getElementById('qtd-lideres').innerText = qtdLideres;
         document.getElementById('qtd-componentes').innerText = qtdComponents;
@@ -292,7 +264,7 @@ window.renderizarEquipeHTML = function(lista) {
         let pais = "Não informado";
 
         if(pai && mae){
-            pais = `${pai} e ${mae}`;
+            pais = `${pai} / ${mae}`;
         } else if(pai){
             pais = pai;
         } else if(mae){
@@ -313,7 +285,7 @@ window.renderizarEquipeHTML = function(lista) {
             </div>
 
             <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
-                <p><b>🛠 Funções:</b> ${pais}</p>
+                <p><b>🛠 Funções:</b></p>
                 <small style="color: #64748b;">${getVal(m, 'CARGO') || 'Membro'}</small>
             </div>
 
@@ -614,5 +586,6 @@ window.excluirDepto = async function(id) {
         carregarDadosIniciais();
     }
 };
+
 
 
