@@ -166,12 +166,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const cpfLimpo = String(SISTEMA.usuario.CPF).replace(/\D/g, '').padStart(11, '0');
     
             if (cpfLimpo.length === 11) {
-    
-                const currentId = await OneSignal.User.getExternalId();
-    
-                if (currentId !== cpfLimpo) {
-                    await OneSignal.login(cpfLimpo);
-                }
+                // CORREÇÃO: O SDK novo usa apenas .login()
+                await OneSignal.login(cpfLimpo);
     
                 await OneSignal.User.addTags({
                     cpf: cpfLimpo,
@@ -181,7 +177,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
                 console.log("OneSignal: Login e tags OK!");
             }
-    
         } catch (err) {
             console.error("Erro ao processar tags OneSignal:", err);
         }
