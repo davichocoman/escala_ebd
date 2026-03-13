@@ -361,9 +361,24 @@ window.renderizarCardProgramacao = function(prog, souLider) {
         </div>
         
         <div class="card-body">
-            <div><span class="material-icons" style="font-size:16px; vertical-align:middle;">calendar_today</span> <strong>Data:</strong> ${getVal(prog, 'DATA')}</div>
+            <div><span class="material-icons" style="font-size:16px; vertical-align:middle;">calendar_today</span> <strong>Data do Culto:</strong> ${getVal(prog, 'DATA')}</div>
             <div><strong>🎤 Pregador:</strong> ${getVal(prog, 'PREGADOR_NOITE')}</div>
+            <div>
+              <strong>
+                <a href="https://www.instagram.com{getVal(prog, 'INSTA_PREGADOR')}">
+                  📸 Instagram Pregador
+                </a>
+              </strong>
+            </div>
+            
             <div><strong>🎵 Cantor:</strong> ${getVal(prog, 'CANTOR_NOITE')}</div>
+            <div>
+              <strong>
+                <a href="https://www.instagram.com{getVal(prog, 'INSTA_CANTOR')}">
+                  📸 Instagram Cantor
+                </a>
+              </strong>
+            </div>
             
             <div class="approval-history" style="background: #f8fafc; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem; border:1px solid #e2e8f0;">
                 <div style="color:#1e293b;"><strong>✅ Vistos dos Líderes:</strong> ${getVal(prog, 'APROVACOES_LIDERES') || 'Nenhum...'}</div>
