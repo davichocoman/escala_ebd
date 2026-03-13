@@ -157,28 +157,58 @@
             </div>
 
             <div id="sec-cooperadores" class="hidden">
-                <div class="page-header">
-                    <h2>Área Pastoral (Departamentos)</h2>
-                </div>
-            
-                <nav class="nav-cooperador">
-                    <div class="nav-container-cooperador">
-                        <button class="nav-btn-cooperador active" id="btn-tab-deptos" onclick="switchCooperadorTab('deptos', this)">
-                            <span class="material-icons" style="font-size: 18px; vertical-align: text-bottom; margin-right: 4px;">account_tree</span> Departamentos
-                        </button>
-                        <button class="nav-btn-cooperador" id="btn-tab-progs" onclick="switchCooperadorTab('progs', this)">
-                            <span class="material-icons" style="font-size: 18px; vertical-align: text-bottom; margin-right: 4px;">event</span> Programações
-                        </button>
+                
+                <div id="view-lista-deptos">
+                    <div class="page-header">
+                        <h2>Gestão de Departamentos</h2>
+                        <button id="btn-novo-depto" class="btn btn-primary hidden" onclick="abrirModalDepto()">+ Novo Departamento</button>
                     </div>
-                </nav>
-            
-                <div id="tab-deptos" class="tab-content">
                     <div id="lista-deptos" class="card-list"></div>
                 </div>
             
-                <div id="tab-progs" class="tab-content hidden">
-                    <button id="btn-nova-prog" class="btn btn-secondary hidden" onclick="abrirModalProg()" style="margin-bottom: 1.5rem;">+ Sugerir Programação</button>
-                    <div id="lista-progs" class="card-list"></div>
+                <div id="view-detalhes-depto" class="hidden">
+                    
+                    <div class="page-header" style="justify-content: flex-start; gap: 15px;">
+                        <button id="btn-voltar-deptos" class="btn btn-secondary" onclick="voltarParaListaDeptos()" style="padding: 8px 12px; background: #e2e8f0; color: #1e293b;">
+                            <span class="material-icons">arrow_back</span>
+                        </button>
+                        <h2 id="titulo-depto-ativo">Nome do Departamento</h2>
+                    </div>
+            
+                    <nav class="nav-cooperador">
+                        <div class="nav-container-cooperador">
+                            <button class="nav-btn-cooperador active" id="btn-tab-equipe" onclick="switchDeptoTab('equipe', this)">
+                                <span class="material-icons" style="font-size: 18px; vertical-align: text-bottom; margin-right: 4px;">groups</span> Equipe
+                            </button>
+                            <button class="nav-btn-cooperador" id="btn-tab-progs" onclick="switchDeptoTab('progs', this)">
+                                <span class="material-icons" style="font-size: 18px; vertical-align: text-bottom; margin-right: 4px;">event</span> Programações
+                            </button>
+                        </div>
+                    </nav>
+            
+                    <div id="tab-equipe" class="tab-content">
+                        <div id="lista-liderados-painel" class="card-list"></div>
+                    </div>
+            
+                    <div id="tab-progs" class="tab-content hidden">
+                        
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <strong>Filtro:</strong>
+                                <select id="filtro-status-prog" class="form-input" style="width: auto; min-width: 150px; padding: 5px;" onchange="renderizarProgramacoesAtuais()">
+                                    <option value="TODAS">Todas</option>
+                                    <option value="PENDENTE">Pendentes / Em Análise</option>
+                                    <option value="APROVADO">Aprovadas</option>
+                                    <option value="REPROVADO">Reprovadas</option>
+                                </select>
+                            </div>
+                            
+                            <button id="btn-nova-prog" class="btn btn-primary hidden" onclick="abrirModalProg()">+ Sugerir Programação</button>
+                        </div>
+            
+                        <div id="lista-progs-depto" class="card-list"></div>
+                    </div>
+            
                 </div>
             </div>
 
