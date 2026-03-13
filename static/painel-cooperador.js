@@ -344,6 +344,21 @@ window.renderizarProgramacoesAtuais = function() {
     container.innerHTML = progs.map(p => renderizarCardProgramacao(p, souLider)).join('');
 };
 
+function formatarDataComDia(dataString) {
+  if (!dataString) return "";
+  
+  // Converte a string (ex: "25/12/2023") para um objeto Date
+  const partes = dataString.split('/');
+  const data = new Date(partes[2], partes[1] - 1, partes[0]);
+  
+  // Opções para formatar o dia da semana em português
+  const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+  
+  // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
+  return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
+}
+
+
 window.renderizarCardProgramacao = function(prog, souLider) {
     const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
     const status = getVal(prog, 'STATUS');
@@ -361,7 +376,11 @@ window.renderizarCardProgramacao = function(prog, souLider) {
         </div>
         
         <div class="card-body">
-            <div><span class="material-icons" style="font-size:16px; vertical-align:middle;">calendar_today</span> <strong>Data do Culto:</strong> ${getVal(prog, 'DATA')}</div>
+            <div>
+              <span class="material-icons" style="font-size:16px; vertical-align:middle;">calendar_today</span> 
+              <strong>Data do Culto:</strong> ${formatarDataComDia(getVal(prog, 'DATA'))}
+            </div>
+            
             <div><strong>🎤 Pregador:</strong> ${getVal(prog, 'PREGADOR_NOITE')}</div>
             <div>
               <strong>
