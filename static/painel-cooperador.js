@@ -124,6 +124,10 @@ window.abrirDepto = function(idDepto) {
     document.getElementById('view-detalhes-depto').classList.remove('hidden');
     document.getElementById('titulo-depto-ativo').innerText = depto.NOME;
 
+    // Limpa a barra de pesquisa ao trocar de departamento
+    const buscaEquipe = document.getElementById('buscaEquipe');
+    if (buscaEquipe) buscaEquipe.value = '';
+
     const meuCpf = String(SISTEMA.usuario.CPF).replace(/\D/g, '');
     const souLiderAqui = String(depto.LIDERES_CPF).replace(/\D/g, '').includes(meuCpf);
 
@@ -155,6 +159,8 @@ window.switchDeptoTab = function(tabId, btnElement) {
 
 window.renderizarDeptos = function() {
     const container = document.getElementById('lista-deptos');
+    const perfil = SISTEMA.usuario.PERFIL.toUpperCase();
+
     if (SISTEMA.meusDepts.length === 0) {
         container.innerHTML = '<p class="empty-msg">Nenhum departamento encontrado.</p>';
         return;
@@ -167,6 +173,13 @@ window.renderizarDeptos = function() {
                     <span class="material-icons" style="color:var(--accent);">account_tree</span>
                     <strong style="font-size:1.2rem;">${d.NOME}</strong>
                 </div>
+                
+                ${['SECRETARIA', 'ADMIN'].includes(perfil) ? `
+                    <div style="display:flex; gap: 8px;">
+                        <button class="btn-icon edit" onclick="event.stopPropagation(); abrirModalDepto('${d.ID}')">✏️</button>
+                        <button class="btn-icon delete" onclick="event.stopPropagation(); excluirDepto('${d.ID}')">🗑️</button>
+                    </div>
+                ` : ''}
             </div>
             <div class="card-body">
                 <p>Clique para ver as estatísticas, a equipe e as programações.</p>
@@ -191,27 +204,33 @@ window.carregarLideradosDoPainel = async function() {
         
         const lideresCpfs = String(depto.LIDERES_CPF || "").split(',').map(c => c.trim().replace(/\D/g, '')).filter(c => c);
         
-        let equipeUnificada = [...lideradosAPI];
-        let nomesLideres = [];
-        let qtdLideres = 0;
-        let qtdComponents = 0;
+        // O USO DO MAP GARANTE QUE NÃO HAVERÁ DUPLICATAS
+        let equipeMap = new Map();
 
-        // INTELIGÊNCIA: Se a Secretaria/Pastor está acessando, nós temos TODOS os membros salvos em memória.
-        // Vamos varrer os CPFs dos líderes e, se eles não vieram na API (porque a coluna Depto tá diferente), a gente insere eles à força!
+        // 1. Adiciona os membros encontrados pela API (Membros que estão vinculados ao departamento)
+        lideradosAPI.forEach(m => {
+            const cpfLimpo = String(getVal(m, 'CPF')).replace(/\D/g, '');
+            equipeMap.set(cpfLimpo, m);
+        });
+
+        // 2. Adiciona os LÍDERES (Mesmo que na planilha o departamento deles esteja como outro)
         if (SISTEMA.dados && SISTEMA.dados.membros) {
             lideresCpfs.forEach(cpf => {
-                const liderEncontrado = SISTEMA.dados.membros.find(m => String(getVal(m, 'CPF')).replace(/\D/g, '') === cpf);
-                if (liderEncontrado) {
-                    nomesLideres.push(getVal(liderEncontrado, 'NOME').split(' ')[0]);
-                    
-                    // Verifica se a API já trouxe ele. Se não trouxe, coloca no array.
-                    const jaEstaNaLista = equipeUnificada.find(m => String(getVal(m, 'CPF')).replace(/\D/g, '') === cpf);
-                    if (!jaEstaNaLista) {
-                        equipeUnificada.push(liderEncontrado);
+                if (cpf && !equipeMap.has(cpf)) {
+                    const liderEncontrado = SISTEMA.dados.membros.find(m => String(getVal(m, 'CPF')).replace(/\D/g, '') === cpf);
+                    if (liderEncontrado) {
+                        equipeMap.set(cpf, liderEncontrado);
                     }
                 }
             });
         }
+
+        // Transforma o Map de volta em Lista Única
+        let equipeUnificada = Array.from(equipeMap.values());
+        
+        let nomesLideres = [];
+        let qtdLideres = 0;
+        let qtdComponents = 0;
 
         SISTEMA.equipeAtual = equipeUnificada.map(m => {
             const cpfLimpo = String(getVal(m, 'CPF')).replace(/\D/g, '');
@@ -219,7 +238,6 @@ window.carregarLideradosDoPainel = async function() {
             
             if (isLider) {
                 qtdLideres++;
-                // Para líderes (Membros comuns) que não passaram pelo IF de cima:
                 const primNome = getVal(m, 'NOME').split(' ')[0];
                 if (!nomesLideres.includes(primNome)) nomesLideres.push(primNome);
             } else {
@@ -271,7 +289,7 @@ window.renderizarEquipeHTML = function(lista) {
         const pai = String(getVal(m, 'PAI') || "");
         const mae = String(getVal(m, 'MAE') || "");
 
-        let pais = "N/A";
+        let pais = "Não informado";
 
         if(pai && mae){
             pais = `${pai} e ${mae}`;
@@ -291,13 +309,20 @@ window.renderizarEquipeHTML = function(lista) {
                 <img src="${foto}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
                 <div>
                     <strong>${getVal(m, 'NOME')}</strong> ${tagLider}<br>
-                    <small style="color: #64748b;">${getVal(m, 'CARGO') || 'Membro'}</small>
                 </div>
             </div>
 
             <div style="margin-top:10px; font-size:0.85rem; color:#64748b;">
-                <p><b>👨‍👩‍👧‍👦 Pais:</b> ${pais}</p>
-                <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL') || "N/A"}</p>
+                <p><b>🛠 Funções:</b> ${pais}</p>
+                <small style="color: #64748b;">${getVal(m, 'CARGO') || 'Membro'}</small>
+            </div>
+
+            <div style="margin-top:10px; font-size:0.85rem; color:#475569;">
+                <p><b>👨‍👩‍👧‍👦 Filiação:</b> ${pais}</p>
+            </div>
+
+            <div style="margin-top:10px; font-size:0.85rem; color:#475569;">
+                <p><b>💍 Estado Civil:</b> ${getVal(m, 'ESTADO_CIVIL') || "Não informado"}</p>
             </div>
             
             <div style="margin-top:10px; font-size:0.85rem; color:#475569;">
@@ -483,8 +508,13 @@ window.toggleConsag = function(val) { document.getElementById('campos-consag').c
 // ============================================================
 // MODAIS E CRUD DE DEPARTAMENTOS (RESTAURO)
 // ============================================================
-window.abrirModalDepto = async function() {
+window.abrirModalDepto = async function(idEdit = null) {
     document.getElementById('formDepto')?.reset();
+    document.getElementById('depto_id').value = idEdit || ''; // Setando se é Edição ou Criação
+    
+    const titulo = document.getElementById('tituloModalDepto');
+    if (titulo) titulo.innerText = idEdit ? "Editar Departamento" : "Criar Novo Departamento";
+
     const busca = document.getElementById('buscaLider');
     if (busca) busca.value = '';
         
@@ -506,14 +536,36 @@ window.abrirModalDepto = async function() {
                 if(res.ok) membros = await res.json();
             }
             
-            membros.sort((a,b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
+            // Tratamento à prova de balas para pegar o Nome e CPF correto
+            const listaLimpa = membros.map(m => {
+                const cpfRaw = m.CPF || m.cpf || getVal(m, 'CPF');
+                const nomeRaw = m.NOME || m.nome || getVal(m, 'NOME');
+                return { NOME: nomeRaw, CPF: String(cpfRaw).replace(/\D/g, '') };
+            }).filter(m => m.NOME && m.CPF);
+
+            listaLimpa.sort((a,b) => a.NOME.localeCompare(b.NOME));
             
-            container.innerHTML = membros.map(m => `
+            container.innerHTML = listaLimpa.map(m => `
                 <label class="checkbox-item" style="padding: 5px 0;">
-                    <input type="checkbox" name="lider_depto_cb" value="${getVal(m, 'CPF') || m.cpf}">
-                    ${getVal(m, 'NOME') || m.nome}
+                    <input type="checkbox" name="lider_depto_cb" value="${m.CPF}">
+                    ${m.NOME}
                 </label>
             `).join('');
+
+            // Se for Edição, pré-marca as caixinhas dos líderes atuais
+            if (idEdit) {
+                const depto = SISTEMA.meusDepts.find(d => d.ID == idEdit);
+                if (depto) {
+                    document.getElementById('depto_nome').value = depto.NOME;
+                    const lideresAtuais = String(depto.LIDERES_CPF || "").split(',').map(c => c.trim().replace(/\D/g, ''));
+                    
+                    document.querySelectorAll('input[name="lider_depto_cb"]').forEach(cb => {
+                        if (lideresAtuais.includes(cb.value)) {
+                            cb.checked = true;
+                        }
+                    });
+                }
+            }
         } catch(e) {
             container.innerHTML = '<span style="color:red; font-size:0.8rem;">Erro ao carregar membros.</span>';
         }
@@ -529,19 +581,26 @@ window.filtrarLideres = function() {
 
 window.salvarDepto = async function(e) {
     e.preventDefault();
+    const id = document.getElementById('depto_id').value;
     const nome = document.getElementById('depto_nome').value.trim();
     const lideresCpf = Array.from(document.querySelectorAll('input[name="lider_depto_cb"]:checked')).map(cb => cb.value).join(', ');
     
-    const res = await fetch(`${API_BASE}/admin/departamentos`, {
-        method: 'POST',
+    // Se tem ID, edita. Se não tem, cria!
+    const url = id ? `${API_BASE}/admin/departamentos/${id}` : `${API_BASE}/admin/departamentos`;
+    const method = id ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') },
         body: JSON.stringify({ NOME: nome, LIDERES_CPF: lideresCpf })
     });
 
     if (res.ok) {
-        Swal.fire('Sucesso', 'Departamento salvo!', 'success');
+        Swal.fire('Sucesso', 'Departamento salvo com sucesso!', 'success');
         fecharModal('modalDepto');
         carregarDadosIniciais(); 
+    } else {
+        Swal.fire('Erro', 'Falha ao salvar departamento.', 'error');
     }
 };
 
@@ -555,4 +614,5 @@ window.excluirDepto = async function(id) {
         carregarDadosIniciais();
     }
 };
+
 
