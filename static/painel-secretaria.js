@@ -245,7 +245,7 @@ async function carregarTudoDoBanco() {
         // ---------------------------------------
 
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
-        if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
+        if (resDash.ok) SISTEMA.dados. = await resDash.json();
 
         renderizarCheckboxesPastores();
         renderizarMembros();
@@ -310,6 +310,20 @@ function renderizarReservas() {
         '#22c55e',
         true
     );
+}
+
+function formatarDataComDia(dataString) {
+  if (!dataString) return "";
+  
+  // Converte a string (ex: "25/12/2023") para um objeto Date
+  const partes = dataString.split('/');
+  const data = new Date(partes[2], partes[1] - 1, partes[0]);
+  
+  // Opções para formatar o dia da semana em português
+  const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+  
+  // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
+  return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
 }
 
 // ============================================================
@@ -385,7 +399,7 @@ function renderizarDashboard() {
                 <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
-                        <div style="font-size:0.85rem; color:#64748b">Dia ${m.diaAniversario}</div>
+                        <div style="font-size:0.85rem; color:#64748b">Dia ${formatarDataComDia(m.diaAniversario)}</div>
                     </div>
                     <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
                 </div>
