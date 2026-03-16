@@ -312,19 +312,19 @@ function renderizarReservas() {
     );
 }
 
-function formatarDataComDia(dataString) {
-  if (!dataString) return "";
+// function formatarDataComDia(dataString) {
+//   if (!dataString) return "";
   
-  // Converte a string (ex: "25/12/2023") para um objeto Date
-  const partes = dataString.split('/');
-  const data = new Date(partes[2], partes[1] - 1, partes[0]);
+//   // Converte a string (ex: "25/12/2023") para um objeto Date
+//   const partes = dataString.split('/');
+//   const data = new Date(partes[2], partes[1] - 1, partes[0]);
   
-  // Opções para formatar o dia da semana em português
-  const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+//   // Opções para formatar o dia da semana em português
+//   const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
   
-  // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
-  return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
-}
+//   // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
+//   return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
+// }
 
 // ============================================================
 // 4. RENDERIZAÇÃO (mantidas como cards)
@@ -399,7 +399,7 @@ function renderizarDashboard() {
                 <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
-                        <div style="font-size:0.85rem; color:#64748b">Dia ${formatarDataComDia(m.diaAniversario)}</div>
+                        <div style="font-size:0.85rem; color:#64748b">Dia ${m.diaAniversario}</div>
                     </div>
                     <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
                 </div>
@@ -547,7 +547,7 @@ function renderizarAgendaGeralCards() {
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'evento')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(ev, 'data'))}</div>
+                    <div><strong>Data:</strong> ${getVal(ev, 'data')}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
                 <div class="card-actions">
