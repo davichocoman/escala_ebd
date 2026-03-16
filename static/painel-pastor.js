@@ -49,13 +49,74 @@ function recuperarFoto(obj) {
     return fotoFull;
 }
 
+window.formatarDataComDia = function(dataInput) {
+    if (!dataInput) return "";
+    if (typeof dataInput !== 'string') return dataInput;
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    try {
+        // A MÁGICA AQUI: Pesca exatamente o padrão "XX/XX/XXXX" ignorando textos
+        const match = dataInput.match(/(\d{2})\/(\d{2})\/(\d{4}|\d{2})/);
+        if (!match) return dataInput;
+
+        const dia = parseInt(match[1]);
+        const mes = parseInt(match[2]);
+        let ano = parseInt(match[3]);
+
+        if (ano < 100) ano += 2000;
+
+        const data = new Date(ano, mes - 1, dia);
+        if (isNaN(data.getTime())) return dataInput;
+        
+        data.setHours(0,0,0,0);
+
+        const diffDias = Math.round((data.getTime() - hoje.getTime()) / 86400000);
+        const diasSemana = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+        if (diffDias === 0) return "🔴 Hoje";
+        if (diffDias === 1) return "🟠 Amanhã";
+        if (diffDias === 2) return "🟡 Em 2 dias";
+        if (diffDias === 3) return "🟡 Em 3 dias";
+        if (diffDias > 3 && diffDias <= 6) return `🔵 Esta semana • ${diasSemana[data.getDay()]}`;
+
+        if (data.getFullYear() === hoje.getFullYear()) {
+            return `${diasSemana[data.getDay()]} • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        }
+        return `${String(dia).padStart(2,'0')} ${meses[mes-1]} ${ano}`;
+    } catch {
+        return dataInput;
+    }
+};
+
 // ============================================================
 // 2. FETCH DE DADOS (Busca Tudo igual Secretaria)
 // ============================================================
+let logoutEmAndamento = false; 
+
+async function fetchComLogout401(url, options = {}) {
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+        if (!logoutEmAndamento) {
+            logoutEmAndamento = true; 
+            Swal.fire({
+                icon: 'error', title: 'Sessão expirada', text: 'Você será redirecionado para o login.',
+                timer: 3000, showConfirmButton: false
+            }).then(() => {
+                sessionStorage.clear();
+                window.location.href = '/login';
+            });
+        }
+        throw new Error('401 detectado');
+    }
+    return res;
+}
+
 async function carregarTudo() {
     console.log("🔄 Atualizando dados pastorais...");
     
-    // Feedback visual
     ['dash-lista-pastor', 'dash-lista-geral'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = '<p style="padding:10px; color:#666">Carregando...</p>';
@@ -68,30 +129,25 @@ async function carregarTudo() {
 
     try {
         const [resMembros, resPastor, resGeral] = await Promise.all([
-            fetch(`${API_BASE}/membros`, { headers }),
-            fetch(`${API_BASE}/agenda-pastor`, { headers }),
-            fetch(`${API_BASE}/patrimonio/dados`, { headers })
+            fetchComLogout401(`${API_BASE}/membros`, { headers }),
+            fetchComLogout401(`${API_BASE}/agenda-pastor`, { headers }),
+            fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers })
         ]);
 
         if (resMembros.ok) {
             SISTEMA.dados.membros = await resMembros.json();
-            
-            // --- "UPGRADE" DO USUÁRIO PASTOR ---
             const meuCpf = getVal(SISTEMA.usuario, 'CPF');
             const euAtualizado = SISTEMA.dados.membros.find(m => getVal(m, 'CPF') === meuCpf);
             if (euAtualizado) {
-                SISTEMA.usuario = euAtualizado; // Agora você tem a foto inteira da API
-                atualizarHeaderPastor(); // Atualiza a sidebar com a foto perfeita
-                renderizarMeusDados();   // Atualiza a aba Meus Dados com a foto perfeita
+                SISTEMA.usuario = euAtualizado;
+                atualizarHeaderPastor(); 
+                renderizarMeusDados();   
             }
         }
 
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resGeral.ok) SISTEMA.dados.dashboard = await resGeral.json();
 
-        console.log("✅ Dados Pastorais Carregados");
-        
-        // Atualiza as telas
         renderizarDashboard();
         renderizarMinhaAgenda();
         renderizarAgendaGeral();
@@ -99,6 +155,7 @@ async function carregarTudo() {
         renderizarMembros();
 
     } catch (e) {
+        if (e.message.includes('401 detectado')) return; 
         console.error(e);
         Swal.fire('Erro', 'Falha ao carregar dados do servidor.', 'error');
     }
@@ -192,7 +249,7 @@ function renderizarDashboard() {
                 <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
-                        <div style="font-size:0.85rem; color:#64748b">Dia ${m.diaAniversario}</div>
+                        <div style="font-size:0.85rem; color:#64748b">${window.formatarDataComDia(m.diaAniversario)}</div>
                     </div>
                     <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
                 </div>
@@ -200,6 +257,7 @@ function renderizarDashboard() {
         }
     }
 }
+// Helper para listas do dashboard
 // Helper para listas do dashboard
 function renderizarListaSimples(elementId, lista, keyTitulo, keyData, color, keyHora = '') {
     const el = document.getElementById(elementId);
@@ -214,7 +272,7 @@ function renderizarListaSimples(elementId, lista, keyTitulo, keyData, color, key
         <div class="member-card" style="padding: 10px; border-left: 4px solid ${color}; margin-bottom: 10px;">
             <div style="font-weight:bold; color:#1e293b">${getVal(item, keyTitulo)}</div>
             <div style="font-size:0.85rem; color:#64748b">
-                ${getVal(item, keyData)} ${keyHora ? '| ' + getVal(item, keyHora) : ''}
+                ${window.formatarDataComDia(getVal(item, keyData))} ${keyHora ? '| ' + getVal(item, keyHora) : ''}
             </div>
             ${getVal(item, 'LOCAL') ? `<div style="font-size:0.8rem; color:#94a3b8">${getVal(item, 'LOCAL')}</div>` : ''}
         </div>
@@ -310,7 +368,7 @@ function renderizarListaCompleta(elementId, dados, keyTitulo, keyData, corBorda,
             <div class="member-card" style="border-left: 5px solid ${corBorda};">
                 <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${getVal(item, keyTitulo)}</div>
                 <div style="font-size:0.95rem; color:#475569; display:grid; gap:2px;">
-                    <div><strong>Data:</strong> ${getVal(item, keyData)}</div>
+                    <div><strong>Data:</strong> ${window.formatarDataComDia(getVal(item, keyData))}</div>
                     ${horarioHtml}
                     <div><strong>Local:</strong> ${getVal(item, 'LOCAL')}</div>
                     
@@ -605,7 +663,6 @@ function eventoValido(item, keyTitulo, keyData) {
 }
 
 window.mostrarTela = function(telaId, btn) {
-    // Adicionamos 'cooperadores' na lista de painéis a serem escondidos
     ['dashboard', 'minha-agenda', 'agenda-geral', 'reservas', 'membros', 'meus-dados', 'cooperadores'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
@@ -615,14 +672,15 @@ window.mostrarTela = function(telaId, btn) {
     
     const alvo = document.getElementById('sec-' + telaId);
     if(alvo) alvo.classList.remove('hidden');
-    
     if(btn) btn.classList.add('active');
 
-    if(window.innerWidth < 768) window.toggleSidebar();
+    if(window.innerWidth < 768) {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) window.toggleSidebar();
+    }
     
-    // ATIVAÇÃO: Se a tela escolhida for cooperadores, carrega os dados automaticamente
-    if (telaId === 'cooperadores') {
-        if (typeof carregarDadosIniciais === 'function') carregarDadosIniciais();
+    if (telaId === 'cooperadores' && typeof carregarDadosIniciais === 'function') {
+        carregarDadosIniciais();
     }
 };
 
@@ -632,8 +690,28 @@ function getVal(obj, k) { if(!obj) return ''; const u=k.toUpperCase(); for(let i
 function dataParaObj(s) { if(!s) return new Date(0); const p=s.split('/'); return p.length===3?new Date(p[2],p[1]-1,p[0]):new Date(0); }
 function debounce(f,w) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>f.apply(this,a),w); }; }
 window.toggleSidebar = function() { 
-    const s = document.querySelector('.sidebar'); 
-    if(s) s.classList.toggle('open'); 
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.toggle('open');
+    
+    let overlay = document.getElementById('sidebar-overlay');
+    if (overlay && !overlay.style.position) {
+        overlay.style.cssText = `position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 990; display: none; transition: opacity 0.28s ease; opacity: 0;`;
+        overlay.addEventListener('click', window.toggleSidebar);
+    }
+
+    if (isOpen) {
+        overlay.style.display = 'block';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+    } else {
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 280);
+    }
+};
+
+window.fecharModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('hidden');
 };
 
 window.logout = function() { 
@@ -677,7 +755,7 @@ function getAniversariantesProximos(listaMembros) {
         const estaNaSemana = niverEsteAno >= hoje && niverEsteAno <= limite;
         
         if (estaNaSemana) {
-            m.diaAniversario = `${dia}/${mes}`; // Guarda pra exibir fácil
+            m.diaAniversario = `${dia}/${mes}/${hoje.getFullYear()}`; // Guarda pra exibir fácil
         }
         
         return estaNaSemana;
