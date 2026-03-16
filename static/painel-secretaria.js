@@ -1097,6 +1097,11 @@ function dataBr(str) {
     const p = str.split('-');
     return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '';
 }
+
+function dataString(data){
+    if (!data) return '';
+    return data.toLocaleDateString('pt-BR')
+}
 // --- Utilitário de Debounce ---
 // Retorna uma função que, enquanto continuar sendo invocada, não será executada.
 // A função só será executada após 'wait' milissegundos de inatividade.
@@ -1195,11 +1200,13 @@ function renderizarReservasCards() {
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
 
+        data = dataString(getVal(res, 'DATA'))
+
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
                 <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(res, 'DATA'))}</div>
+                    <div><strong>Data:</strong> ${formatarDataComDia(data)}</div>
                     <div>
                         <strong>Horário:</strong> 
                         ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} 
