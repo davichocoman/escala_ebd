@@ -71,6 +71,21 @@ function timeParaMinutos(timeStr) {
     if (partes.length < 2) return 9999;
     return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
 }
+
+function formatarDataComDia(dataString) {
+  if (!dataString) return "";
+  
+  // Converte a string (ex: "25/12/2023") para um objeto Date
+  const partes = dataString.split('/');
+  const data = new Date(partes[2], partes[1] - 1, partes[0]);
+  
+  // Opções para formatar o dia da semana em português
+  const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+  
+  // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
+  return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
+}
+
 //função única para decidir se um item deve aparecer
 // Substitua a função eventoValido inteira por esta:
 function eventoValido(item, chaveEvento, chaveData) {
@@ -1141,7 +1156,7 @@ function renderizarReservasCards() {
             <div class="member-card" style="border-left: 5px solid var(--green);">
                 <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(res, 'DATA')}</div>
+                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(res, 'DATA'))}</div>
                     <div>
                         <strong>Horário:</strong> 
                         ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} 
