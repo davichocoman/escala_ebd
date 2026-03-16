@@ -1196,7 +1196,8 @@ function renderizarReservasCards() {
             html += `<div class="month-header">${NOMES_MESES[m]}</div>`;
         }
         console.log(getVal(res, 'DATA'))
-        console.log(typeof(getVal(res, 'DATA')))
+        console.log(getVal(res, 'DATA'))
+        console.log(formatarDataComDia(getVal(res, 'DATA')))
 
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
