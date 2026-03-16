@@ -245,7 +245,7 @@ async function carregarTudoDoBanco() {
         // ---------------------------------------
 
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
-        if (resDash.ok) SISTEMA.dados. = await resDash.json();
+        if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
 
         renderizarCheckboxesPastores();
         renderizarMembros();
@@ -311,20 +311,6 @@ function renderizarReservas() {
         true
     );
 }
-
-// function formatarDataComDia(dataString) {
-//   if (!dataString) return "";
-  
-//   // Converte a string (ex: "25/12/2023") para um objeto Date
-//   const partes = dataString.split('/');
-//   const data = new Date(partes[2], partes[1] - 1, partes[0]);
-  
-//   // Opções para formatar o dia da semana em português
-//   const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
-  
-//   // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
-//   return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
-// }
 
 // ============================================================
 // 4. RENDERIZAÇÃO (mantidas como cards)
