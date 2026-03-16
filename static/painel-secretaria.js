@@ -104,8 +104,8 @@ function formatarDataComDia(dataInput) {
 
         if (isNaN(data.getTime())) return `${dia}/${mes}`;
 
-        const diffDias = Math.floor((data - hoje) / 86400000);
-
+        const diffDias = Math.round((data - hoje) / 86400000);
+        
         const diasSemana = [
             "Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"
         ];
@@ -117,7 +117,7 @@ function formatarDataComDia(dataInput) {
 
         if (diffDias === 0) return "🔴 Hoje";
         if (diffDias === 1) return "🟠 Amanhã";
-        if (diffDias > 1 && diffDias <= 2) return `🟡 Em ${diffDias} dias`;
+        if (diffDias >= 2 && diffDias <= 3) return `🟡 Em ${diffDias} dias`;
 
         if (diffDias > 2 && diffDias <= 6) {
             return `🔵 Esta semana • ${diasSemana[data.getDay()]}`;
@@ -1390,7 +1390,7 @@ function getAniversariantesProximos(listaMembros) {
         const estaNaSemana = niverEsteAno >= hoje && niverEsteAno <= limite;
         
         if (estaNaSemana) {
-            m.diaAniversario = `${dia}/${mes}`; // Guarda pra exibir fácil
+            m.diaAniversario = `${dia}/${mes}/${hoje.getFullYear()}`; // Guarda pra exibir fácil
         }
         
         return estaNaSemana;
