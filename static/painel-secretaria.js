@@ -74,18 +74,29 @@ function timeParaMinutos(timeStr) {
 
 function formatarDataComDia(dataInput) {
     if (!dataInput) return "";
+    
+    if (typeof dataInput !== 'string') return dataInput;
 
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
 
     try {
+        // A MÁGICA AQUI: Pesca exatamente o padrão "XX/XX/XXXX" ignorando textos como "Quarta-feira,"
+        const match = dataInput.match(/(\d{2})\/(\d{2})\/(\d{4}|\d{2})/);
+        
+        // Se não encontrar nenhuma data no padrão, devolve o texto original
+        if (!match) return dataInput;
 
-        const partes = dataInput.split("/");
-        const dia = parseInt(partes[0]);
-        const mes = parseInt(partes[1]);
-        const ano = parseInt(partes[2]);
+        const dia = parseInt(match[1]);
+        const mes = parseInt(match[2]);
+        let ano = parseInt(match[3]);
+
+        if (ano < 100) ano += 2000;
 
         const data = new Date(ano, mes - 1, dia);
+        
+        if (isNaN(data.getTime())) return dataInput;
+        
         data.setHours(0,0,0,0);
 
         const diffDias = Math.round((data.getTime() - hoje.getTime()) / 86400000);
@@ -118,7 +129,6 @@ function formatarDataComDia(dataInput) {
         return dataInput;
     }
 }
-
 //função única para decidir se um item deve aparecer
 // Substitua a função eventoValido inteira por esta:
 function eventoValido(item, chaveEvento, chaveData) {
