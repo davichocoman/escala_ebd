@@ -75,37 +75,21 @@ function timeParaMinutos(timeStr) {
 function formatarDataComDia(dataInput) {
     if (!dataInput) return "";
 
-    let dia, mes, ano;
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
 
     try {
 
-        if (typeof dataInput === "string" && dataInput.includes("-")) {
-            const p = dataInput.split("-");
-            ano = parseInt(p[0]);
-            mes = parseInt(p[1]);
-            dia = parseInt(p[2]);
-        }
-
-        else if (typeof dataInput === "string" && dataInput.includes("/")) {
-            const p = dataInput.split("/");
-            dia = parseInt(p[0]);
-            mes = parseInt(p[1]);
-            ano = p[2] ? parseInt(p[2]) : hoje.getFullYear();
-        }
-
-        else {
-            return dataInput;
-        }
+        const partes = dataInput.split("/");
+        const dia = parseInt(partes[0]);
+        const mes = parseInt(partes[1]);
+        const ano = parseInt(partes[2]);
 
         const data = new Date(ano, mes - 1, dia);
         data.setHours(0,0,0,0);
 
-        if (isNaN(data.getTime())) return `${dia}/${mes}`;
+        const diffDias = Math.round((data.getTime() - hoje.getTime()) / 86400000);
 
-        const diffDias = Math.round((data - hoje) / 86400000);
-        
         const diasSemana = [
             "Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"
         ];
@@ -117,9 +101,10 @@ function formatarDataComDia(dataInput) {
 
         if (diffDias === 0) return "🔴 Hoje";
         if (diffDias === 1) return "🟠 Amanhã";
-        if (diffDias >= 2 && diffDias <= 3) return `🟡 Em ${diffDias} dias`;
+        if (diffDias === 2) return "🟡 Em 2 dias";
+        if (diffDias === 3) return "🟡 Em 3 dias";
 
-        if (diffDias > 2 && diffDias <= 6) {
+        if (diffDias > 3 && diffDias <= 6) {
             return `🔵 Esta semana • ${diasSemana[data.getDay()]}`;
         }
 
