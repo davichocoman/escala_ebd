@@ -547,7 +547,7 @@ function renderizarAgendaGeralCards() {
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'evento')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(ev, 'data')}</div>
+                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(ev, 'data'))}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
                 <div class="card-actions">
