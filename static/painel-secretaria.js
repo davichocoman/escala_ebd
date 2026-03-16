@@ -81,20 +81,18 @@ function formatarDataComDia(dataInput) {
 
     try {
 
-        // YYYY-MM-DD
         if (typeof dataInput === "string" && dataInput.includes("-")) {
-            const partes = dataInput.split("-");
-            ano = parseInt(partes[0]);
-            mes = parseInt(partes[1]);
-            dia = parseInt(partes[2]);
+            const p = dataInput.split("-");
+            ano = parseInt(p[0]);
+            mes = parseInt(p[1]);
+            dia = parseInt(p[2]);
         }
 
-        // DD/MM ou DD/MM/YYYY
         else if (typeof dataInput === "string" && dataInput.includes("/")) {
-            const partes = dataInput.split("/");
-            dia = parseInt(partes[0]);
-            mes = parseInt(partes[1]);
-            ano = partes[2] ? parseInt(partes[2]) : hoje.getFullYear();
+            const p = dataInput.split("/");
+            dia = parseInt(p[0]);
+            mes = parseInt(p[1]);
+            ano = p[2] ? parseInt(p[2]) : hoje.getFullYear();
         }
 
         else {
@@ -108,15 +106,28 @@ function formatarDataComDia(dataInput) {
 
         const diffDias = Math.floor((data - hoje) / 86400000);
 
-        if (diffDias === 0) return "Hoje";
-        if (diffDias === 1) return "Amanhã";
-        if (diffDias === -1) return "Ontem";
+        const diasSemana = [
+            "Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"
+        ];
 
-        const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+        const meses = [
+            "Jan","Fev","Mar","Abr","Mai","Jun",
+            "Jul","Ago","Set","Out","Nov","Dez"
+        ];
 
-        return diaSemana.charAt(0).toUpperCase() +
-               diaSemana.slice(1) +
-               `, ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        if (diffDias === 0) return "🔴 Hoje";
+        if (diffDias === 1) return "🟠 Amanhã";
+        if (diffDias > 1 && diffDias <= 2) return `🟡 Em ${diffDias} dias`;
+
+        if (diffDias > 2 && diffDias <= 6) {
+            return `🔵 Esta semana • ${diasSemana[data.getDay()]}`;
+        }
+
+        if (data.getFullYear() === hoje.getFullYear()) {
+            return `${diasSemana[data.getDay()]} • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        }
+
+        return `${String(dia).padStart(2,'0')} ${meses[mes-1]} ${ano}`;
 
     } catch {
         return dataInput;
