@@ -72,7 +72,7 @@ function timeParaMinutos(timeStr) {
     return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
 }
 
-function formatarDataComDia(dataInput) {
+function formatarDataInteligente(dataInput) {
     if (!dataInput) return "";
     
     if (typeof dataInput !== 'string') return dataInput;
@@ -443,7 +443,7 @@ function renderizarDashboard() {
                 <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
-                        <div style="font-size:0.85rem; color:#64748b">${formatarDataComDia(m.diaAniversario)}</div>
+                        <div style="font-size:0.85rem; color:#64748b">${formatarDataInteligente(m.diaAniversario)}</div>
                     </div>
                     <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
                 </div>
@@ -468,7 +468,7 @@ function preencherListaDashSimples(elementId, lista, keyTitulo, keyData, color, 
             <li style="border-left: 4px solid ${color}; padding-left: 10px; margin-bottom: 8px; list-style: none;">
                 <strong style="display:block; color:#1e293b;">${getVal(item, keyTitulo)}</strong>
                 <span style="font-size:0.85rem; color:#64748b;">
-                    ${formatarDataComDia(getVal(item, keyData))} ${hora ? '| ' + hora : ''}
+                    ${formatarDataInteligente(getVal(item, keyData))} ${hora ? '| ' + hora : ''}
                 </span>
             </li>
         `;
@@ -545,7 +545,7 @@ function renderizarAgendaPastor() {
                 <strong>${getVal(a, 'EVENTO')}</strong>
             </div>
             <div class="card-body">
-                <div><strong>Data:</strong> ${formatarDataComDia(getVal(a, 'DATA'))}</div>
+                <div><strong>Data:</strong> ${formatarDataInteligente(getVal(a, 'DATA'))}</div>
                 <div><strong>Horário:</strong> ${getVal(a, 'HORARIO')} ${getVal(a, 'HORARIO_FIM') ? '- ' + getVal(a, 'HORARIO_FIM') : ''}</div>
                 
                 ${nomePastor ? `<div><strong>Pastor:</strong> ${nomePastor}</div>` : ''}
@@ -591,7 +591,7 @@ function renderizarAgendaGeralCards() {
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'evento')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(ev, 'data'))}</div>
+                    <div><strong>Data:</strong> ${formatarDataInteligente(getVal(ev, 'data'))}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
                 <div class="card-actions">
@@ -1197,13 +1197,13 @@ function renderizarReservasCards() {
         }
         console.log(getVal(res, 'DATA'))
         console.log(typeof(getVal(res, 'DATA')))
-        console.log(formatarDataComDia(getVal(res, 'DATA')))
+        console.log(formatarDataInteligente(getVal(res, 'DATA')))
 
         html += `
             <div class="member-card" style="border-left: 5px solid var(--green);">
                 <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(res, 'DATA'))}</div>
+                    <div><strong>Data:</strong> ${formatarDataInteligente(getVal(res, 'DATA'))}</div>
                     <div>
                         <strong>Horário:</strong> 
                         ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} 
