@@ -75,48 +75,52 @@ function timeParaMinutos(timeStr) {
 function formatarDataComDia(dataInput) {
     if (!dataInput) return "";
 
-    let data;
+    let dia, mes, ano;
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
 
-    // Se já for objeto Date
-    if (dataInput instanceof Date) {
-        data = dataInput;
-    }
-
-    // Se for string
-    else if (typeof dataInput === "string") {
+    try {
 
         // YYYY-MM-DD
-        if (dataInput.includes("-")) {
-            const [ano, mes, dia] = dataInput.split("-");
-            data = new Date(ano, mes - 1, dia);
+        if (typeof dataInput === "string" && dataInput.includes("-")) {
+            const partes = dataInput.split("-");
+            ano = parseInt(partes[0]);
+            mes = parseInt(partes[1]);
+            dia = parseInt(partes[2]);
         }
 
-        // DD/MM/YYYY ou DD/MM
-        else if (dataInput.includes("/")) {
+        // DD/MM ou DD/MM/YYYY
+        else if (typeof dataInput === "string" && dataInput.includes("/")) {
             const partes = dataInput.split("/");
-
-            let dia = partes[0];
-            let mes = partes[1];
-            let ano = partes[2];
-
-            // Se não tiver ano, usa o atual
-            if (!ano) {
-                ano = new Date().getFullYear();
-            }
-
-            data = new Date(ano, mes - 1, dia);
+            dia = parseInt(partes[0]);
+            mes = parseInt(partes[1]);
+            ano = partes[2] ? parseInt(partes[2]) : hoje.getFullYear();
         }
+
+        else {
+            return dataInput;
+        }
+
+        const data = new Date(ano, mes - 1, dia);
+        data.setHours(0,0,0,0);
+
+        if (isNaN(data.getTime())) return `${dia}/${mes}`;
+
+        const diffDias = Math.floor((data - hoje) / 86400000);
+
+        if (diffDias === 0) return "Hoje";
+        if (diffDias === 1) return "Amanhã";
+        if (diffDias === -1) return "Ontem";
+
+        const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+
+        return diaSemana.charAt(0).toUpperCase() +
+               diaSemana.slice(1) +
+               `, ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+
+    } catch {
+        return dataInput;
     }
-
-    if (!data || isNaN(data.getTime())) return dataInput;
-
-    const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
-
-    const dia = String(data.getDate()).padStart(2, '0');
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const ano = data.getFullYear();
-
-    return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + `, ${dia}/${mes}/${ano}`;
 }
 
 //função única para decidir se um item deve aparecer
