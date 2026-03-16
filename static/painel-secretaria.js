@@ -443,7 +443,7 @@ function renderizarDashboard() {
                 <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
-                        <div style="font-size:0.85rem; color:#64748b">Dia ${formatarDataComDia(m.diaAniversario)}</div>
+                        <div style="font-size:0.85rem; color:#64748b">${formatarDataComDia(m.diaAniversario)}</div>
                     </div>
                     <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
                 </div>
