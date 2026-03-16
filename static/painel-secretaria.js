@@ -72,18 +72,51 @@ function timeParaMinutos(timeStr) {
     return (parseInt(partes[0]) * 60) + parseInt(partes[1]);
 }
 
-function formatarDataComDia(dataString) {
-  if (!dataString) return "";
-  
-  // Converte a string (ex: "25/12/2023") para um objeto Date
-  const partes = dataString.split('/');
-  const data = new Date(partes[2], partes[1] - 1, partes[0]);
-  
-  // Opções para formatar o dia da semana em português
-  const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
-  
-  // Retorna "Sexta-feira, 25/12/2023" (com a primeira letra maiúscula)
-  return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + ", " + dataString;
+function formatarDataComDia(dataInput) {
+    if (!dataInput) return "";
+
+    let data;
+
+    // Se já for objeto Date
+    if (dataInput instanceof Date) {
+        data = dataInput;
+    }
+
+    // Se for string
+    else if (typeof dataInput === "string") {
+
+        // YYYY-MM-DD
+        if (dataInput.includes("-")) {
+            const [ano, mes, dia] = dataInput.split("-");
+            data = new Date(ano, mes - 1, dia);
+        }
+
+        // DD/MM/YYYY ou DD/MM
+        else if (dataInput.includes("/")) {
+            const partes = dataInput.split("/");
+
+            let dia = partes[0];
+            let mes = partes[1];
+            let ano = partes[2];
+
+            // Se não tiver ano, usa o atual
+            if (!ano) {
+                ano = new Date().getFullYear();
+            }
+
+            data = new Date(ano, mes - 1, dia);
+        }
+    }
+
+    if (!data || isNaN(data.getTime())) return dataInput;
+
+    const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const ano = data.getFullYear();
+
+    return diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1) + `, ${dia}/${mes}/${ano}`;
 }
 
 //função única para decidir se um item deve aparecer
@@ -400,7 +433,7 @@ function renderizarDashboard() {
                 <div class="member-card" style="padding: 10px; border-left: 4px solid #e11d48; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-weight:bold; color:#1e293b">${getVal(m, 'NOME')}</div>
-                        <div style="font-size:0.85rem; color:#64748b">Dia ${m.diaAniversario}</div>
+                        <div style="font-size:0.85rem; color:#64748b">Dia ${formatarDataComDia(m.diaAniversario)}</div>
                     </div>
                     <span class="material-icons" style="color:#e11d48; font-size:1.2rem;">celebration</span>
                 </div>
@@ -425,7 +458,7 @@ function preencherListaDashSimples(elementId, lista, keyTitulo, keyData, color, 
             <li style="border-left: 4px solid ${color}; padding-left: 10px; margin-bottom: 8px; list-style: none;">
                 <strong style="display:block; color:#1e293b;">${getVal(item, keyTitulo)}</strong>
                 <span style="font-size:0.85rem; color:#64748b;">
-                    ${getVal(item, keyData)} ${hora ? '| ' + hora : ''}
+                    ${formatarDataComDia(getVal(item, keyData))} ${hora ? '| ' + hora : ''}
                 </span>
             </li>
         `;
@@ -502,7 +535,7 @@ function renderizarAgendaPastor() {
                 <strong>${getVal(a, 'EVENTO')}</strong>
             </div>
             <div class="card-body">
-                <div><strong>Data:</strong> ${getVal(a, 'DATA')}</div>
+                <div><strong>Data:</strong> ${formatarDataComDia(getVal(a, 'DATA'))}</div>
                 <div><strong>Horário:</strong> ${getVal(a, 'HORARIO')} ${getVal(a, 'HORARIO_FIM') ? '- ' + getVal(a, 'HORARIO_FIM') : ''}</div>
                 
                 ${nomePastor ? `<div><strong>Pastor:</strong> ${nomePastor}</div>` : ''}
@@ -548,7 +581,7 @@ function renderizarAgendaGeralCards() {
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'evento')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${getVal(ev, 'data')}</div>
+                    <div><strong>Data:</strong> ${formatarDataComDia(getVal(ev, 'data'))}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
                 <div class="card-actions">
