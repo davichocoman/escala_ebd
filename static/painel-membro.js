@@ -522,6 +522,9 @@ const formatarData = (valor) => {
 };
 
 // Sidebar Toggle
+// ============================================================
+// SIDEBAR TOGLE E OVERLAY BLINDADO
+// ============================================================
 window.toggleSidebar = function() {
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) return;
@@ -529,30 +532,47 @@ window.toggleSidebar = function() {
     
     let overlay = document.getElementById('sidebar-overlay');
     
-    // Se o overlay existe, mas está sem estilo, aplicamos o estilo e o clique nele
-    if (overlay && !overlay.style.position) {
-        overlay.style.cssText = `
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 990;
-            display: none;
-            transition: opacity 0.28s ease;
-            opacity: 0;
-        `;
-        // O pulo do gato: quando clicar fora (no fundo escuro), fecha o menu
-        overlay.addEventListener('click', window.toggleSidebar);
+    // Se o overlay não existir no HTML, cria ele agora
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        document.body.appendChild(overlay);
     }
+
+    // Força o CSS pelo Javascript para garantir que funcione mesmo sem o portal.css estar atualizado
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '990';
+    overlay.style.transition = 'opacity 0.3s ease';
+
+    // Remove o evento antigo para não duplicar, e adiciona o novo garantindo que o clique feche o menu
+    overlay.removeEventListener('click', window.toggleSidebar);
+    overlay.addEventListener('click', window.toggleSidebar);
 
     if (isOpen) {
         overlay.style.display = 'block';
         setTimeout(() => { overlay.style.opacity = '1'; }, 10);
     } else {
         overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 280);
+        setTimeout(() => { overlay.style.display = 'none'; }, 300); // 300ms dá tempo da animação acabar
     }
 };
 
-// Fechar também ao apertar o botão 'Voltar' ou a tecla 'ESC'
+// ESCUTADOR GLOBAL: Fecha o menu se clicar em qualquer botão do menu no celular
+document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    
+    // Se a tela for de celular E o menu estiver aberto E o clique foi num item do menu
+    if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+        if (e.target.closest('.menu-item')) {
+            window.toggleSidebar();
+        }
+    }
+});
+
+// Fechar também ao apertar o botão 'Voltar' no Android ou a tecla 'ESC' no PC
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         const sidebar = document.querySelector('.sidebar');
@@ -561,6 +581,7 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
 
 window.logout = function() {
     Swal.fire({
