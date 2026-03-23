@@ -175,6 +175,48 @@ function renderizarDashboard() {
     }
 }
 
+window.formatarDataComDia = function(dataInput) {
+    if (!dataInput) return "";
+    if (typeof dataInput !== 'string') return dataInput;
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    try {
+        // A MÁGICA AQUI: Pesca exatamente o padrão "XX/XX/XXXX" ignorando textos
+        const match = dataInput.match(/(\d{2})\/(\d{2})\/(\d{4}|\d{2})/);
+        if (!match) return dataInput;
+
+        const dia = parseInt(match[1]);
+        const mes = parseInt(match[2]);
+        let ano = parseInt(match[3]);
+
+        if (ano < 100) ano += 2000;
+
+        const data = new Date(ano, mes - 1, dia);
+        if (isNaN(data.getTime())) return dataInput;
+        
+        data.setHours(0,0,0,0);
+
+        const diffDias = Math.round((data.getTime() - hoje.getTime()) / 86400000);
+        const diasSemana = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+        if (diffDias === 0) return "🔴 Hoje";
+        if (diffDias === 1) return "🟠 Amanhã";
+        if (diffDias === 2) return `🟡 Em 2 dias  • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        if (diffDias === 3) return `🟡 Em 3 dias  • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        if (diffDias > 3 && diffDias <= 6) return `🔵 Esta semana • ${diasSemana[data.getDay()]} (${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')})`;
+
+        if (data.getFullYear() === hoje.getFullYear()) {
+            return `${diasSemana[data.getDay()]} • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        }
+        return `${String(dia).padStart(2,'0')} ${meses[mes-1]} ${ano}`;
+    } catch {
+        return dataInput;
+    }
+};
+
 // --- Meus Dados ---
 async function renderizarMeusDados() {
     const div = document.getElementById('form-meus-dados');
