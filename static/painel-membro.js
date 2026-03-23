@@ -93,7 +93,7 @@ async function carregarDadosGerais() {
             headers: { 
                 'Content-Type': 'application/json',
                 // Alguns endpoints podem pedir token, mesmo que não validem permissão de admin estrita
-                'x-admin-token': SISTEMA.token 
+                'x-token': SISTEMA.token 
             }
         });
 
@@ -139,8 +139,9 @@ function renderizarDashboard() {
         .filter(ev => filtroSemana(ev, 'EVENTO', 'DATA'))
         .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
 
-    document.getElementById('count-eventos-semana').innerText = agendaSemana.length;
-
+    const elEventos = document.getElementById('count-eventos-semana');
+    if (elEventos) elEventos.innerText = agendaSemana.length;
+    
     if (agendaSemana.length === 0) {
         containerAgenda.innerHTML = '<p class="empty-msg">Nenhum evento esta semana.</p>';
     } else {
@@ -159,7 +160,8 @@ function renderizarDashboard() {
         .filter(res => filtroSemana(res, 'EVENTO', 'DATA'))
         .sort((a,b) => dataParaObj(getVal(a, 'DATA')) - dataParaObj(getVal(b, 'DATA')));
 
-    document.getElementById('count-reservas-semana').innerText = reservasSemana.length;
+    const elReservas = document.getElementById('count-reservas-semana');
+    if (elReservas) elReservas.innerText = reservasSemana.length;
 
     if (reservasSemana.length === 0) {
         containerReservas.innerHTML = '<p class="empty-msg">Nenhuma reserva esta semana.</p>';
