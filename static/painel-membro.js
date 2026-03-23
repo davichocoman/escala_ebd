@@ -148,7 +148,7 @@ function renderizarDashboard() {
             <div class="member-card" style="padding: 10px; border-left: 4px solid #ef4444;">
                 <div style="font-weight:bold; color:#b91c1c">${getVal(ev, 'EVENTO')}</div>
                 <div style="font-size:0.85rem; color:#666">
-                    ${window.formatarDataComDia(getVal(ev, 'DATA'))} - ${getVal(ev, 'LOCAL')}
+                    ${window.dataColorida(getVal(ev, 'DATA'))} - ${getVal(ev, 'LOCAL')}
                 </div>
             </div>
         `).join('');
@@ -168,7 +168,7 @@ function renderizarDashboard() {
             <div class="member-card" style="padding: 10px; border-left: 4px solid #22c55e;">
                 <div style="font-weight:bold; color:#15803d">${getVal(res, 'EVENTO')}</div>
                 <div style="font-size:0.85rem; color:#666">
-                    ${window.formatarDataComDia(getVal(res, 'DATA'))} | ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')}
+                    ${window.dataColorida(getVal(res, 'DATA'))} | ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')}
                 </div>
                 <div style="font-size:0.8rem; color:#888">${getVal(res, 'LOCAL')}</div>
             </div>
@@ -176,7 +176,7 @@ function renderizarDashboard() {
     }
 }
 
-window.formatarDataComDia = function(dataInput) {
+window.dataColorida = function(dataInput) {
     if (!dataInput) return "";
     if (typeof dataInput !== 'string') return dataInput;
 
@@ -184,7 +184,6 @@ window.formatarDataComDia = function(dataInput) {
     hoje.setHours(0,0,0,0);
 
     try {
-        // A MÁGICA AQUI: Pesca exatamente o padrão "XX/XX/XXXX" ignorando textos
         const match = dataInput.match(/(\d{2})\/(\d{2})\/(\d{4}|\d{2})/);
         if (!match) return dataInput;
 
@@ -381,7 +380,7 @@ function renderizarAgendaGeralCards() {
             <div class="member-card">
                 <div class="card-header"><strong>${getVal(ev, 'EVENTO')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${window.formatarDataComDia(getVal(ev, 'DATA'))}</div>
+                    <div><strong>Data:</strong> ${window.dataColorida(getVal(ev, 'DATA'))}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'LOCAL')}</div>
                     <div><strong>Responsável:</strong> ${getVal(ev, 'RESPONSAVEL')}</div>
                 </div>
@@ -420,7 +419,7 @@ function renderizarReservasCards() {
             <div class="member-card" style="border-left: 5px solid var(--green, #22c55e);">
                 <div class="card-header"><strong>${getVal(res, 'EVENTO')}</strong></div>
                 <div class="card-body">
-                    <div><strong>Data:</strong> ${window.formatarDataComDia(getVal(res, 'DATA'))}</div>
+                    <div><strong>Data:</strong> ${window.dataColorida(getVal(res, 'DATA'))}</div>
                     <div>
                         <strong>Horário:</strong> 
                         ${getVal(res, 'HORARIO_INICIO') || getVal(res, 'inicio')} - 
