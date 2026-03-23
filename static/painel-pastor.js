@@ -78,9 +78,9 @@ window.formatarDataComDia = function(dataInput) {
 
         if (diffDias === 0) return "🔴 Hoje";
         if (diffDias === 1) return "🟠 Amanhã";
-        if (diffDias === 2) return "🟡 Em 2 dias";
-        if (diffDias === 3) return "🟡 Em 3 dias";
-        if (diffDias > 3 && diffDias <= 6) return `🔵 Esta semana • ${diasSemana[data.getDay()]}`;
+        if (diffDias === 2) return `🟡 Em 2 dias  • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        if (diffDias === 3) return `🟡 Em 3 dias  • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
+        if (diffDias > 3 && diffDias <= 6) return `🔵 Esta semana • ${diasSemana[data.getDay()]} (${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')})`;
 
         if (data.getFullYear() === hoje.getFullYear()) {
             return `${diasSemana[data.getDay()]} • ${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}`;
