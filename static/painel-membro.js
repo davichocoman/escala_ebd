@@ -149,8 +149,9 @@ function renderizarDashboard() {
             <div class="member-card" style="padding: 10px; border-left: 4px solid #ef4444;">
                 <div style="font-weight:bold; color:#b91c1c">${getVal(ev, 'EVENTO')}</div>
                 <div style="font-size:0.85rem; color:#666">
-                    ${window.dataColorida(getVal(ev, 'DATA'))} - ${getVal(ev, 'LOCAL')}
+                    ${window.dataColorida(getVal(ev, 'DATA'))}
                 </div>
+                <div style="font-size:0.8rem; color:#888">${getVal(ev, 'LOCAL')}</div>
             </div>
         `).join('');
     }
