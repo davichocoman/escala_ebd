@@ -841,15 +841,20 @@ function baixarCredencialPDF() {
     
     // Muda o botão para "Gerando..."
     const textoOriginal = btn.innerHTML;
-    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando...';
+    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando PDF...';
     btn.disabled = true;
 
-    // Opções do PDF (Tamanho A4, paisagem, para as duas cartas ficarem lado a lado)
+    // Opções do PDF em Alta Resolução (Ultra HD)
     const opt = {
-        margin:       10,
+        margin:       15,
         filename:     `credencial_${getVal(SISTEMA.usuario, 'NOME').split(' ')[0]}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true }, // useCORS garante que a foto apareça no PDF
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { 
+            scale: 4, // Quadruplica a resolução para não ficar embaçado
+            useCORS: true, 
+            letterRendering: true, // Força a nitidez dos textos
+            logging: false 
+        },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
@@ -857,7 +862,7 @@ function baixarCredencialPDF() {
         // Restaura botão
         btn.innerHTML = textoOriginal;
         btn.disabled = false;
-        Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado e baixado!', timer: 2000, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado com alta qualidade!', timer: 2000, showConfirmButton: false });
     });
 }
 // ============================================================
