@@ -788,7 +788,6 @@ window.logout = function() {
 function renderizarCredencial() {
     if (!SISTEMA.usuario) return;
     
-    // Pega os dados do usuário logado
     const u = SISTEMA.usuario;
     const cpfLimpo = String(getVal(u, 'CPF')).replace(/\D/g, '');
 
@@ -797,22 +796,32 @@ function renderizarCredencial() {
     document.getElementById('cred-cargo').innerText = getVal(u, 'CARGO') || getVal(u, 'PERFIL') || 'Membro';
     document.getElementById('cred-foto').src = recuperarFoto(u) || '../static/icons/ios/180.png';
 
+    // Utilitário exclusivo para limpar datas em documentos oficiais (Tira o "Sexta-feira")
+    const extrairData = (d) => {
+        if(!d) return 'Não informado';
+        const match = d.match(/(\d{2})\/(\d{2})\/(\d{4}|\d{2})/);
+        return match ? `${match[1]}/${match[2]}/${match[3]}` : d;
+    };
+
     // Preenche o Verso
     document.getElementById('cred-pai').innerText = getVal(u, 'PAI') || 'Não informado';
     document.getElementById('cred-mae').innerText = getVal(u, 'MAE') || 'Não informado';
-    document.getElementById('cred-nasc').innerText = window.formatarDataComDia ? window.formatarDataComDia(getVal(u, 'NASCIMENTO')) : getVal(u, 'NASCIMENTO');
-    document.getElementById('cred-batismo').innerText = window.formatarDataComDia ? window.formatarDataComDia(getVal(u, 'BATISMO')) : getVal(u, 'BATISMO');
+    document.getElementById('cred-nasc').innerText = extrairData(getVal(u, 'NASCIMENTO'));
+    document.getElementById('cred-batismo').innerText = extrairData(getVal(u, 'BATISMO'));
     
-    // Emissão: Hoje
+    // CPF Formatado se existir
+    const cpfMask = cpfLimpo.length === 11 ? cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : 'Não informado';
+    document.getElementById('cred-cpf').innerText = cpfMask;
+    
+    // Emissão
     const hoje = new Date();
     document.getElementById('cred-emissao').innerText = hoje.toLocaleDateString('pt-BR');
 
-    // Gera o QR Code de Validação
+    // Gera o QR Code de Validação (Limpa antes para não duplicar)
     const qrContainer = document.getElementById('qrcode');
-    qrContainer.innerHTML = ''; // Limpa anterior
+    qrContainer.innerHTML = ''; 
     
-    // O link apontará para uma página "validar.html" que criaremos depois!
-    // A chave é passar o CPF criptografado em Base64 para não expor a URL crua
+    // Hash básico em base64
     const hash = btoa(cpfLimpo); 
     const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar.html?id=${hash}`;
 
@@ -825,7 +834,6 @@ function renderizarCredencial() {
         correctLevel : QRCode.CorrectLevel.L
     });
 }
-
 function baixarCredencialPDF() {
     const element = document.getElementById('area-pdf-credencial');
     const btn = document.querySelector('button[onclick="baixarCredencialPDF()"]');
