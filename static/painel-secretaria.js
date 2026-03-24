@@ -748,7 +748,7 @@ function configurarBotoes() {
 }
 window.mostrarTela = function(telaId, btn) {
     // Esconde todas as seções possíveis
-    const secoes = ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas', 'cooperadores'];
+    const secoes = ['dashboard', 'membros', 'pastor', 'perfil', 'agenda-geral', 'reservas', 'cooperadores', 'credencial'];
     secoes.forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
@@ -762,6 +762,9 @@ window.mostrarTela = function(telaId, btn) {
 
     if (telaId === 'cooperadores') {
         carregarDadosIniciais();
+    }
+    if (telaId === 'credencial') {
+        renderizarCredencial();
     }
 };
 window.logout = function() {
@@ -781,6 +784,73 @@ window.logout = function() {
         }
     });
 };
+
+function renderizarCredencial() {
+    if (!SISTEMA.usuario) return;
+    
+    // Pega os dados do usuário logado
+    const u = SISTEMA.usuario;
+    const cpfLimpo = String(getVal(u, 'CPF')).replace(/\D/g, '');
+
+    // Preenche a Frente
+    document.getElementById('cred-nome').innerText = getVal(u, 'NOME');
+    document.getElementById('cred-cargo').innerText = getVal(u, 'CARGO') || getVal(u, 'PERFIL') || 'Membro';
+    document.getElementById('cred-foto').src = recuperarFoto(u) || '../static/icons/ios/180.png';
+
+    // Preenche o Verso
+    document.getElementById('cred-pai').innerText = getVal(u, 'PAI') || 'Não informado';
+    document.getElementById('cred-mae').innerText = getVal(u, 'MAE') || 'Não informado';
+    document.getElementById('cred-nasc').innerText = window.formatarDataComDia ? window.formatarDataComDia(getVal(u, 'NASCIMENTO')) : getVal(u, 'NASCIMENTO');
+    document.getElementById('cred-batismo').innerText = window.formatarDataComDia ? window.formatarDataComDia(getVal(u, 'BATISMO')) : getVal(u, 'BATISMO');
+    
+    // Emissão: Hoje
+    const hoje = new Date();
+    document.getElementById('cred-emissao').innerText = hoje.toLocaleDateString('pt-BR');
+
+    // Gera o QR Code de Validação
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = ''; // Limpa anterior
+    
+    // O link apontará para uma página "validar.html" que criaremos depois!
+    // A chave é passar o CPF criptografado em Base64 para não expor a URL crua
+    const hash = btoa(cpfLimpo); 
+    const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar.html?id=${hash}`;
+
+    new QRCode(qrContainer, {
+        text: urlValidacao,
+        width: 70,
+        height: 70,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L
+    });
+}
+
+function baixarCredencialPDF() {
+    const element = document.getElementById('area-pdf-credencial');
+    const btn = document.querySelector('button[onclick="baixarCredencialPDF()"]');
+    
+    // Muda o botão para "Gerando..."
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando...';
+    btn.disabled = true;
+
+    // Opções do PDF (Tamanho A4, paisagem, para as duas cartas ficarem lado a lado)
+    const opt = {
+        margin:       10,
+        filename:     `credencial_${getVal(SISTEMA.usuario, 'NOME').split(' ')[0]}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true }, // useCORS garante que a foto apareça no PDF
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Restaura botão
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+        Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado e baixado!', timer: 2000, showConfirmButton: false });
+    });
+}
 // ============================================================
 // 6. CRUD
 // ============================================================
