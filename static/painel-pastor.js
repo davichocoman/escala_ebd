@@ -663,7 +663,7 @@ function eventoValido(item, keyTitulo, keyData) {
 }
 
 window.mostrarTela = function(telaId, btn) {
-    ['dashboard', 'minha-agenda', 'agenda-geral', 'reservas', 'membros', 'meus-dados', 'cooperadores'].forEach(id => {
+    ['dashboard', 'minha-agenda', 'agenda-geral', 'reservas', 'membros', 'meus-dados', 'cooperadores', 'credencial'].forEach(id => {
         const el = document.getElementById('sec-' + id);
         if (el) el.classList.add('hidden');
     });
@@ -682,7 +682,91 @@ window.mostrarTela = function(telaId, btn) {
     if (telaId === 'cooperadores' && typeof carregarDadosIniciais === 'function') {
         carregarDadosIniciais();
     }
+    if (telaId === 'credencial') {
+        renderizarCredencial();
+    }
 };
+
+function renderizarCredencial() {
+    if (!SISTEMA.usuario) return;
+    
+    const u = SISTEMA.usuario;
+    const cpfLimpo = String(getVal(u, 'CPF'))
+      .replace(/\D/g, '')
+      .padStart(11, '0');
+
+    // Preenche a Frente
+    document.getElementById('cred-nome').innerText = getVal(u, 'NOME');
+    document.getElementById('cred-foto').src = recuperarFoto(u) || '../static/icons/ios/180.png';
+
+    // Utilitário exclusivo para limpar datas em documentos oficiais (Tira o "Sexta-feira")
+    const extrairData = (d) => {
+        if(!d) return 'Não informado';
+        const match = d.match(/(\d{2})\/(\d{2})\/(\d{4}|\d{2})/);
+        return match ? `${match[1]}/${match[2]}/${match[3]}` : d;
+    };
+
+    // Preenche o Verso
+    document.getElementById('cred-pai').innerText = getVal(u, 'PAI') || 'Não informado';
+    document.getElementById('cred-mae').innerText = getVal(u, 'MAE') || 'Não informado';
+    document.getElementById('cred-nasc').innerText = extrairData(getVal(u, 'NASCIMENTO'));
+    document.getElementById('cred-batismo').innerText = extrairData(getVal(u, 'BATISMO'));
+    
+    // CPF Formatado se existir
+    const cpfMask = cpfLimpo.length === 11 ? cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : 'Não informado';
+    document.getElementById('cred-cpf').innerText = cpfMask;
+    
+    // Emissão
+    const hoje = new Date();
+    document.getElementById('cred-emissao').innerText = hoje.toLocaleDateString('pt-BR');
+
+    // Gera o QR Code de Validação (Limpa antes para não duplicar)
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = ''; 
+    
+    // Hash básico em base64
+    const hash = btoa(cpfLimpo); 
+    const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar?id=${hash}`;
+
+    new QRCode(qrContainer, {
+        text: urlValidacao,
+        width: 60,
+        height: 60,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L
+    });
+}
+function baixarCredencialPDF() {
+    const element = document.getElementById('area-pdf-credencial');
+    const btn = document.querySelector('button[onclick="baixarCredencialPDF()"]');
+    
+    // Muda o botão para "Gerando..."
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando PDF...';
+    btn.disabled = true;
+
+    // Opções do PDF em Alta Resolução (Ultra HD)
+    const opt = {
+        margin:       15,
+        filename:     `credencial_${getVal(SISTEMA.usuario, 'NOME').split(' ')[0]}.pdf`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { 
+            scale: 4, // Quadruplica a resolução para não ficar embaçado
+            useCORS: true, 
+            letterRendering: true, // Força a nitidez dos textos
+            logging: false 
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Restaura botão
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+        Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado com alta qualidade!', timer: 2000, showConfirmButton: false });
+    });
+}
 
 // Helpers Comuns (GetVal, Debounce, Dates, SidebarToggle, Logout)
 // Copiar exatamente as mesmas funções do painel-secretaria.js ou painel-membro.js
