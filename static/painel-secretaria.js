@@ -825,7 +825,7 @@ function renderizarCredencial() {
     
     // Hash básico em base64
     const hash = btoa(cpfLimpo); 
-    const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar.html?id=${hash}`;
+    const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar?id=${hash}`;
 
     new QRCode(qrContainer, {
         text: urlValidacao,
