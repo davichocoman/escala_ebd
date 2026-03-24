@@ -18,6 +18,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         .hidden { display: none !important; }
         /* Estilos específicos para visualização limpa */
@@ -69,6 +71,10 @@
 
                 <div class="menu-item" onclick="mostrarTela('cooperadores', this)">
                     <span class="material-icons menu-icon">groups</span> Cooperadores
+                </div>
+
+                <div class="menu-item" onclick="mostrarTela('credencial', this)">
+                    <span class="material-icons menu-icon">badge</span> Minha Credencial
                 </div>
                 
                 <hr style="border:0; border-top:1px solid #334155; margin:10px 0;">
@@ -238,6 +244,112 @@
                     <div id="lista-pendentes-geral" class="card-list"></div>
                 </div>
             
+            </div>
+
+            <div id="sec-credencial" class="hidden">
+                <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <h2>Minha Credencial</h2>
+                    <button class="btn btn-primary" onclick="baixarCredencialPDF()" style="display: flex; align-items: center; gap: 5px;">
+                        <span class="material-icons">picture_as_pdf</span> Baixar PDF
+                    </button>
+                </div>
+
+                <div id="area-pdf-credencial" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 20px; padding: 20px; background: #fff; border-radius: 8px;">
+                    
+                    <style>
+                        .cracha {
+                            width: 220px;
+                            height: 345px;
+                            background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%);
+                            border-radius: 12px;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                            position: relative;
+                            overflow: hidden;
+                            color: #fff;
+                            font-family: 'Segoe UI', sans-serif;
+                            box-sizing: border-box;
+                        }
+                        .cracha::before {
+                            content: ''; position: absolute; top: -50px; left: -50px; width: 150px; height: 150px;
+                            background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none;
+                        }
+                        /* FRENTE */
+                        .cracha-frente { padding: 15px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+                        .cracha-frente img.logo { width: 70px; margin-bottom: 5px; z-index: 1; }
+                        .cracha-frente h3 { font-size: 1rem; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; z-index: 1; }
+                        
+                        /* Trava para funções longas não quebrarem o layout (Máx 2 linhas) */
+                        .cracha-frente p.cargo { 
+                            font-size: 0.65rem; margin: 5px 0; color: #e0f2fe; z-index: 1; font-weight: 500;
+                            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+                        }
+                        
+                        /* Foto e Assinatura empurrados para o final */
+                        .box-foto-assinatura { margin-top: auto; display: flex; flex-direction: column; align-items: center; width: 110%; z-index: 1; }
+                        .cracha-foto { width: 80px; height: 100px; object-fit: cover; border: 2px solid #fff; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background: #cbd5e1; }
+                        
+                        /* Faixa lateral rotacionada matematicamente para o PDF não quebrar */
+                        .faixa-lateral { 
+                            position: absolute; 
+                            right: -160px; 
+                            top: 160px; 
+                            width: 345px; 
+                            height: 25px; 
+                            background: rgba(0,0,0,0.1); 
+                            transform: rotate(90deg); 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            font-size: 0.65rem; 
+                            letter-spacing: 2px; 
+                            font-weight: bold; 
+                            color: #fff; 
+                            white-space: nowrap; 
+                        }
+                        
+                        /* VERSO */
+                        .cracha-verso { padding: 15px; font-size: 0.75rem; color: #0f172a; background: #f8fafc; display: flex; flex-direction: column; }
+                        .verso-linha { margin-bottom: 5px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 2px; }
+                        .verso-linha strong { color: #0284c7; display: block; font-size: 0.5rem; text-transform: uppercase; }
+                        /* Texto com reticências se o nome do pai/mãe for gigante */
+                        .verso-linha span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.7rem; font-weight: 600; }
+                        
+                        /* QR Code fixado no final */
+                        .box-qr { margin-top: auto; display: flex; flex-direction: column; align-items: center; }
+                        .qr-bg { background: #fff; padding: 5px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+                    </style>
+
+                    <div class="cracha cracha-frente" id="cracha-frente">
+                        <img src="../static/logo.png" class="logo" alt="Logo">
+                        <h4 id="cred-nome">NOME DO MEMBRO</h4>
+                        
+                        <div class="box-foto-assinatura">
+                            <img src="" id="cred-foto" class="cracha-foto">
+                            <div style="margin-top: 8px; width: 80%;">
+                                <img src="../static/assinatura-pastor.png" style="height: 50px; object-fit: contain;" onerror="this.style.display='none'">
+                                <div style="font-size: 0.55rem; border-top: 1px solid rgba(255,255,255,0.5); padding-top: 2px; margin-top: 2px;">Ass. Pastor Local</div>
+                            </div>
+                        </div>
+                        <div class="faixa-lateral">AD RODOVIA A - SALVADOR</div>
+                    </div>
+
+                    <div class="cracha cracha-verso" id="cracha-verso">
+                        <div style="flex: 1;">
+                            <div class="verso-linha"><strong>Filiação (Pai):</strong> <span id="cred-pai"></span></div>
+                            <div class="verso-linha"><strong>Filiação (Mãe):</strong> <span id="cred-mae"></span></div>
+                            <div class="verso-linha"><strong>Data Nasc:</strong> <span id="cred-nasc"></span></div>
+                            <div class="verso-linha"><strong>Data Batismo:</strong> <span id="cred-batismo"></span></div>
+                            <div class="verso-linha"><strong>CPF:</strong> <span id="cred-cpf"></span></div>
+                            <div class="verso-linha" style="border:none;"><strong>Emissão:</strong> <span id="cred-emissao"></span></div>
+                        </div>
+                        
+                        <div class="box-qr">
+                            <div class="qr-bg"><div id="qrcode"></div></div>
+                            <div style="font-size: 0.5rem; margin-top: 3px; color: #64748b; font-weight: 800;">VALIDAR DOCUMENTO</div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </main>
     </div>
