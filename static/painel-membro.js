@@ -449,34 +449,34 @@ function debounce(func, wait) {
     };
 }
 
-// Atualizar função mostrarTela para incluir o dashboard
+// ============================================================
+// NAVEGAÇÃO UNIVERSAL BLINDADA (Fim das telas vazando!)
+// ============================================================
 window.mostrarTela = function(telaId, btn) {
-    // Esconde todas as seções (adicionei cooperadores na lista)
-    const secoes = ['dashboard', 'meus-dados', 'agenda-geral', 'reservas', 'cooperadores', 'credencial'];
-    secoes.forEach(id => {
-        const el = document.getElementById('sec-' + id);
-        if (el) el.classList.add('hidden');
+    // 1. Esconde absolutamente TODAS as seções que começam com "sec-" (Sem precisar de listas)
+    document.querySelectorAll('[id^="sec-"]').forEach(el => {
+        el.classList.add('hidden');
     });
-
+    
+    // 2. Remove o destaque de todos os botões do menu
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     
+    // 3. Mostra apenas a tela correta e destaca o botão clicado
     const alvo = document.getElementById('sec-' + telaId);
-    if (alvo) alvo.classList.remove('hidden');
-    if (btn) btn.classList.add('active');
+    if(alvo) alvo.classList.remove('hidden');
+    if(btn) btn.classList.add('active');
 
-    // 👇 MUDANÇA AQUI: Fecha a sidebar no celular após clicar em uma aba
-    if (window.innerWidth < 768) {
+    // 4. Fecha o menu no celular automaticamente
+    if(window.innerWidth < 768) {
         const sidebar = document.querySelector('.sidebar');
-        if (sidebar && sidebar.classList.contains('open')) {
-            window.toggleSidebar();
-        }
+        if (sidebar && sidebar.classList.contains('open')) window.toggleSidebar();
     }
-
-    // Se ele clicar em cooperadores, carrega os dados
+    
+    // 5. Gatilhos das abas especiais
     if (telaId === 'cooperadores' && typeof carregarDadosIniciais === 'function') {
         carregarDadosIniciais();
     }
-    if (telaId === 'credencial') {
+    if (telaId === 'credencial' && typeof renderizarCredencial === 'function') {
         renderizarCredencial();
     }
 };
