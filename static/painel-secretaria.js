@@ -795,7 +795,6 @@ function renderizarCredencial() {
 
     // Preenche a Frente
     document.getElementById('cred-nome').innerText = getVal(u, 'NOME');
-    document.getElementById('cred-cargo').innerText = getVal(u, 'CARGO') || getVal(u, 'PERFIL') || 'Membro';
     document.getElementById('cred-foto').src = recuperarFoto(u) || '../static/icons/ios/180.png';
 
     // Utilitário exclusivo para limpar datas em documentos oficiais (Tira o "Sexta-feira")
