@@ -829,8 +829,8 @@ function renderizarCredencial() {
 
     new QRCode(qrContainer, {
         text: urlValidacao,
-        width: 70,
-        height: 70,
+        width: 60,
+        height: 60,
         colorDark : "#0f172a",
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.L
