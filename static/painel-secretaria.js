@@ -789,8 +789,9 @@ function renderizarCredencial() {
     if (!SISTEMA.usuario) return;
     
     const u = SISTEMA.usuario;
-    console.log("Informações da Carteira:", JSON.stringify(u, null, 2));
-    const cpfLimpo = String(getVal(u, 'CPF')).replace(/\D/g, '');
+    const cpfLimpo = String(getVal(u, 'CPF'))
+      .replace(/\D/g, '')
+      .padStart(11, '0');
 
     // Preenche a Frente
     document.getElementById('cred-nome').innerText = getVal(u, 'NOME');
