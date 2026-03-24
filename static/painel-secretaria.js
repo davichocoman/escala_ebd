@@ -595,7 +595,7 @@ function renderizarAgendaGeralCards() {
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'id')}')">✏️</button>
+                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID') || getVal(ev, 'id')}')">✏️</button>
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'id')}', 'agenda-geral')">🗑️</button>
                 </div>
             </div>`;
@@ -1282,13 +1282,24 @@ async function salvarReserva(e) {
 }
 // --- Edição Agenda Geral ---
 window.prepararEdicaoGeral = function(id) {
-    const ev = SISTEMA.dados.dashboard.agenda.find(x => getVal(x, 'ID') == id);
-    if (!ev) return;
-    document.getElementById('ag_id').value = getVal(ev, 'ID');
+    const ev = SISTEMA.dados.dashboard.agenda.find(x => 
+        getVal(x, 'ID') == id || getVal(x, 'id') == id
+    );
+
+    if (!ev) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Evento não encontrado'
+        });
+        return;
+    }
+
+    document.getElementById('ag_id').value = getVal(ev, 'ID') || getVal(ev, 'id');
     document.getElementById('ag_data').value = dataIso(getVal(ev, 'DATA'));
     document.getElementById('ag_evento').value = getVal(ev, 'EVENTO');
     document.getElementById('ag_local').value = getVal(ev, 'LOCAL');
     document.getElementById('ag_resp').value = getVal(ev, 'RESPONSAVEL');
+
     document.getElementById('modalAgendaGeral').classList.remove('hidden');
 };
 // --- Edição Reservas ---
