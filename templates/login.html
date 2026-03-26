@@ -279,14 +279,15 @@ async function fazerLogin(e) {
             sessionStorage.setItem("usuario_sistema", JSON.stringify(data.user));
             sessionStorage.setItem("token_sistema", data.token);
 
-            // 2. Tenta Registrar Biometria (Fluxo Pausado)
+            // 2. Tenta Registrar Biometria
             if (window.PublicKeyCredential) {
                 const bioSalva = localStorage.getItem("biometria_usuario");
                 const bioObj = bioSalva ? JSON.parse(bioSalva) : null;
 
                 // Se não tem biometria para este login, ou se a biometria salva é de outro CPF
                 if (!bioObj || bioObj.login !== login) {
-                    await registrarBiometria(login, data.user, data.token);
+                    // MUDANÇA: Passamos a 'password' em vez do token velho!
+                    await registrarBiometria(login, data.user, password);
                 }
             }
 
@@ -306,8 +307,8 @@ async function fazerLogin(e) {
     }
 }
 
-// Função de Registro da Biometria
-async function registrarBiometria(login, user, token) {
+// MUDANÇA: Recebendo 'password' no lugar de 'token'
+async function registrarBiometria(login, user, password) {
     const result = await Swal.fire({
         title: 'Facilitar acesso?',
         text: "Deseja entrar com Digital/Face ID na próxima vez?",
@@ -353,10 +354,10 @@ async function registrarBiometria(login, user, token) {
         // Salva tudo no LocalStorage
         localStorage.setItem("biometria_usuario", JSON.stringify({
             login: login,
+            senhaBase64: btoa(password), // <--- O SEGREDO ESTÁ AQUI: Esconde a senha em base64
             perfil: user.PERFIL,
-            token: token,
             nome: user.NOME,
-            credentialId: rawIdBase64 // <--- AQUI ESTÁ O SEGREDO
+            credentialId: rawIdBase64
         }));
 
         await Swal.fire({
@@ -369,7 +370,6 @@ async function registrarBiometria(login, user, token) {
 
     } catch (err) {
         console.error("Erro ao registrar:", err);
-        // Não mostra erro para o usuário para não travar o fluxo, apenas segue o login
     }
 }
 
