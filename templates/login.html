@@ -411,15 +411,30 @@ btnBio.addEventListener("click", async () => {
         });
 
         if (assertion) {
-            // Sucesso!
-            sessionStorage.setItem("token_sistema", dados.token);
-            sessionStorage.setItem("usuario_sistema", JSON.stringify({ 
-                NOME: dados.nome, 
-                PERFIL: dados.perfil, 
-                CPF: dados.login 
-            }));
+            // A biometria passou! Agora vamos pegar um TOKEN NOVO silenciosamente
+            const btnOriginalText = btnBio.innerHTML;
+            btnBio.innerHTML = '🔄 Autenticando...';
+            btnBio.disabled = true;
 
-            irParaHome(dados.perfil);
+            const res = await fetch("https://api-escala.onrender.com/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // Envia o login e "descriptografa" a senha salva
+                body: JSON.stringify({ login: dados.login, password: atob(dados.senhaBase64) })
+            });
+
+            const newData = await res.json();
+
+            if (res.ok) {
+                // Sucesso Absoluto! Temos um Token JWT zerinho de 6 horas!
+                sessionStorage.setItem("token_sistema", newData.token);
+                sessionStorage.setItem("usuario_sistema", JSON.stringify(newData.user));
+                irParaHome(newData.user.PERFIL);
+            } else {
+                Swal.fire("Erro na Sessão", "A senha foi alterada ou ocorreu um erro. Faça login manualmente.", "warning");
+                btnBio.innerHTML = btnOriginalText;
+                btnBio.disabled = false;
+            }
         }
     } catch (e) {
         console.error(e);
