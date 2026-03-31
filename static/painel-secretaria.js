@@ -1628,10 +1628,10 @@ window.iniciarInstalacao = async () => {
 };
 
 // ============================================================
-// GERAÇÃO DE FICHA CADASTRAL (PDF)
+// GERAÇÃO E VISUALIZAÇÃO DE FICHA CADASTRAL
 // ============================================================
 
-// Calcula a idade com base na data de nascimento (DD/MM/YYYY)
+// Calcula a idade com base na data de nascimento
 function calcularIdade(dataNasc) {
     if (!dataNasc) return '';
     const partes = dataNasc.split('/');
@@ -1650,15 +1650,15 @@ window.abrirModalFicha = function(id) {
     document.getElementById('modalFicha').classList.remove('hidden');
 };
 
+// Quando o secretário clica em "Gerar" no modal
 window.gerarFichaPDF = function(e) {
     e.preventDefault();
     
-    // 1. Pega os dados do membro no banco (SISTEMA.dados.membros)
     const id = document.getElementById('f_id_membro').value;
     const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
     if (!m) return Swal.fire('Erro', 'Membro não encontrado', 'error');
 
-    // 2. Coleta os dados complementares do modal
+    // Coleta do modal
     const rg = document.getElementById('f_rg').value || '________________';
     const sexo = document.getElementById('f_sexo').value;
     const nat = document.getElementById('f_naturalidade').value || '________________';
@@ -1668,7 +1668,7 @@ window.gerarFichaPDF = function(e) {
     const localBatismo = document.getElementById('f_local_batismo').value || '________________';
     const teologia = document.getElementById('f_teologia').value;
 
-    // 3. Formatações auxiliares
+    // Formatações
     const idade = calcularIdade(getVal(m, 'NASCIMENTO'));
     const sexoM = sexo === 'M' ? '( X )' : '(   )';
     const sexoF = sexo === 'F' ? '( X )' : '(   )';
@@ -1677,23 +1677,26 @@ window.gerarFichaPDF = function(e) {
     const cargo = getVal(m, 'CARGO') || '________________';
     const funcao = getVal(m, 'DEPARTAMENTO') || '________________';
 
-    // 4. Constrói o HTML idêntico ao modelo do Word
+    // Salva o nome para usar no nome do arquivo PDF depois
+    document.getElementById('area-pdf-ficha').setAttribute('data-nome', getVal(m, 'NOME'));
+
+    // HTML idêntico ao modelo (Com 800px fixos para imitar A4)
     const htmlFicha = `
-    <div style="padding: 30px; font-family: Arial, sans-serif; color: #000; width: 800px; background: #fff;">
+    <div style="padding: 40px; font-family: Arial, sans-serif; color: #000; width: 800px; background: #fff; box-sizing: border-box;">
         
         <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
-            <img src="../static/logo.png" style="width: 90px; margin-right: 20px;">
+            <img src="../static/logo.png" style="width: 100px; margin-right: 20px;">
             <div style="text-align: center; flex: 1;">
-                <h2 style="margin: 0; font-size: 20px; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
-                <p style="margin: 5px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                <p style="margin: 5px 0; font-size: 13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h2 style="margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                <p style="margin: 5px 0; font-size: 14px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 5px 0; font-size: 14px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
                 <h3 style="margin: 15px 0 0 0; font-size: 18px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
             </div>
         </div>
 
         <style>
-            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
-            .tbl-ficha td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; }
+            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 12px; }
+            .tbl-ficha td { border: 1px solid #000; padding: 8px; vertical-align: middle; }
             .t-label { font-weight: bold; margin-right: 5px; }
         </style>
 
@@ -1730,7 +1733,7 @@ window.gerarFichaPDF = function(e) {
                 <td><span class="t-label">Estado Civil:</span> ${getVal(m, 'ESTADO_CIVIL')}</td>
             </tr>
             <tr>
-                <td colspan="3"><span class="t-label">Endereço (Completo):</span> ${getVal(m, 'ENDERECO')}</td>
+                <td colspan="3"><span class="t-label">Endereço:</span> ${getVal(m, 'ENDERECO')}</td>
                 <td><span class="t-label">CEP:</span> _________</td>
             </tr>
             <tr>
@@ -1758,52 +1761,45 @@ window.gerarFichaPDF = function(e) {
                 <td colspan="2"><span class="t-label">Função / Departamento:</span> ${funcao}</td>
             </tr>
             <tr>
-                <td colspan="2" style="height: 60px; vertical-align: top;"><span class="t-label">Observações:</span></td>
+                <td colspan="2" style="height: 70px; vertical-align: top;"><span class="t-label">Observações:</span></td>
             </tr>
             <tr>
-                <td><span class="t-label">Superintendente:</span> ___________________________</td>
-                <td><span class="t-label">Pr. Setorial:</span> ___________________________</td>
+                <td style="padding-top: 30px;"><span class="t-label">Superintendente:</span> ___________________________</td>
+                <td style="padding-top: 30px;"><span class="t-label">Pr. Setorial:</span> ___________________________</td>
             </tr>
         </table>
     </div>
     `;
 
-    // 5. Injeta no container invisível e dispara o html2pdf
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlFicha;
+    // Joga o HTML na div visível
+    document.getElementById('area-pdf-ficha').innerHTML = htmlFicha;
     
-    // Posiciona no topo, atrás de tudo e quase 100% transparente. 
-    // Assim a biblioteca "enxerga" o elemento, mas o usuário não vê.
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.top = '0';
-    tempDiv.style.left = '0';
-    tempDiv.style.zIndex = '-1000';
-    tempDiv.style.opacity = '0.001'; 
-    document.body.appendChild(tempDiv);
+    // Fecha o modal e abre a nova tela!
+    fecharModal('modalFicha');
+    mostrarTela('ficha-impressao');
+};
+
+// Função acionada pelo botão azul "Baixar PDF / Imprimir" na nova tela
+window.baixarFichaPDF = function() {
+    const element = document.getElementById('area-pdf-ficha');
+    const nomeMembro = element.getAttribute('data-nome') || 'Membro';
+    const btn = document.querySelector('button[onclick="baixarFichaPDF()"]');
     
-    // Altera o botão para Loading
-    const btn = e.target.querySelector('button[type="submit"]');
     const textoOriginal = btn.innerHTML;
-    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando PDF...';
+    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando...';
     btn.disabled = true;
 
     const opt = {
         margin:       10,
-        filename:     `Ficha_Cadastral_${getVal(m, 'NOME').replace(/ /g, '_')}.pdf`,
+        filename:     `Ficha_Cadastral_${nomeMembro.replace(/ /g, '_')}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-            scale: 2, 
-            useCORS: true,
-            windowWidth: 900 // Garante que a tabela não fique espremida se for gerada pelo celular!
-        },
+        html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(tempDiv).save().then(() => {
+    html2pdf().set(opt).from(element).save().then(() => {
         btn.innerHTML = textoOriginal;
         btn.disabled = false;
-        fecharModal('modalFicha');
-        document.body.removeChild(tempDiv); // Limpa o elemento fantasma para não pesar a página
-        Swal.fire({ icon: 'success', title: 'Ficha Gerada!', text: 'O download foi iniciado.', timer: 2000, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado e baixado!', timer: 2000, showConfirmButton: false });
     });
 };
