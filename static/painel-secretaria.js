@@ -1668,12 +1668,14 @@ window.gerarFichaPDF = function(e) {
     const nat = document.getElementById('f_naturalidade').value || '';
     const nac = document.getElementById('f_nacionalidade').value || 'Brasileiro(a)';
     const escolaridade = document.getElementById('f_escolaridade').value || '';
-    const foneRes = document.getElementById('f_fone_res').value || '';
-    const localBatismo = document.getElementById('f_local_batismo').value || '';
-    const teologia = document.getElementById('f_teologia').value;
     
+    const foneRes = document.getElementById('f_fone_res').value || '';
+    const email = document.getElementById('f_email').value || ''; // <--- A LINHA QUE FALTAVA!
+    const localBatismo = document.getElementById('f_local_batismo').value || '';
+    
+    const teologia = document.getElementById('f_teologia').value;
     const cargoSel = document.getElementById('f_cargo_oficial').value;
-    const funcSel = document.getElementById('f_funcao_oficial').value;
+    const funcSel = document.getElementById('f_funcao_oficial').value
 
     // Formatações
     const idade = calcularIdade(getVal(m, 'NASCIMENTO'));
