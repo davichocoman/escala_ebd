@@ -1781,6 +1781,10 @@ window.gerarFichaPDF = function(e) {
 
 // Função acionada pelo botão azul "Baixar PDF / Imprimir" na nova tela
 window.baixarFichaPDF = function() {
+    // TRUQUE NINJA 1: Rola a página para o topo absoluto antes de gerar!
+    // Isso impede que a biblioteca corte a imagem se você tiver rolado para baixo para ler a ficha.
+    window.scrollTo(0, 0);
+
     const element = document.getElementById('area-pdf-ficha');
     const nomeMembro = element.getAttribute('data-nome') || 'Membro';
     const btn = document.querySelector('button[onclick="baixarFichaPDF()"]');
@@ -1793,7 +1797,12 @@ window.baixarFichaPDF = function() {
         margin:       10,
         filename:     `Ficha_Cadastral_${nomeMembro.replace(/ /g, '_')}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true,
+            // TRUQUE NINJA 2: Força a captura a começar do pixel zero (Y: 0)
+            scrollY: 0 
+        },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
