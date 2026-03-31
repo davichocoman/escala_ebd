@@ -504,6 +504,7 @@ function renderizarMembros() {
                     <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
                 </div>
                 <div class="card-actions">
+                    <button class="btn-icon" style="background:#0ea5e9; color:white;" onclick="abrirModalFicha('${getVal(m, 'ID')}')" title="Imprimir Ficha">🖨️</button>
                     <button class="btn-icon edit" onclick="prepararEdicaoMembro('${getVal(m, 'ID')}')">✏️</button>
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(m, 'ID')}', 'membros')">🗑️</button>
                 </div>
@@ -1624,4 +1625,171 @@ window.iniciarInstalacao = async () => {
         }
         deferredPrompt = null;
     }
+};
+
+// ============================================================
+// GERAÇÃO DE FICHA CADASTRAL (PDF)
+// ============================================================
+
+// Calcula a idade com base na data de nascimento (DD/MM/YYYY)
+function calcularIdade(dataNasc) {
+    if (!dataNasc) return '';
+    const partes = dataNasc.split('/');
+    if (partes.length !== 3) return '';
+    const nasc = new Date(partes[2], partes[1] - 1, partes[0]);
+    const hoje = new Date();
+    let idade = hoje.getFullYear() - nasc.getFullYear();
+    const m = hoje.getMonth() - nasc.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+    return idade;
+}
+
+window.abrirModalFicha = function(id) {
+    document.getElementById('formFicha').reset();
+    document.getElementById('f_id_membro').value = id;
+    document.getElementById('modalFicha').classList.remove('hidden');
+};
+
+window.gerarFichaPDF = function(e) {
+    e.preventDefault();
+    
+    // 1. Pega os dados do membro no banco (SISTEMA.dados.membros)
+    const id = document.getElementById('f_id_membro').value;
+    const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
+    if (!m) return Swal.fire('Erro', 'Membro não encontrado', 'error');
+
+    // 2. Coleta os dados complementares do modal
+    const rg = document.getElementById('f_rg').value || '________________';
+    const sexo = document.getElementById('f_sexo').value;
+    const nat = document.getElementById('f_naturalidade').value || '________________';
+    const nac = document.getElementById('f_nacionalidade').value || 'Brasileiro(a)';
+    const escolaridade = document.getElementById('f_escolaridade').value || '________________';
+    const email = document.getElementById('f_email').value || '________________';
+    const localBatismo = document.getElementById('f_local_batismo').value || '________________';
+    const teologia = document.getElementById('f_teologia').value;
+
+    // 3. Formatações auxiliares
+    const idade = calcularIdade(getVal(m, 'NASCIMENTO'));
+    const sexoM = sexo === 'M' ? '( X )' : '(   )';
+    const sexoF = sexo === 'F' ? '( X )' : '(   )';
+    const isObreiro = ['PASTOR', 'EVANGELISTA', 'PRESBITERO', 'DIACONO'].includes(getVal(m, 'CARGO').toUpperCase()) ? '( X )' : '(   )';
+    const isMembro = isObreiro === '(   )' ? '( X )' : '(   )';
+    const cargo = getVal(m, 'CARGO') || '________________';
+    const funcao = getVal(m, 'DEPARTAMENTO') || '________________';
+
+    // 4. Constrói o HTML idêntico ao modelo do Word
+    const htmlFicha = `
+    <div style="padding: 30px; font-family: Arial, sans-serif; color: #000; width: 800px; background: #fff;">
+        
+        <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+            <img src="../static/logo.png" style="width: 90px; margin-right: 20px;">
+            <div style="text-align: center; flex: 1;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
+                <p style="margin: 5px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 5px 0; font-size: 13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h3 style="margin: 15px 0 0 0; font-size: 18px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
+            </div>
+        </div>
+
+        <style>
+            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+            .tbl-ficha td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; }
+            .t-label { font-weight: bold; margin-right: 5px; }
+        </style>
+
+        <table class="tbl-ficha">
+            <tr>
+                <td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td>
+                <td><span class="t-label">Código:</span> ${id.substring(0,6).toUpperCase()}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Situação:</span> Ativo ( X ) Inativo (   )</td>
+                <td><span class="t-label">Idade:</span> ${idade} anos</td>
+                <td>Obreiro ${isObreiro} Membro ${isMembro}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Mãe:</span> ${getVal(m, 'MAE')}</td>
+                <td colspan="2"><span class="t-label">Pai:</span> ${getVal(m, 'PAI')}</td>
+            </tr>
+            <tr>
+                <td><span class="t-label">Data de Nascimento:</span> ${getVal(m, 'NASCIMENTO')}</td>
+                <td><span class="t-label">Sexo:</span> M ${sexoM} F ${sexoF}</td>
+                <td colspan="2"><span class="t-label">Naturalidade:</span> ${nat}</td>
+            </tr>
+            <tr>
+                <td><span class="t-label">CPF:</span> ${formatarCPF(getVal(m, 'CPF'))}</td>
+                <td><span class="t-label">Identidade (RG):</span> ${rg}</td>
+                <td colspan="2"><span class="t-label">Nacionalidade:</span> ${nac}</td>
+            </tr>
+            <tr>
+                <td colspan="4"><span class="t-label">Email:</span> ${email}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Profissão:</span> ${getVal(m, 'PROFISSAO')}</td>
+                <td><span class="t-label">Escolaridade:</span> ${escolaridade}</td>
+                <td><span class="t-label">Estado Civil:</span> ${getVal(m, 'ESTADO_CIVIL')}</td>
+            </tr>
+            <tr>
+                <td colspan="3"><span class="t-label">Endereço (Completo):</span> ${getVal(m, 'ENDERECO')}</td>
+                <td><span class="t-label">CEP:</span> _________</td>
+            </tr>
+            <tr>
+                <td colspan="4"><span class="t-label">Contatos (WhatsApp/Celular):</span> ${getVal(m, 'CONTATO')}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Data de Batismo:</span> ${getVal(m, 'BATISMO')}</td>
+                <td colspan="2"><span class="t-label">Local de Batismo:</span> ${localBatismo}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Cursos Teológicos:</span> ${teologia}</td>
+                <td colspan="2"><span class="t-label">Cônjuge:</span> ${getVal(m, 'CONJUGE')}</td>
+            </tr>
+        </table>
+
+        <table class="tbl-ficha">
+            <tr>
+                <td><span class="t-label">Regional/Setor:</span> CAPELINHA</td>
+                <td><span class="t-label">Congregação:</span> RODOVIA A</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Cargo Atual:</span> ${cargo}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Função / Departamento:</span> ${funcao}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="height: 60px; vertical-align: top;"><span class="t-label">Observações:</span></td>
+            </tr>
+            <tr>
+                <td><span class="t-label">Superintendente:</span> ___________________________</td>
+                <td><span class="t-label">Pr. Setorial:</span> ___________________________</td>
+            </tr>
+        </table>
+    </div>
+    `;
+
+    // 5. Injeta no container invisível e dispara o html2pdf
+    document.getElementById('area-pdf-ficha').innerHTML = htmlFicha;
+    const element = document.getElementById('area-pdf-ficha');
+    
+    // Altera o botão para Loading
+    const btn = e.target.querySelector('button[type="submit"]');
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons spin">sync</span> Gerando PDF...';
+    btn.disabled = true;
+
+    const opt = {
+        margin:       10,
+        filename:     `Ficha_Cadastral_${getVal(m, 'NOME').replace(/ /g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 3, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+        fecharModal('modalFicha');
+        Swal.fire({ icon: 'success', title: 'Ficha Gerada!', text: 'O download foi iniciado.', timer: 2000, showConfirmButton: false });
+    });
 };
