@@ -1658,46 +1658,76 @@ window.gerarFichaPDF = function(e) {
     const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
     if (!m) return Swal.fire('Erro', 'Membro não encontrado', 'error');
 
-    // Coleta do modal
-    const rg = document.getElementById('f_rg').value || '________________';
+    // Coleta dos dados novos do Modal
+    const rg = document.getElementById('f_rg').value || '';
+    const cep = document.getElementById('f_cep').value || '';
     const sexo = document.getElementById('f_sexo').value;
-    const nat = document.getElementById('f_naturalidade').value || '________________';
+    const bairro = document.getElementById('f_bairro').value || '';
+    const cidade = document.getElementById('f_cidade').value || 'Salvador';
+    const estado = document.getElementById('f_estado').value || 'BA';
+    const nat = document.getElementById('f_naturalidade').value || '';
     const nac = document.getElementById('f_nacionalidade').value || 'Brasileiro(a)';
-    const escolaridade = document.getElementById('f_escolaridade').value || '________________';
-    const email = document.getElementById('f_email').value || '________________';
-    const localBatismo = document.getElementById('f_local_batismo').value || '________________';
+    const escolaridade = document.getElementById('f_escolaridade').value || '';
+    const foneRes = document.getElementById('f_fone_res').value || '';
+    const localBatismo = document.getElementById('f_local_batismo').value || '';
     const teologia = document.getElementById('f_teologia').value;
+    
+    const cargoSel = document.getElementById('f_cargo_oficial').value;
+    const funcSel = document.getElementById('f_funcao_oficial').value;
 
     // Formatações
     const idade = calcularIdade(getVal(m, 'NASCIMENTO'));
-    const sexoM = sexo === 'M' ? '( X )' : '(   )';
-    const sexoF = sexo === 'F' ? '( X )' : '(   )';
-    const isObreiro = ['PASTOR', 'EVANGELISTA', 'PRESBITERO', 'DIACONO'].includes(getVal(m, 'CARGO').toUpperCase()) ? '( X )' : '(   )';
-    const isMembro = isObreiro === '(   )' ? '( X )' : '(   )';
-    const cargo = getVal(m, 'CARGO') || '________________';
-    const funcao = getVal(m, 'DEPARTAMENTO') || '________________';
+    const sexoM = sexo === 'M' ? '( X )' : '( &nbsp;&nbsp; )';
+    const sexoF = sexo === 'F' ? '( X )' : '( &nbsp;&nbsp; )';
+    
+    const teoS = teologia === 'S' ? '( X )' : '( &nbsp;&nbsp; )';
+    const teoN = teologia === 'N' ? '( X )' : '( &nbsp;&nbsp; )';
 
-    // Salva o nome para usar no nome do arquivo PDF depois
+    const isObreiro = cargoSel !== '' ? '( X )' : '( &nbsp;&nbsp; )';
+    const isMembro = cargoSel === '' ? '( X )' : '( &nbsp;&nbsp; )';
+
+    // Montando os Checkboxes do Cargo
+    const strCargo = `( ${cargoSel==='AUX'?'X':'&nbsp;&nbsp;'} ) Aux. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='DC'?'X':'&nbsp;&nbsp;'} ) Dc. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='PB'?'X':'&nbsp;&nbsp;'} ) Pb. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='EV'?'X':'&nbsp;&nbsp;'} ) Ev. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='PR'?'X':'&nbsp;&nbsp;'} ) Pr.`;
+
+    // Montando os Checkboxes da Função
+    const strFuncao = `( ${funcSel==='SUP'?'X':'&nbsp;&nbsp;'} ) Sup. &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='VICE'?'X':'&nbsp;&nbsp;'} ) Vice &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='PORT'?'X':'&nbsp;&nbsp;'} ) Porteiro &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='DIR'?'X':'&nbsp;&nbsp;'} ) Dir. de Circ. de Oração &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='OUTROS'?'X':'&nbsp;&nbsp;'} ) Outros`;
+
+    // Observações Automáticas
+    let obsText = "";
+    if (document.getElementById('f_incluir_obs').checked) {
+        const cargosSistema = getVal(m, 'CARGO');
+        if (cargosSistema) obsText = `O membro exerce em nossa congregação a(s) seguinte(s) função(ões): ${cargosSistema}.`;
+    }
+
+    // Montagem da Foto 3x4
+    const foto = recuperarFoto(m);
+    const boxFoto = (foto && foto.length > 100)
+        ? `<img src="${foto}" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px; text-align:center;">FOTO<br>3x4</div>`;
+
     document.getElementById('area-pdf-ficha').setAttribute('data-nome', getVal(m, 'NOME'));
 
-    // HTML idêntico ao modelo (Com 800px fixos para imitar A4)
+    // O HTML EXATO DA FICHA
     const htmlFicha = `
-    <div style="padding: 40px; font-family: Arial, sans-serif; color: #000; width: 800px; background: #fff; box-sizing: border-box;">
+    <div style="padding: 30px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
         
-        <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
-            <img src="../static/logo.png" style="width: 100px; margin-right: 20px;">
-            <div style="text-align: center; flex: 1;">
-                <h2 style="margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
-                <p style="margin: 5px 0; font-size: 14px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                <p style="margin: 5px 0; font-size: 14px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
-                <h3 style="margin: 15px 0 0 0; font-size: 18px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <img src="../static/logo.png" style="width: 90px; height: auto;">
+            <div style="text-align: center; flex: 1; padding: 0 15px;">
+                <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                <p style="margin: 4px 0; font-size: 12px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 4px 0; font-size: 12px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h3 style="margin: 12px 0 0 0; font-size: 16px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
+            </div>
+            <div style="width: 3cm; height: 4cm; border: 1px solid #000; flex-shrink: 0; padding: 2px; box-sizing: border-box;">
+                ${boxFoto}
             </div>
         </div>
 
         <style>
-            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 12px; }
-            .tbl-ficha td { border: 1px solid #000; padding: 8px; vertical-align: middle; }
-            .t-label { font-weight: bold; margin-right: 5px; }
+            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
+            .tbl-ficha td { border: 1px solid #000; padding: 5px 6px; vertical-align: middle; word-wrap: break-word; }
+            .t-label { font-weight: bold; margin-right: 3px; }
         </style>
 
         <table class="tbl-ficha">
@@ -1706,9 +1736,9 @@ window.gerarFichaPDF = function(e) {
                 <td><span class="t-label">Código:</span> ${id.substring(0,6).toUpperCase()}</td>
             </tr>
             <tr>
-                <td colspan="2"><span class="t-label">Situação:</span> Ativo ( X ) Inativo (   )</td>
+                <td colspan="2"><span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )</td>
                 <td><span class="t-label">Idade:</span> ${idade} anos</td>
-                <td>Obreiro ${isObreiro} Membro ${isMembro}</td>
+                <td><span class="t-label">Obreiro</span> ${isObreiro} &nbsp;&nbsp; <span class="t-label">Membro</span> ${isMembro}</td>
             </tr>
             <tr>
                 <td colspan="2"><span class="t-label">Mãe:</span> ${getVal(m, 'MAE')}</td>
@@ -1721,60 +1751,66 @@ window.gerarFichaPDF = function(e) {
             </tr>
             <tr>
                 <td><span class="t-label">CPF:</span> ${formatarCPF(getVal(m, 'CPF'))}</td>
-                <td><span class="t-label">Identidade (RG):</span> ${rg}</td>
+                <td><span class="t-label">Identidade:</span> ${rg}</td>
                 <td colspan="2"><span class="t-label">Nacionalidade:</span> ${nac}</td>
             </tr>
             <tr>
                 <td colspan="4"><span class="t-label">Email:</span> ${email}</td>
             </tr>
             <tr>
-                <td colspan="2"><span class="t-label">Profissão:</span> ${getVal(m, 'PROFISSAO')}</td>
-                <td><span class="t-label">Escolaridade:</span> ${escolaridade}</td>
+                <td><span class="t-label">Profissão:</span> ${getVal(m, 'PROFISSAO')}</td>
+                <td colspan="2"><span class="t-label">Escolaridade:</span> ${escolaridade}</td>
                 <td><span class="t-label">Estado Civil:</span> ${getVal(m, 'ESTADO_CIVIL')}</td>
             </tr>
             <tr>
                 <td colspan="3"><span class="t-label">Endereço:</span> ${getVal(m, 'ENDERECO')}</td>
-                <td><span class="t-label">CEP:</span> _________</td>
+                <td><span class="t-label">CEP:</span> ${cep}</td>
             </tr>
             <tr>
-                <td colspan="4"><span class="t-label">Contatos (WhatsApp/Celular):</span> ${getVal(m, 'CONTATO')}</td>
+                <td><span class="t-label">Bairro:</span> ${bairro}</td>
+                <td colspan="2"><span class="t-label">Cidade:</span> ${cidade}</td>
+                <td><span class="t-label">Estado:</span> ${estado}</td>
+            </tr>
+            <tr>
+                <td><span class="t-label">Fone Residencial:</span> ${foneRes}</td>
+                <td colspan="2"><span class="t-label">Fone do Trabalho:</span> ________________________</td>
+                <td><span class="t-label">Celular / Zap:</span> ${getVal(m, 'CONTATO')}</td>
             </tr>
             <tr>
                 <td colspan="2"><span class="t-label">Data de Batismo:</span> ${getVal(m, 'BATISMO')}</td>
                 <td colspan="2"><span class="t-label">Local de Batismo:</span> ${localBatismo}</td>
             </tr>
             <tr>
-                <td colspan="2"><span class="t-label">Cursos Teológicos:</span> ${teologia}</td>
+                <td colspan="2"><span class="t-label">Cursos Teológicos:</span> S ${teoS} &nbsp;&nbsp;&nbsp;&nbsp; N ${teoN}</td>
                 <td colspan="2"><span class="t-label">Cônjuge:</span> ${getVal(m, 'CONJUGE')}</td>
             </tr>
         </table>
 
         <table class="tbl-ficha">
             <tr>
-                <td><span class="t-label">Regional/Setor:</span> CAPELINHA</td>
-                <td><span class="t-label">Congregação:</span> RODOVIA A</td>
+                <td style="width: 50%;"><span class="t-label">Regional/Setor:</span> CAPELINHA</td>
+                <td style="width: 50%;"><span class="t-label">Congregação:</span> RODOVIA A</td>
             </tr>
             <tr>
-                <td colspan="2"><span class="t-label">Cargo Atual:</span> ${cargo}</td>
+                <td colspan="2"><span class="t-label">Cargo:</span> &nbsp;&nbsp; ${strCargo}</td>
             </tr>
             <tr>
-                <td colspan="2"><span class="t-label">Função / Departamento:</span> ${funcao}</td>
+                <td colspan="2"><span class="t-label">Função:</span> &nbsp;&nbsp; ${strFuncao}</td>
             </tr>
             <tr>
-                <td colspan="2" style="height: 70px; vertical-align: top;"><span class="t-label">Observações:</span></td>
+                <td colspan="2" style="height: 60px; vertical-align: top;">
+                    <span class="t-label">OBS:</span> ${obsText}
+                </td>
             </tr>
             <tr>
-                <td style="padding-top: 30px;"><span class="t-label">Superintendente:</span> ___________________________</td>
-                <td style="padding-top: 30px;"><span class="t-label">Pr. Setorial:</span> ___________________________</td>
+                <td style="padding-top: 30px; text-align: center;"><span class="t-label">Superintendente:</span> ___________________________</td>
+                <td style="padding-top: 30px; text-align: center;"><span class="t-label">Pr. Setorial:</span> ___________________________</td>
             </tr>
         </table>
     </div>
     `;
 
-    // Joga o HTML na div visível
     document.getElementById('area-pdf-ficha').innerHTML = htmlFicha;
-    
-    // Fecha o modal e abre a nova tela!
     fecharModal('modalFicha');
     mostrarTela('ficha-impressao');
 };
