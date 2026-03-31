@@ -1769,8 +1769,17 @@ window.gerarFichaPDF = function(e) {
     `;
 
     // 5. Injeta no container invisível e dispara o html2pdf
-    document.getElementById('area-pdf-ficha').innerHTML = htmlFicha;
-    const element = document.getElementById('area-pdf-ficha');
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlFicha;
+    
+    // Posiciona no topo, atrás de tudo e quase 100% transparente. 
+    // Assim a biblioteca "enxerga" o elemento, mas o usuário não vê.
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.top = '0';
+    tempDiv.style.left = '0';
+    tempDiv.style.zIndex = '-1000';
+    tempDiv.style.opacity = '0.001'; 
+    document.body.appendChild(tempDiv);
     
     // Altera o botão para Loading
     const btn = e.target.querySelector('button[type="submit"]');
@@ -1782,14 +1791,19 @@ window.gerarFichaPDF = function(e) {
         margin:       10,
         filename:     `Ficha_Cadastral_${getVal(m, 'NOME').replace(/ /g, '_')}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 3, useCORS: true },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true,
+            windowWidth: 900 // Garante que a tabela não fique espremida se for gerada pelo celular!
+        },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save().then(() => {
+    html2pdf().set(opt).from(tempDiv).save().then(() => {
         btn.innerHTML = textoOriginal;
         btn.disabled = false;
         fecharModal('modalFicha');
+        document.body.removeChild(tempDiv); // Limpa o elemento fantasma para não pesar a página
         Swal.fire({ icon: 'success', title: 'Ficha Gerada!', text: 'O download foi iniciado.', timer: 2000, showConfirmButton: false });
     });
 };
