@@ -283,7 +283,7 @@ async function carregarTudoDoBanco() {
     };
 
     try {
-        const [resMembros, resPastor, resDash] = await Promise.all([
+        const [resMembros, resPastor, resDash, resDocs] = await Promise.all([
             fetchComLogout401(`${API_BASE}/membros`, { headers }),
             fetchComLogout401(`${API_BASE}/agenda-pastor`, { headers }),
             fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers }),
