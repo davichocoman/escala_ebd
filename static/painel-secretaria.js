@@ -2043,14 +2043,20 @@ window.imprimirDocumentoInterno = function(id) {
 
     if (status === 'ASSINADO') {
         rodapeHTML = `
-        <div style="margin-top: 50px; border-top: 2px dashed #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
-            <div style="text-align: center; flex: 1;">
-                <img src="../static/assinatura-pastor.png" style="height: 60px; object-fit: contain;" onerror="this.style.display='none'">
-                <p style="margin: 0; font-weight: bold; border-top: 1px solid #000; display: inline-block; padding-top: 5px; width: 80%;">${pastor}</p>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">Assinado digitalmente em: ${dataAssinatura}</p>
+        <div style="margin-top: 50px; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
+            <div style="flex: 1;">
+                <div style="border: 2px solid #0ea5e9; border-radius: 6px; padding: 12px; background: #f0f9ff; display: inline-block; text-align: left; width: 90%;">
+                    <div style="font-weight: 900; font-size: 13px; color: #0284c7; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                        <span style="font-size: 16px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
+                    </div>
+                    <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Signatário:</strong> ${pastor}</div>
+                    <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>CPF:</strong> ***.163.435-**</div>
+                    <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 8px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
+                </div>
             </div>
             <div style="text-align: center; width: 100px;">
-                <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px;"></div>
+                <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px; border: 2px solid #000; padding: 4px; border-radius: 4px;"></div>
                 <p style="margin: 0; font-size: 9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
             </div>
         </div>
