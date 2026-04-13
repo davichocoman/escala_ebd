@@ -2033,8 +2033,10 @@ window.imprimirDocumentoInterno = function(id) {
     const pastor = getVal(doc, 'PASTOR_ASSINATURA');
     const hash = getVal(doc, 'HASH_VALIDACAO');
     
+    // NOVA VARIÁVEL: Pega o CPF do pastor que assinou
+    const cpfPastor = getVal(doc, 'CPF_PASTOR') || '***.***.***-**';
+    
     let conteudo = getVal(doc, 'CONTEUDO'); 
-    // Retrocompatibilidade (Se for um documento velho feito antes do editor, aplica as quebras manuais)
     if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
         conteudo = conteudo.replace(/\n/g, '<br>');
     }
@@ -2050,7 +2052,7 @@ window.imprimirDocumentoInterno = function(id) {
                         <span style="font-size: 16px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                     </div>
                     <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Signatário:</strong> ${pastor}</div>
-                    <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>CPF:</strong> ***.163.435-**</div>
+                    <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>CPF:</strong> ${cpfPastor}</div>
                     <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
                     <div style="font-size: 10px; color: #64748b; margin-top: 8px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
                 </div>
