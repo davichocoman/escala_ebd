@@ -26,8 +26,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     SISTEMA.usuario = JSON.parse(userStr);
+    
+    // --- NOVO: Libera o menu de Assinaturas para PASTOR ou ADMIN ---
+    const perfil = getVal(SISTEMA.usuario, 'PERFIL').toUpperCase();
+    const itemAssinaturas = document.getElementById('item-menu-assinaturas');
+    if (itemAssinaturas && ['ADMIN', 'PASTOR'].includes(perfil)) {
+        itemAssinaturas.classList.remove('hidden');
+    }
 
-    // CHAMADA INICIAL: Mostra a foto (mesmo fatiada) logo que abre
+    // CHAMADA INICIAL: Mostra a foto logo que abre
     atualizarHeaderPastor(); 
 
     configurarBuscas();
@@ -128,10 +135,11 @@ async function carregarTudo() {
     };
 
     try {
-        const [resMembros, resPastor, resGeral] = await Promise.all([
+        const [resMembros, resPastor, resGeral, resDocs] = await Promise.all([
             fetchComLogout401(`${API_BASE}/membros`, { headers }),
             fetchComLogout401(`${API_BASE}/agenda-pastor`, { headers }),
-            fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers })
+            fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers }),
+            fetchComLogout401(`${API_BASE}/documentos`, { headers }) // <--- NOVA ROTA
         ]);
 
         if (resMembros.ok) {
@@ -147,12 +155,14 @@ async function carregarTudo() {
 
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resGeral.ok) SISTEMA.dados.dashboard = await resGeral.json();
+        if (resDocs.ok) SISTEMA.dados.documentos = await resDocs.json(); // <--- GUARDA NA MEMÓRIA
 
         renderizarDashboard();
         renderizarMinhaAgenda();
         renderizarAgendaGeral();
         renderizarReservas();
         renderizarMembros();
+        renderizarDocumentosPastor(); // <--- DESENHA A LISTA DE ASSINATURAS PENDENTES
 
     } catch (e) {
         if (e.message.includes('401 detectado')) return; 
@@ -1063,5 +1073,105 @@ window.enviarDados = async function(urlBase, id, payload, formId = null) {
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = textoOriginal;
         }
+    }
+};
+
+// ============================================================
+// MESA DO PASTOR (ASSINATURA DIGITAL)
+// ============================================================
+
+function renderizarDocumentosPastor() {
+    const container = document.getElementById('lista-docs-pastor');
+    if (!container) return;
+
+    const docs = SISTEMA.dados.documentos || [];
+    
+    // A mesa do pastor SÓ mostra o que ele precisa assinar!
+    const pendentes = docs.filter(d => getVal(d, 'STATUS') === 'PENDENTE');
+
+    if (pendentes.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #64748b;">
+                <span class="material-icons" style="font-size: 60px; color: #cbd5e1;">task_alt</span>
+                <h3 style="margin-top: 10px;">Sua mesa está limpa!</h3>
+                <p>Nenhum documento aguardando assinatura no momento.</p>
+            </div>`;
+        return;
+    }
+
+    let html = '';
+    [...pendentes].reverse().forEach(d => {
+        const idDoc = getVal(d, 'ID_DOC') || getVal(d, 'ID');
+        html += `
+        <div class="member-card" style="border-left: 5px solid #f59e0b;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>${getVal(d, 'TITULO') || getVal(d, 'TIPO')}</strong>
+                <span class="badge-perfil" style="background:#fef3c7; color:#d97706; display:flex; align-items:center; gap:4px;">
+                    <span class="material-icons" style="font-size:14px;">pending_actions</span> Aguardando Assinatura
+                </span>
+            </div>
+            <div class="card-body">
+                <div><strong>Tipo:</strong> ${getVal(d, 'TIPO')}</div>
+                ${getVal(d, 'NOME_MEMBRO') ? `<div><strong>Membro:</strong> ${getVal(d, 'NOME_MEMBRO')}</div>` : ''}
+                <div><strong>Criado em:</strong> ${getVal(d, 'DATA_CRIACAO')}</div>
+            </div>
+            <div class="card-actions" style="background:#f8fafc; padding:10px; border-top:1px solid #e2e8f0; text-align:center;">
+                <button class="btn btn-primary" onclick="abrirModalAssinatura('${idDoc}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px; background: #0ea5e9;">
+                    <span class="material-icons">visibility</span> Revisar e Assinar Documento
+                </button>
+            </div>
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+}
+
+window.abrirModalAssinatura = function(id) {
+    const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
+    if (!doc) return Swal.fire('Erro', 'Documento não encontrado', 'error');
+
+    document.getElementById('assinar_titulo').innerText = getVal(doc, 'TITULO');
+    
+    // Pega o texto e já aceita as formatações em Negrito/Itálico que a Secretaria fez
+    let conteudo = getVal(doc, 'CONTEUDO');
+    if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
+        conteudo = conteudo.replace(/\n/g, '<br>');
+    }
+    document.getElementById('assinar_conteudo').innerHTML = conteudo;
+    
+    const btnAssinar = document.getElementById('btn-confirmar-assinatura');
+    btnAssinar.onclick = () => confirmarAssinatura(id);
+
+    document.getElementById('modalAssinarDoc').classList.remove('hidden');
+};
+
+window.confirmarAssinatura = async function(id) {
+    Swal.fire({
+        title: 'Assinando Documento...',
+        text: 'Criptografando e gerando selo de autenticidade...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        // Bate na rota do Python para assinar (PUT /api/documentos/{id}/assinar)
+        const res = await fetch(`${API_BASE}/documentos/${id}/assinar`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token }
+        });
+
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.detail || 'Falha ao assinar');
+        }
+
+        // Se deu sucesso, atualiza o sistema e fecha a janela
+        await carregarTudo();
+        
+        fecharModal('modalAssinarDoc');
+        Swal.fire('Documento Assinado!', 'O documento foi autenticado e o QR Code foi gerado. A Secretaria já pode imprimir a via oficial.', 'success');
+        
+    } catch (e) {
+        Swal.fire('Erro', e.message || 'Não foi possível assinar o documento.', 'error');
     }
 };
