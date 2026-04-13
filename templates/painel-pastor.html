@@ -56,21 +56,29 @@
                 <div class="menu-item active" onclick="mostrarTela('dashboard', this)">
                     <span class="material-icons menu-icon">dashboard</span> Visão Semanal
                 </div>
+                
                 <div class="menu-item" onclick="mostrarTela('minha-agenda', this)">
                     <span class="material-icons menu-icon">event_note</span> Minha Agenda
                 </div>
+                
                 <div class="menu-item" onclick="mostrarTela('agenda-geral', this)">
                     <span class="material-icons menu-icon">calendar_month</span> Agenda Geral
                 </div>
+                
                 <div class="menu-item" onclick="mostrarTela('reservas', this)">
                     <span class="material-icons menu-icon">meeting_room</span> Reservas
                 </div>
+                
                 <div class="menu-item" onclick="mostrarTela('membros', this)">
                     <span class="material-icons menu-icon">people</span> Membros
                 </div>
 
                 <div class="menu-item" onclick="mostrarTela('cooperadores', this)">
                     <span class="material-icons menu-icon">groups</span> Cooperadores
+                </div>
+
+                <div class="menu-item hidden" id="item-menu-assinaturas" onclick="mostrarTela('assinaturas', this)">
+                    <span class="material-icons">draw</span> Assinar Documentos
                 </div>
 
                 <div class="menu-item" onclick="mostrarTela('credencial', this)">
@@ -351,6 +359,15 @@
 
                 </div>
             </div>
+
+            <div id="sec-assinaturas" class="hidden">
+                <div class="page-header">
+                    <h2>Mesa do Pastor - Assinaturas Pendentes</h2>
+                </div>
+                <div id="lista-docs-pastor" class="card-list"></div>
+            </div>
+
+            
         </main>
     </div>
 
@@ -423,6 +440,29 @@
 
                 <button type="submit" class="btn btn-primary" style="width:100%; margin-top:15px;">Enviar para Análise</button>
             </form>
+        </div>
+
+        </div> <div id="modalAssinarDoc" class="modal-overlay hidden">
+            <div class="panel-card modal-card" style="max-width: 800px;">
+                <div class="panel-title">
+                    <span>Revisar e Assinar Documento</span>
+                    <button onclick="fecharModal('modalAssinarDoc')" class="btn-close-modal">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    <h3 id="assinar_titulo" style="text-align: center; text-decoration: underline; margin-bottom: 20px;"></h3>
+                    
+                    <div id="assinar_conteudo" style="background: #f8fafc; padding: 25px; border: 1px solid #cbd5e1; border-radius: 6px; min-height: 300px; max-height: 450px; overflow-y: auto; font-family: Arial, sans-serif; line-height: 1.6; font-size: 15px;"></div>
+    
+                    <div style="margin-top: 20px; text-align: center; color: #ef4444; font-size: 0.85rem; background: #fef2f2; padding: 10px; border-radius: 6px; border: 1px dashed #f87171;">
+                        <span class="material-icons" style="vertical-align: middle; font-size: 18px;">warning</span> 
+                        Ao assinar, este documento será <b>bloqueado para edição</b> e o QR Code de autenticação pública será gerado no rodapé da folha oficial.
+                    </div>
+                    
+                    <button id="btn-confirmar-assinatura" class="btn btn-primary" style="width: 100%; margin-top: 15px; background: #22c55e; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                        <span class="material-icons">draw</span> Assinar Digitalmente
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
