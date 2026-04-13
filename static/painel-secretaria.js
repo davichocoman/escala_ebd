@@ -1965,7 +1965,7 @@ function renderizarDocumentos() {
     container.innerHTML = html;
 }
 
-                                window.imprimirDocumentoInterno = function(id) {
+window.imprimirDocumentoInterno = function(id) {
     // 1. Acha o documento na memória
     const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
     if (!doc) return Swal.fire('Erro', 'Documento não encontrado', 'error');
