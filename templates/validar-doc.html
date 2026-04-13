@@ -82,10 +82,12 @@
                             <div class="info-value highlight">${data.TIPO}</div>
                         </div>
 
+                        ${data.NOME_MEMBRO ? `
                         <div class="info-group">
                             <div class="info-label">Referente a (Membro)</div>
                             <div class="info-value">${data.NOME_MEMBRO}</div>
                         </div>
+                        ` : ''}
 
                         <div class="info-group">
                             <div class="info-label">Assinado Digitalmente Por</div>
