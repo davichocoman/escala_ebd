@@ -1950,14 +1950,122 @@ function renderizarDocumentos() {
                 <div><strong>Criado em:</strong> ${getVal(d, 'DATA_CRIACAO')}</div>
                 ${status === 'ASSINADO' ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1;"><strong>Assinado por:</strong> ${getVal(d, 'PASTOR_ASSINATURA')}<br><small>${getVal(d, 'DATA_ASSINATURA')}</small></div>` : ''}
             </div>
-            <div class="card-actions" style="background:#f8fafc; padding:10px; border-top:1px solid #e2e8f0; text-align:center;">
+            
+            <div class="card-actions" style="background:#f8fafc; padding:10px; border-top:1px solid #e2e8f0; text-align:center; display: flex; flex-direction: column; gap: 8px;">
                 ${status === 'ASSINADO' 
-                    ? `<button class="btn btn-primary" onclick="imprimirDocAssinado('${getVal(d, 'HASH_VALIDACAO')}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px;"><span class="material-icons">picture_as_pdf</span> Imprimir Oficial</button>` 
-                    : '<span style="color:#64748b; font-size:0.85rem; font-weight:600;"><span class="material-icons" style="font-size:16px; vertical-align:middle;">hourglass_empty</span> Aguardando Assinatura do Pastor...</span>'
+                    ? `<button class="btn btn-primary" onclick="imprimirDocumentoInterno('${getVal(d, 'ID_DOC') || getVal(d, 'ID')}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px; background: #22c55e;"><span class="material-icons">verified</span> Imprimir Oficial</button>` 
+                    : `
+                      <span style="color:#64748b; font-size:0.85rem; font-weight:600; margin-bottom: 5px;"><span class="material-icons" style="font-size:16px; vertical-align:middle;">hourglass_empty</span> Aguardando Assinatura...</span>
+                      <button class="btn btn-secondary" onclick="imprimirDocumentoInterno('${getVal(d, 'ID_DOC') || getVal(d, 'ID')}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px; background: #e2e8f0; color: #1e293b; border: none; border-radius: 6px;"><span class="material-icons">print</span> Imprimir Rascunho</button>
+                      `
                 }
             </div>
         </div>`;
-    });
     
     container.innerHTML = html;
 }
+
+                                window.imprimirDocumentoInterno = function(id) {
+    // 1. Acha o documento na memória
+    const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
+    if (!doc) return Swal.fire('Erro', 'Documento não encontrado', 'error');
+
+    const status = getVal(doc, 'STATUS');
+    const dataAssinatura = getVal(doc, 'DATA_ASSINATURA');
+    const pastor = getVal(doc, 'PASTOR_ASSINATURA');
+    const hash = getVal(doc, 'HASH_VALIDACAO');
+    // Converte as quebras de linha normais (Enter) do textarea para <br> do HTML
+    const conteudo = getVal(doc, 'CONTEUDO').replace(/\n/g, '<br>'); 
+
+    let rodapeHTML = '';
+
+    // 2. Define o rodapé baseado no Status
+    if (status === 'ASSINADO') {
+        rodapeHTML = `
+        <div style="margin-top: 50px; border-top: 2px dashed #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="text-align: center; flex: 1;">
+                <img src="../static/assinatura-pastor.png" style="height: 60px; object-fit: contain;" onerror="this.style.display='none'">
+                <p style="margin: 0; font-weight: bold; border-top: 1px solid #000; display: inline-block; padding-top: 5px; width: 80%;">${pastor}</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">Assinado digitalmente em: ${dataAssinatura}</p>
+            </div>
+            <div style="text-align: center; width: 100px;">
+                <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px;"></div>
+                <p style="margin: 0; font-size: 9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
+            </div>
+        </div>
+        `;
+    } else {
+        rodapeHTML = `
+        <div style="margin-top: 80px; text-align: center;">
+            <p style="margin: 0; font-weight: bold; color: #ef4444; font-size: 16px;">[ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]</p>
+            <p style="margin: 60px auto 0 auto; border-top: 1px solid #000; width: 60%;">Assinatura Manual do Responsável</p>
+        </div>
+        `;
+    }
+
+    // 3. Monta o HTML idêntico a um papel timbrado da Igreja
+    const htmlDoc = `
+    <div style="padding: 40px 50px; font-family: Arial, sans-serif; color: #000; width: 800px; margin: 0 auto; background: #fff; box-sizing: border-box; min-height: 1120px; position: relative;">
+        <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+            <img src="../static/logo.png" style="width: 100px; margin-right: 20px;">
+            <div style="text-align: center; flex: 1;">
+                <h2 style="margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                <p style="margin: 5px 0; font-size: 14px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 5px 0; font-size: 14px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h3 style="margin: 25px 0 0 0; font-size: 18px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
+            </div>
+        </div>
+
+        <div style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px;">
+            ${conteudo}
+        </div>
+
+        ${rodapeHTML}
+    </div>
+    `;
+
+    // 4. Cria o container fantasma para tirar a foto do PDF
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlDoc;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.top = '0';
+    tempDiv.style.left = '0';
+    tempDiv.style.zIndex = '-1000';
+    tempDiv.style.opacity = '0.001';
+    document.body.appendChild(tempDiv);
+
+    // 5. Se estiver assinado, injeta o QRCode dinâmico
+    if (status === 'ASSINADO') {
+        const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`; // Caminho limpo da Vercel
+        new QRCode(document.getElementById(`qr-doc-${id}`), {
+            text: urlValidacao,
+            width: 80,
+            height: 80,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.L
+        });
+    }
+
+    Swal.fire({
+        title: 'Gerando PDF...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    const opt = {
+        margin:       10,
+        filename:     `${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Dá um tempinho pequeno pro QR Code terminar de ser desenhado na tela antes de bater a foto
+    setTimeout(() => {
+        html2pdf().set(opt).from(tempDiv).save().then(() => {
+            document.body.removeChild(tempDiv);
+            Swal.close();
+        });
+    }, 500); 
+};
