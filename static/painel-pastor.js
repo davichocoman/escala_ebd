@@ -1154,24 +1154,33 @@ window.confirmarAssinatura = async function(id) {
     });
 
     try {
-        // Bate na rota do Python para assinar (PUT /api/documentos/{id}/assinar)
-        const res = await fetch(`${API_BASE}/documentos/${id}/assinar`, {
+        // Usamos fetchComLogout401 para garantir que o token esteja sempre válido
+        const res = await fetchComLogout401(`${API_BASE}/documentos/${id}/assinar`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-token': SISTEMA.token }
+            headers: { 
+                'Content-Type': 'application/json', 
+                'x-token': SISTEMA.token 
+            }
         });
 
         if (!res.ok) {
             const data = await res.json();
-            throw new Error(data.detail || 'Falha ao assinar');
+            throw new Error(data.detail || 'Falha ao assinar o documento');
         }
 
-        // Se deu sucesso, atualiza o sistema e fecha a janela
+        // Agora o carregarTudo() não vai mais dar erro de resDocs
         await carregarTudo();
         
         fecharModal('modalAssinarDoc');
-        Swal.fire('Documento Assinado!', 'O documento foi autenticado e o QR Code foi gerado. A Secretaria já pode imprimir a via oficial.', 'success');
+        Swal.fire({
+            icon: 'success',
+            title: 'Documento Assinado!',
+            text: 'O documento foi autenticado e o QR Code foi gerado com sucesso.',
+            confirmButtonColor: '#22c55e'
+        });
         
     } catch (e) {
+        console.error("Erro na assinatura:", e);
         Swal.fire('Erro', e.message || 'Não foi possível assinar o documento.', 'error');
     }
 };
