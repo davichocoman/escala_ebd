@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticidade de Documento - AD Rodovia A</title>
+    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f8fafc; 
+            margin: 0; padding: 20px; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 90vh; 
+        }
+        .card { 
+            background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            width: 100%; max-width: 450px; padding: 30px; text-align: left; 
+            position: relative; overflow: hidden; border-top: 6px solid #0ea5e9;
+        }
+        
+        .header-status { text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px dashed #e2e8f0; }
+        .status-icon { font-size: 70px; line-height: 1; }
+        .valido { color: #22c55e; }
+        .invalido { color: #ef4444; }
+
+        .info-group { margin-bottom: 15px; }
+        .info-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .info-value { font-size: 1rem; color: #0f172a; font-weight: 600; }
+        .info-value.highlight { color: #0ea5e9; }
+
+        .box-igreja { background: #f1f5f9; border-radius: 8px; padding: 15px; margin-top: 25px; text-align: center; }
+        .box-igreja img { width: 80px; margin-bottom: 10px; }
+        .box-igreja p { margin: 3px 0; font-size: 0.8rem; color: #475569; }
+
+        .hash-code { background: #f8fafc; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-size: 0.8rem; word-break: break-all; text-align: center; color: #475569; margin-top: 15px; }
+
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #0ea5e9; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="card" id="resultado">
+        <div class="header-status">
+            <div class="loader"></div>
+            <h3 style="color:#64748b;">Consultando Blockchain da Igreja...</h3>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api-escala.onrender.com/api';
+
+        async function validarDocumento() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hash = urlParams.get('hash');
+            const container = document.getElementById('resultado');
+
+            if (!hash) {
+                mostrarErro("QR Code inválido ou link de validação quebrado.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/public/validar-doc/${hash}`);
+                const data = await res.json();
+
+                if (data.status === 'valido') {
+                    // Sucesso!
+                    container.innerHTML = `
+                        <div class="header-status">
+                            <div class="status-icon valido"><span class="material-icons" style="font-size: 70px;">gpp_good</span></div>
+                            <h2 class="valido" style="margin: 5px 0 0 0;">DOCUMENTO AUTÊNTICO</h2>
+                            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">Assinatura Digital Verificada</p>
+                        </div>
+                        
+                        <div class="info-group">
+                            <div class="info-label">Tipo de Documento</div>
+                            <div class="info-value highlight">${data.TIPO}</div>
+                        </div>
+
+                        <div class="info-group">
+                            <div class="info-label">Referente a (Membro)</div>
+                            <div class="info-value">${data.NOME_MEMBRO}</div>
+                        </div>
+
+                        <div class="info-group">
+                            <div class="info-label">Assinado Digitalmente Por</div>
+                            <div class="info-value">${data.PASTOR_ASSINATURA}</div>
+                            <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">CPF: ***.163.435-**</div>
+                        </div>
+
+                        <div class="info-group">
+                            <div class="info-label">Data e Hora da Assinatura</div>
+                            <div class="info-value">${data.DATA_ASSINATURA}</div>
+                        </div>
+
+                        <div class="hash-code">
+                            <strong>CÓDIGO DE AUTENTICIDADE:</strong><br>
+                            ${data.HASH}
+                        </div>
+
+                        <div class="box-igreja">
+                            <img src="static/logo.png" alt="Logo AD" onerror="this.style.display='none'">
+                            <p style="font-weight: bold; color: #0f172a;">IGREJA EVANGÉLICA ASSEMBLEIA DE DEUS</p>
+                            <p>Congregação em Rodovia A</p>
+                            <p>CNPJ: 14.183.181/0001-92</p>
+                            <p>Rua Rodovia A, nº 2597 - Boa Vista de São Caetano<br>Salvador - BA</p>
+                        </div>
+                    `;
+                } else {
+                    mostrarErro(data.mensagem || "Documento não encontrado no sistema.");
+                }
+            } catch(e) {
+                mostrarErro("Falha de conexão. Verifique sua internet e tente novamente.");
+            }
+        }
+
+        function mostrarErro(msg) {
+            document.getElementById('resultado').innerHTML = `
+                <div class="header-status">
+                    <div class="status-icon invalido"><span class="material-icons" style="font-size: 70px;">gpp_bad</span></div>
+                    <h2 class="invalido" style="margin: 5px 0 0 0;">NÃO AUTENTICADO</h2>
+                </div>
+                <p style="color:#475569; text-align: center; margin-bottom: 30px;">${msg}</p>
+                <div class="box-igreja">
+                    <p style="font-weight: bold; color: #0f172a;">Departamento de Segurança</p>
+                    <p>AD Rodovia A - Salvador/BA</p>
+                </div>
+            `;
+        }
+
+        validarDocumento();
+    </script>
+</body>
+</html>
