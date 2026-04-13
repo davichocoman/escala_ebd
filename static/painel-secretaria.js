@@ -1850,3 +1850,60 @@ window.baixarFichaPDF = function() {
         Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado e baixado!', timer: 2000, showConfirmButton: false });
     });
 };
+
+
+// ============================================================
+// MÓDULO: GESTÃO ELETRÔNICA DE DOCUMENTOS (GED)
+// ============================================================
+
+window.abrirModalNovoDoc = function() {
+    document.getElementById('formNovoDoc').reset();
+    
+    // Preenche o select com os membros do banco de dados
+    const selectMembro = document.getElementById('doc_membro_vinculo');
+    selectMembro.innerHTML = '<option value="">Documento Geral (Sem vínculo)</option>';
+    
+    // Ordena os membros em ordem alfabética para facilitar a busca
+    const membrosOrdenados = [...SISTEMA.dados.membros].sort((a, b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
+    
+    membrosOrdenados.forEach(m => {
+        const cpf = getVal(m, 'CPF');
+        const nome = getVal(m, 'NOME');
+        if (nome) {
+            selectMembro.innerHTML += `<option value="${cpf}|${nome}">${nome}</option>`;
+        }
+    });
+
+    document.getElementById('modalNovoDoc').classList.remove('hidden');
+};
+
+window.salvarDocumento = async function(e) {
+    e.preventDefault();
+    
+    const vinculo = document.getElementById('doc_membro_vinculo').value;
+    let cpfMembro = "";
+    let nomeMembro = "";
+    
+    if (vinculo) {
+        const partes = vinculo.split('|');
+        cpfMembro = partes[0];
+        nomeMembro = partes[1];
+    }
+
+    const dados = {
+        TIPO: document.getElementById('doc_tipo').value,
+        TITULO: document.getElementById('doc_titulo').value.toUpperCase(),
+        CONTEUDO: document.getElementById('doc_conteudo').value,
+        CPF_MEMBRO: cpfMembro,
+        NOME_MEMBRO: nomeMembro
+    };
+
+    // Usando a sua função padrão de salvar (enviarDados)
+    const sucesso = await enviarDados(`${API_BASE}/documentos`, null, dados, 'formNovoDoc');
+    
+    if (sucesso) {
+        fecharModal('modalNovoDoc');
+        Swal.fire('Enviado!', 'O documento foi enviado para a assinatura do Pastor.', 'success');
+        // Adicione aqui a chamada para recarregar a lista de documentos (renderizarDocumentos) depois que criarmos ela!
+    }
+};
