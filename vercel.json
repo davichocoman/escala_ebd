@@ -16,6 +16,7 @@
     { "source": "/agenda", "destination": "/templates/agenda.html" },
     { "source": "/reservas", "destination": "/templates/reservas.html" },
     { "source": "/validar", "destination": "/templates/validar.html" },
+    { "source": "/validar-doc", "destination": "/templates/validar-doc.html" },
     
     { "source": "/(.*)", "destination": "/templates/login.html" }
   ]
