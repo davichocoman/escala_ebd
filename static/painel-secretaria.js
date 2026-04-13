@@ -1860,14 +1860,32 @@ window.baixarFichaPDF = function() {
 // MÓDULO: GESTÃO ELETRÔNICA DE DOCUMENTOS (GED)
 // ============================================================
 
+let quillEditor; // Variável global do editor
+
 window.abrirModalNovoDoc = function() {
     document.getElementById('formNovoDoc').reset();
+    
+    // Inicia o Editor do Word (Quill) se ainda não foi iniciado
+    if (!quillEditor) {
+        quillEditor = new Quill('#editor-container', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'], // Negrito, Itálico, Sublinhado
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }], // Tópicos e Números
+                    [{ 'align': [] }], // Alinhamento
+                    ['clean'] // Remover formatação
+                ]
+            }
+        });
+    }
+    // Limpa o editor para o novo documento
+    quillEditor.root.innerHTML = '';
     
     // Preenche o select com os membros do banco de dados
     const selectMembro = document.getElementById('doc_membro_vinculo');
     selectMembro.innerHTML = '<option value="">Documento Geral (Sem vínculo)</option>';
     
-    // Ordena os membros em ordem alfabética para facilitar a busca
     const membrosOrdenados = [...SISTEMA.dados.membros].sort((a, b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
     
     membrosOrdenados.forEach(m => {
@@ -1884,6 +1902,14 @@ window.abrirModalNovoDoc = function() {
 window.salvarDocumento = async function(e) {
     e.preventDefault();
     
+    // Pega o HTML formadado (com negrito, tópicos, etc) gerado pelo editor
+    const conteudoHTML = quillEditor.root.innerHTML;
+    
+    // Trava de segurança para não enviar documento vazio
+    if (quillEditor.getText().trim().length === 0) {
+        return Swal.fire('Atenção', 'O documento não pode estar vazio!', 'warning');
+    }
+
     const vinculo = document.getElementById('doc_membro_vinculo').value;
     let cpfMembro = "";
     let nomeMembro = "";
@@ -1897,19 +1923,17 @@ window.salvarDocumento = async function(e) {
     const dados = {
         TIPO: document.getElementById('doc_tipo').value,
         TITULO: document.getElementById('doc_titulo').value.toUpperCase(),
-        CONTEUDO: document.getElementById('doc_conteudo').value,
+        CONTEUDO: conteudoHTML, // Salva o HTML Rico
         CPF_MEMBRO: cpfMembro,
         NOME_MEMBRO: nomeMembro
     };
 
-    // Usando a sua função padrão de salvar (enviarDados)
     const sucesso = await enviarDados(`${API_BASE}/documentos`, null, dados, 'formNovoDoc');
     
     if (sucesso) {
         fecharModal('modalNovoDoc');
         Swal.fire('Enviado!', 'O documento foi enviado para a assinatura do Pastor.', 'success');
         renderizarDocumentos();
-        // Adicione aqui a chamada para recarregar a lista de documentos (renderizarDocumentos) depois que criarmos ela!
     }
 };
 
@@ -1924,15 +1948,14 @@ function renderizarDocumentos() {
         return;
     }
 
-    // Inverte a lista para o documento mais novo aparecer no topo
     let html = '';
     [...docs].reverse().forEach(d => {
         const status = getVal(d, 'STATUS') || 'PENDENTE';
-        let corStatus = '#f59e0b'; // Laranja = Pendente
+        let corStatus = '#f59e0b';
         let iconeStatus = 'pending_actions';
         
         if (status === 'ASSINADO') {
-            corStatus = '#22c55e'; // Verde = Assinado
+            corStatus = '#22c55e';
             iconeStatus = 'verified';
         }
 
@@ -1967,7 +1990,6 @@ function renderizarDocumentos() {
 }
 
 window.imprimirDocumentoInterno = function(id) {
-    // 1. Acha o documento na memória
     const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
     if (!doc) return Swal.fire('Erro', 'Documento não encontrado', 'error');
 
@@ -1976,15 +1998,17 @@ window.imprimirDocumentoInterno = function(id) {
     const pastor = getVal(doc, 'PASTOR_ASSINATURA');
     const hash = getVal(doc, 'HASH_VALIDACAO');
     
-    // Pega o texto exatamente como o secretário digitou
-    const conteudo = getVal(doc, 'CONTEUDO'); 
+    let conteudo = getVal(doc, 'CONTEUDO'); 
+    // Retrocompatibilidade (Se for um documento velho feito antes do editor, aplica as quebras manuais)
+    if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
+        conteudo = conteudo.replace(/\n/g, '<br>');
+    }
 
     let rodapeHTML = '';
 
-    // 2. Define o rodapé baseado no Status
     if (status === 'ASSINADO') {
         rodapeHTML = `
-        <div style="margin-top: 50px; border-top: 2px dashed #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div style="margin-top: 50px; border-top: 2px dashed #000; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
             <div style="text-align: center; flex: 1;">
                 <img src="../static/assinatura-pastor.png" style="height: 60px; object-fit: contain;" onerror="this.style.display='none'">
                 <p style="margin: 0; font-weight: bold; border-top: 1px solid #000; display: inline-block; padding-top: 5px; width: 80%;">${pastor}</p>
@@ -1998,18 +2022,18 @@ window.imprimirDocumentoInterno = function(id) {
         `;
     } else {
         rodapeHTML = `
-        <div style="margin-top: 80px; text-align: center;">
+        <div style="margin-top: 80px; text-align: center; page-break-inside: avoid;">
             <p style="margin: 0; font-weight: bold; color: #ef4444; font-size: 16px;">[ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]</p>
             <p style="margin: 60px auto 0 auto; border-top: 1px solid #000; width: 60%;">Assinatura Manual do Responsável</p>
         </div>
         `;
     }
 
-    // 3. Monta o HTML idêntico a um papel timbrado da Igreja (LARGURA CORRIGIDA PARA 740px)
+    // O CSS interno proíbe a quebra no meio de um parágrafo (page-break-inside: avoid)
     const htmlDoc = `
-    <div id="pdf-doc-content" style="padding: 40px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box; min-height: 1045px; position: relative;">
+    <div id="pdf-doc-content" style="padding: 20px 40px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box; position: relative;">
         
-        <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+        <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px; page-break-inside: avoid;">
             <img src="../static/logo.png" style="width: 90px; margin-right: 20px;" onerror="this.style.display='none'">
             <div style="text-align: center; flex: 1;">
                 <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
@@ -2019,13 +2043,20 @@ window.imprimirDocumentoInterno = function(id) {
             </div>
         </div>
 
-        <div style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px; white-space: pre-wrap; word-wrap: break-word;">${conteudo}</div>
+        <style>
+            .pdf-texto p { margin-bottom: 12px; page-break-inside: avoid; }
+            .pdf-texto li { margin-bottom: 6px; page-break-inside: avoid; }
+            .pdf-texto ul, .pdf-texto ol { margin-left: 20px; padding-left: 20px; }
+        </style>
+
+        <div class="pdf-texto" style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px;">
+            ${conteudo}
+        </div>
 
         ${rodapeHTML}
     </div>
     `;
 
-    // 4. Cria o container fantasma ESCONDIDO ATRÁS DA TELA
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlDoc;
     tempDiv.style.position = 'fixed';
@@ -2034,31 +2065,24 @@ window.imprimirDocumentoInterno = function(id) {
     tempDiv.style.zIndex = '-9999'; 
     document.body.appendChild(tempDiv);
 
-    // 5. Se estiver assinado, injeta o QRCode dinâmico
     if (status === 'ASSINADO') {
         const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
         new QRCode(document.getElementById(`qr-doc-${id}`), {
             text: urlValidacao,
-            width: 80,
-            height: 80,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.L
+            width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
         });
     }
 
-    Swal.fire({
-        title: 'Gerando PDF...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
+    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
+    // MÁGICA DE QUEBRA DE PÁGINA: Margem superior e inferior garantidas, e motor CSS ativado
     const opt = {
-        margin:       10,
+        margin:       [20, 10, 20, 10], // Margens Top, Left, Bottom, Right
         filename:     `${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] } // Avisa a biblioteca para respeitar as quebras (avoid)
     };
 
     setTimeout(() => {
