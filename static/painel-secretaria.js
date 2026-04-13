@@ -16,7 +16,8 @@ const SISTEMA = {
     dados: {
         membros: [],
         agendaPastor: [],
-        dashboard: { agenda: [], reservas: [] }
+        dashboard: { agenda: [], reservas: [] },
+        documentos: [],
     }
 };
 // Função auxiliar para acessar chaves ignorando case
@@ -285,7 +286,8 @@ async function carregarTudoDoBanco() {
         const [resMembros, resPastor, resDash] = await Promise.all([
             fetchComLogout401(`${API_BASE}/membros`, { headers }),
             fetchComLogout401(`${API_BASE}/agenda-pastor`, { headers }),
-            fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers })
+            fetchComLogout401(`${API_BASE}/patrimonio/dados`, { headers }),
+            fetchComLogout401(`${API_BASE}/documentos`, { headers }),
         ]);
 
         if (resMembros.ok) SISTEMA.dados.membros = await resMembros.json();
@@ -304,6 +306,7 @@ async function carregarTudoDoBanco() {
 
         if (resPastor.ok) SISTEMA.dados.agendaPastor = await resPastor.json();
         if (resDash.ok) SISTEMA.dados.dashboard = await resDash.json();
+        if (resDocs.ok) SISTEMA.dados.documentos = await resDocs.json();
 
         renderizarCheckboxesPastores();
         renderizarMembros();
@@ -312,6 +315,7 @@ async function carregarTudoDoBanco() {
         renderizarAgendaGeralCards(); 
         renderizarReservasCards();
         renderizarMeusDados();
+        renderizarDocumentos();
     } catch (erro) {
         if (erro.message.includes('401 detectado')) return; // Já tratado acima
         console.error("Erro fatal ao carregar:", erro);
@@ -1904,6 +1908,56 @@ window.salvarDocumento = async function(e) {
     if (sucesso) {
         fecharModal('modalNovoDoc');
         Swal.fire('Enviado!', 'O documento foi enviado para a assinatura do Pastor.', 'success');
+        renderizarDocumentos();
         // Adicione aqui a chamada para recarregar a lista de documentos (renderizarDocumentos) depois que criarmos ela!
     }
 };
+
+function renderizarDocumentos() {
+    const container = document.getElementById('lista-documentos');
+    if (!container) return;
+
+    const docs = SISTEMA.dados.documentos || [];
+
+    if (docs.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Nenhum documento gerado ainda.</div>';
+        return;
+    }
+
+    // Inverte a lista para o documento mais novo aparecer no topo
+    let html = '';
+    [...docs].reverse().forEach(d => {
+        const status = getVal(d, 'STATUS') || 'PENDENTE';
+        let corStatus = '#f59e0b'; // Laranja = Pendente
+        let iconeStatus = 'pending_actions';
+        
+        if (status === 'ASSINADO') {
+            corStatus = '#22c55e'; // Verde = Assinado
+            iconeStatus = 'verified';
+        }
+
+        html += `
+        <div class="member-card" style="border-left: 5px solid ${corStatus};">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>${getVal(d, 'TITULO') || getVal(d, 'TIPO')}</strong>
+                <span class="badge-perfil" style="background:${corStatus}20; color:${corStatus}; display:flex; align-items:center; gap:4px;">
+                    <span class="material-icons" style="font-size:14px;">${iconeStatus}</span> ${status}
+                </span>
+            </div>
+            <div class="card-body">
+                <div><strong>Tipo:</strong> ${getVal(d, 'TIPO')}</div>
+                ${getVal(d, 'NOME_MEMBRO') ? `<div><strong>Membro:</strong> ${getVal(d, 'NOME_MEMBRO')}</div>` : ''}
+                <div><strong>Criado em:</strong> ${getVal(d, 'DATA_CRIACAO')}</div>
+                ${status === 'ASSINADO' ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1;"><strong>Assinado por:</strong> ${getVal(d, 'PASTOR_ASSINATURA')}<br><small>${getVal(d, 'DATA_ASSINATURA')}</small></div>` : ''}
+            </div>
+            <div class="card-actions" style="background:#f8fafc; padding:10px; border-top:1px solid #e2e8f0; text-align:center;">
+                ${status === 'ASSINADO' 
+                    ? `<button class="btn btn-primary" onclick="imprimirDocAssinado('${getVal(d, 'HASH_VALIDACAO')}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px;"><span class="material-icons">picture_as_pdf</span> Imprimir Oficial</button>` 
+                    : '<span style="color:#64748b; font-size:0.85rem; font-weight:600;"><span class="material-icons" style="font-size:16px; vertical-align:middle;">hourglass_empty</span> Aguardando Assinatura do Pastor...</span>'
+                }
+            </div>
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+}
