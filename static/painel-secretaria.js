@@ -1864,56 +1864,85 @@ let quillEditor; // Variável global do editor
 
 window.abrirModalNovoDoc = function() {
     document.getElementById('formNovoDoc').reset();
+    document.getElementById('doc_id').value = ''; // Limpa o ID para garantir que é um documento novo
     
-    // Inicia o Editor do Word (Quill) se ainda não foi iniciado
     if (!quillEditor) {
         quillEditor = new Quill('#editor-container', {
             theme: 'snow',
             modules: {
                 toolbar: [
-                    ['bold', 'italic', 'underline'], // Negrito, Itálico, Sublinhado
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }], // Tópicos e Números
-                    [{ 'align': [] }], // Alinhamento
-                    ['clean'] // Remover formatação
+                    ['bold', 'italic', 'underline'], 
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }], 
+                    [{ 'align': [] }], 
+                    ['clean'] 
                 ]
             }
         });
     }
-    // Limpa o editor para o novo documento
     quillEditor.root.innerHTML = '';
     
-    // Preenche o select com os membros do banco de dados
     const selectMembro = document.getElementById('doc_membro_vinculo');
     selectMembro.innerHTML = '<option value="">Documento Geral (Sem vínculo)</option>';
-    
     const membrosOrdenados = [...SISTEMA.dados.membros].sort((a, b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
     
     membrosOrdenados.forEach(m => {
         const cpf = getVal(m, 'CPF');
         const nome = getVal(m, 'NOME');
-        if (nome) {
-            selectMembro.innerHTML += `<option value="${cpf}|${nome}">${nome}</option>`;
-        }
+        if (nome) selectMembro.innerHTML += `<option value="${cpf}|${nome}">${nome}</option>`;
     });
 
     document.getElementById('modalNovoDoc').classList.remove('hidden');
 };
 
+// NOVA FUNÇÃO: Prepara o modal com os dados existentes para edição
+window.prepararEdicaoDocumento = function(id) {
+    const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
+    if (!doc) return Swal.fire('Erro', 'Documento não encontrado', 'error');
+
+    if (getVal(doc, 'STATUS') === 'ASSINADO') {
+        return Swal.fire('Atenção', 'Documentos já assinados não podem ser editados.', 'warning');
+    }
+
+    // Aproveita a lógica de abertura do modal
+    window.abrirModalNovoDoc();
+
+    // Preenche os campos com os dados antigos
+    document.getElementById('doc_id').value = getVal(doc, 'ID_DOC') || getVal(doc, 'ID');
+    document.getElementById('doc_tipo').value = getVal(doc, 'TIPO');
+    document.getElementById('doc_titulo').value = getVal(doc, 'TITULO');
+
+    // Seleciona o membro correto no dropdown
+    const cpfDoc = getVal(doc, 'CPF_MEMBRO');
+    if (cpfDoc) {
+        const selectMembro = document.getElementById('doc_membro_vinculo');
+        for (let i = 0; i < selectMembro.options.length; i++) {
+            if (selectMembro.options[i].value.startsWith(cpfDoc + '|')) {
+                selectMembro.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    // Injeta o conteúdo no editor Quill
+    let conteudo = getVal(doc, 'CONTEUDO');
+    if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
+        conteudo = `<p>${conteudo.replace(/\n/g, '<br>')}</p>`; // Retrocompatibilidade
+    }
+    quillEditor.root.innerHTML = conteudo;
+};
+
 window.salvarDocumento = async function(e) {
     e.preventDefault();
     
-    // Pega o HTML formadado (com negrito, tópicos, etc) gerado pelo editor
+    const id = document.getElementById('doc_id').value; // Apanha o ID (se existir)
     const conteudoHTML = quillEditor.root.innerHTML;
     
-    // Trava de segurança para não enviar documento vazio
     if (quillEditor.getText().trim().length === 0) {
         return Swal.fire('Atenção', 'O documento não pode estar vazio!', 'warning');
     }
 
     const vinculo = document.getElementById('doc_membro_vinculo').value;
-    let cpfMembro = "";
-    let nomeMembro = "";
-    
+    let cpfMembro = "", nomeMembro = "";
     if (vinculo) {
         const partes = vinculo.split('|');
         cpfMembro = partes[0];
@@ -1923,16 +1952,17 @@ window.salvarDocumento = async function(e) {
     const dados = {
         TIPO: document.getElementById('doc_tipo').value,
         TITULO: document.getElementById('doc_titulo').value.toUpperCase(),
-        CONTEUDO: conteudoHTML, // Salva o HTML Rico
+        CONTEUDO: conteudoHTML,
         CPF_MEMBRO: cpfMembro,
         NOME_MEMBRO: nomeMembro
     };
 
-    const sucesso = await enviarDados(`${API_BASE}/documentos`, null, dados, 'formNovoDoc');
+    // A função enviarDados é inteligente: se tiver 'id', faz PUT (atualiza), senão faz POST (cria)
+    const sucesso = await enviarDados(`${API_BASE}/documentos`, id, dados, 'formNovoDoc');
     
     if (sucesso) {
         fecharModal('modalNovoDoc');
-        Swal.fire('Enviado!', 'O documento foi enviado para a assinatura do Pastor.', 'success');
+        Swal.fire('Guardado!', 'O documento foi guardado com sucesso.', 'success');
         renderizarDocumentos();
     }
 };
@@ -1953,6 +1983,7 @@ function renderizarDocumentos() {
         const status = getVal(d, 'STATUS') || 'PENDENTE';
         let corStatus = '#f59e0b';
         let iconeStatus = 'pending_actions';
+        const idDoc = getVal(d, 'ID_DOC') || getVal(d, 'ID');
         
         if (status === 'ASSINADO') {
             corStatus = '#22c55e';
@@ -1976,10 +2007,14 @@ function renderizarDocumentos() {
             
             <div class="card-actions" style="background:#f8fafc; padding:10px; border-top:1px solid #e2e8f0; text-align:center; display: flex; flex-direction: column; gap: 8px;">
                 ${status === 'ASSINADO' 
-                    ? `<button class="btn btn-primary" onclick="imprimirDocumentoInterno('${getVal(d, 'ID_DOC') || getVal(d, 'ID')}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px; background: #22c55e;"><span class="material-icons">verified</span> Imprimir Oficial</button>` 
+                    ? `<button class="btn btn-primary" onclick="imprimirDocumentoInterno('${idDoc}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px; background: #22c55e;"><span class="material-icons">verified</span> Imprimir Oficial</button>` 
                     : `
                       <span style="color:#64748b; font-size:0.85rem; font-weight:600; margin-bottom: 5px;"><span class="material-icons" style="font-size:16px; vertical-align:middle;">hourglass_empty</span> Aguardando Assinatura...</span>
-                      <button class="btn btn-secondary" onclick="imprimirDocumentoInterno('${getVal(d, 'ID_DOC') || getVal(d, 'ID')}')" style="width:100%; display:flex; justify-content:center; align-items:center; gap:5px; background: #e2e8f0; color: #1e293b; border: none; border-radius: 6px;"><span class="material-icons">print</span> Imprimir Rascunho</button>
+                      <div style="display: flex; gap: 8px; width: 100%;">
+                          <button class="btn btn-secondary" onclick="imprimirDocumentoInterno('${idDoc}')" style="flex: 1; display:flex; justify-content:center; align-items:center; gap:5px; background: #e2e8f0; color: #1e293b; border: none; border-radius: 6px;"><span class="material-icons">print</span> Rascunho</button>
+                          <button class="btn btn-icon edit" onclick="prepararEdicaoDocumento('${idDoc}')" style="border-radius: 6px; padding: 8px 12px; background: #dbeafe; color: #2563eb; border: none; cursor: pointer;"><span class="material-icons">edit</span></button>
+                          <button class="btn btn-icon delete" onclick="deletarItem('${idDoc}', 'documentos')" style="border-radius: 6px; padding: 8px 12px; background: #fee2e2; color: #dc2626; border: none; cursor: pointer;"><span class="material-icons">delete</span></button>
+                      </div>
                       `
                 }
             </div>
