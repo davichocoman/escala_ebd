@@ -1961,6 +1961,7 @@ function renderizarDocumentos() {
                 }
             </div>
         </div>`;
+    });
     
     container.innerHTML = html;
 }
