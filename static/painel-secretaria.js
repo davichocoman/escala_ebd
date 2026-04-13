@@ -1975,8 +1975,9 @@ window.imprimirDocumentoInterno = function(id) {
     const dataAssinatura = getVal(doc, 'DATA_ASSINATURA');
     const pastor = getVal(doc, 'PASTOR_ASSINATURA');
     const hash = getVal(doc, 'HASH_VALIDACAO');
-    // Converte as quebras de linha normais (Enter) do textarea para <br> do HTML
-    const conteudo = getVal(doc, 'CONTEUDO').replace(/\n/g, '<br>'); 
+    
+    // Pega o texto exatamente como o secretário digitou
+    const conteudo = getVal(doc, 'CONTEUDO'); 
 
     let rodapeHTML = '';
 
@@ -2004,34 +2005,33 @@ window.imprimirDocumentoInterno = function(id) {
         `;
     }
 
-    // 3. Monta o HTML idêntico a um papel timbrado da Igreja
+    // 3. Monta o HTML idêntico a um papel timbrado da Igreja (LARGURA CORRIGIDA PARA 740px)
     const htmlDoc = `
-    <div id="pdf-doc-content" style="padding: 40px 50px; font-family: Arial, sans-serif; color: #000; width: 800px; margin: 0 auto; background: #fff; box-sizing: border-box; min-height: 1120px; position: relative;">
+    <div id="pdf-doc-content" style="padding: 40px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box; min-height: 1045px; position: relative;">
+        
         <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px;">
-            <img src="../static/logo.png" style="width: 100px; margin-right: 20px;" onerror="this.style.display='none'">
+            <img src="../static/logo.png" style="width: 90px; margin-right: 20px;" onerror="this.style.display='none'">
             <div style="text-align: center; flex: 1;">
-                <h2 style="margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
-                <p style="margin: 5px 0; font-size: 14px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                <p style="margin: 5px 0; font-size: 14px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
-                <h3 style="margin: 25px 0 0 0; font-size: 18px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
+                <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                <p style="margin: 5px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 5px 0; font-size: 13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h3 style="margin: 20px 0 0 0; font-size: 16px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
             </div>
         </div>
 
-        <div style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px;">
-            ${conteudo}
-        </div>
+        <div style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px; white-space: pre-wrap; word-wrap: break-word;">${conteudo}</div>
 
         ${rodapeHTML}
     </div>
     `;
 
-    // 4. Cria o container fantasma ESCONDIDO ATRÁS DA TELA, mas totalmente opaco (visível pro PDF)
+    // 4. Cria o container fantasma ESCONDIDO ATRÁS DA TELA
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlDoc;
     tempDiv.style.position = 'fixed';
     tempDiv.style.top = '0';
     tempDiv.style.left = '0';
-    tempDiv.style.zIndex = '-9999'; // Escondido atrás do sistema
+    tempDiv.style.zIndex = '-9999'; 
     document.body.appendChild(tempDiv);
 
     // 5. Se estiver assinado, injeta o QRCode dinâmico
@@ -2061,7 +2061,6 @@ window.imprimirDocumentoInterno = function(id) {
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Dá um tempinho pequeno pro QR Code terminar de ser desenhado na tela antes de bater a foto
     setTimeout(() => {
         html2pdf().set(opt).from(document.getElementById('pdf-doc-content')).save().then(() => {
             document.body.removeChild(tempDiv);
