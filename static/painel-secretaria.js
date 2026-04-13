@@ -2006,9 +2006,9 @@ window.imprimirDocumentoInterno = function(id) {
 
     // 3. Monta o HTML idêntico a um papel timbrado da Igreja
     const htmlDoc = `
-    <div style="padding: 40px 50px; font-family: Arial, sans-serif; color: #000; width: 800px; margin: 0 auto; background: #fff; box-sizing: border-box; min-height: 1120px; position: relative;">
+    <div id="pdf-doc-content" style="padding: 40px 50px; font-family: Arial, sans-serif; color: #000; width: 800px; margin: 0 auto; background: #fff; box-sizing: border-box; min-height: 1120px; position: relative;">
         <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px;">
-            <img src="../static/logo.png" style="width: 100px; margin-right: 20px;">
+            <img src="../static/logo.png" style="width: 100px; margin-right: 20px;" onerror="this.style.display='none'">
             <div style="text-align: center; flex: 1;">
                 <h2 style="margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
                 <p style="margin: 5px 0; font-size: 14px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
@@ -2025,19 +2025,18 @@ window.imprimirDocumentoInterno = function(id) {
     </div>
     `;
 
-    // 4. Cria o container fantasma para tirar a foto do PDF
+    // 4. Cria o container fantasma ESCONDIDO ATRÁS DA TELA, mas totalmente opaco (visível pro PDF)
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlDoc;
-    tempDiv.style.position = 'absolute';
+    tempDiv.style.position = 'fixed';
     tempDiv.style.top = '0';
     tempDiv.style.left = '0';
-    tempDiv.style.zIndex = '-1000';
-    tempDiv.style.opacity = '0.001';
+    tempDiv.style.zIndex = '-9999'; // Escondido atrás do sistema
     document.body.appendChild(tempDiv);
 
     // 5. Se estiver assinado, injeta o QRCode dinâmico
     if (status === 'ASSINADO') {
-        const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`; // Caminho limpo da Vercel
+        const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
         new QRCode(document.getElementById(`qr-doc-${id}`), {
             text: urlValidacao,
             width: 80,
@@ -2064,9 +2063,10 @@ window.imprimirDocumentoInterno = function(id) {
 
     // Dá um tempinho pequeno pro QR Code terminar de ser desenhado na tela antes de bater a foto
     setTimeout(() => {
-        html2pdf().set(opt).from(tempDiv).save().then(() => {
+        html2pdf().set(opt).from(document.getElementById('pdf-doc-content')).save().then(() => {
             document.body.removeChild(tempDiv);
             Swal.close();
+            Swal.fire({ icon: 'success', title: 'Sucesso', text: 'PDF gerado e baixado!', timer: 2000, showConfirmButton: false });
         });
     }, 500); 
 };
