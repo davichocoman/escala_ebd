@@ -2024,16 +2024,22 @@ function renderizarDocumentos() {
     container.innerHTML = html;
 }
 
-window.imprimirDocumentoInterno = async function(id) {
+window.imprimirDocumentoInterno = async function (id) {
+    // 1. AVISO VISUAL DE CARREGAMENTO
     Swal.fire({
         title: 'A preparar documento...',
         text: 'A obter dados atualizados da assinatura...',
         allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
+        didOpen: () => Swal.showLoading()
     });
 
     try {
-        const headers = { 'Content-Type': 'application/json', 'x-token': SISTEMA.token };
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-token': SISTEMA.token
+        };
+
+        // 2. REFRESH SILENCIOSO
         const resDocs = await fetch(`${API_BASE}/documentos`, { headers });
 
         if (resDocs.ok) {
@@ -2041,92 +2047,109 @@ window.imprimirDocumentoInterno = async function(id) {
             renderizarDocumentos();
         }
 
+        // 3. BUSCAR DOCUMENTO ATUALIZADO
         const doc = SISTEMA.dados.documentos.find(d =>
             getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id
         );
 
         if (!doc) {
-            Swal.fire('Erro', 'Documento não encontrado.', 'error');
-            return;
+            return Swal.fire('Erro', 'Documento não encontrado na base de dados.', 'error');
         }
 
-        // 🛡️ SAFE VALUES
-        const safe = (v) => v || '---';
-
+        // 4. EXTRAÇÃO DE DADOS
         const status = getVal(doc, 'STATUS');
-        const dataAssinatura = safe(getVal(doc, 'DATA_ASSINATURA'));
-        const pastor = safe(getVal(doc, 'PASTOR_ASSINATURA'));
-        const hash = safe(getVal(doc, 'HASH_VALIDACAO'));
-        const cpfPastor = safe(getVal(doc, 'CPF_PASTOR'));
+        const dataAssinatura = getVal(doc, 'DATA_ASSINATURA');
+        const pastor = getVal(doc, 'PASTOR_ASSINATURA');
+        const hash = getVal(doc, 'HASH_VALIDACAO');
+        const cpfPastor = getVal(doc, 'CPF_PASTOR') || '***.***.***-**';
 
-        let conteudo = safe(getVal(doc, 'CONTEUDO'));
+        console.log({ dataAssinatura, pastor, hash, cpfPastor });
+
+        // 5. FORMATAÇÃO DO CONTEÚDO
+        let conteudo = getVal(doc, 'CONTEUDO');
 
         if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
             conteudo = conteudo.replace(/\n/g, '<br>');
         }
 
+        // 6. RODAPÉ
         let rodapeHTML = '';
 
         if (status === 'ASSINADO') {
             rodapeHTML = `
-            <div style="margin-top: 50px; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-                <div style="flex: 1;">
-                    <div style="border: 2px solid #0ea5e9; border-radius: 6px; padding: 12px; background: #f0f9ff; display: inline-block; width: 95%;">
-                        <div style="font-weight: 900; font-size: 13px; color: #0284c7;">
-                            ✓ ASSINATURA ELETRÔNICA VERIFICADA
-                        </div>
-                        <div style="font-size: 11px;"><strong>Signatário:</strong> ${pastor}</div>
-                        <div style="font-size: 11px;"><strong>CPF:</strong> ${cpfPastor}</div>
-                        <div style="font-size: 11px;"><strong>Data:</strong> ${dataAssinatura}</div>
-                        <div style="font-size: 10px; margin-top: 6px; word-break: break-all;">
-                            <strong>Hash:</strong><br>${hash}
+                <div style="margin-top:50px; padding-top:20px; display:flex; justify-content:space-between; align-items:flex-end; page-break-inside:avoid;">
+                    
+                    <div style="flex:1;">
+                        <div style="border:2px solid #0ea5e9; border-radius:6px; padding:12px; background:#f0f9ff; display:inline-block; width:95%;">
+                            
+                            <div style="font-weight:900; font-size:13px; color:#0284c7; margin-bottom:8px;">
+                                ✓ ASSINATURA ELETRÔNICA VERIFICADA
+                            </div>
+
+                            <div style="font-size:11px;"><strong>Signatário:</strong> ${pastor}</div>
+                            <div style="font-size:11px;"><strong>CPF:</strong> ${cpfPastor}</div>
+                            <div style="font-size:11px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
+
+                            <div style="font-size:10px; margin-top:8px; word-break:break-all;">
+                                <strong>Hash:</strong><br>${hash}
+                            </div>
+
                         </div>
                     </div>
+
+                    <div style="text-align:center; width:100px;">
+                        <div id="qr-doc-${id}" style="border:2px solid #000; padding:4px;"></div>
+                        <p style="font-size:9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
+                    </div>
+
                 </div>
-                <div style="text-align: center; width: 100px;">
-                    <div id="qr-doc-${id}" style="margin-bottom:5px;"></div>
-                    <p style="font-size: 9px; font-weight:bold;">VALIDAR</p>
-                </div>
-            </div>`;
+            `;
         } else {
             rodapeHTML = `
-            <div style="margin-top: 80px; text-align: center;">
-                <p style="font-weight: bold; color: red;">
-                    [ RASCUNHO - SEM ASSINATURA ]
-                </p>
-            </div>`;
+                <div style="margin-top:80px; text-align:center; page-break-inside:avoid;">
+                    <p style="font-weight:bold; color:#ef4444;">
+                        [ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]
+                    </p>
+                    <p style="margin-top:60px; border-top:1px solid #000; width:60%; margin-left:auto; margin-right:auto;">
+                        Assinatura Manual do Responsável
+                    </p>
+                </div>
+            `;
         }
 
+        // 7. HTML PRINCIPAL
         const htmlDoc = `
-        <div id="pdf-doc-content" style="padding: 20px 40px; font-family: Arial; width: 740px; margin: auto; background: #fff;">
-            <div style="display: flex; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px;">
-                <img src="../static/logo.png" style="width: 80px;" onerror="this.style.display='none'">
-                <div style="flex:1; text-align:center;">
-                    <h2>Igreja Assembleia de Deus</h2>
-                    <h3>${safe(getVal(doc, 'TITULO'))}</h3>
+            <div id="pdf-doc-content" style="padding:20px 40px; font-family:Arial; width:740px; margin:auto; background:#fff;">
+                
+                <div style="display:flex; align-items:center; margin-bottom:40px; border-bottom:2px solid #000; padding-bottom:15px;">
+                    <img src="../static/logo.png" style="width:90px; margin-right:20px;" onerror="this.style.display='none'">
+                    
+                    <div style="text-align:center; flex:1;">
+                        <h2>Igreja Evangélica Assembleia de Deus</h2>
+                        <p>Sede - Paralela - Salvador - BA</p>
+                        <p>Presidente: Pr. Valdomiro Pereira da Silva</p>
+                        <h3>${getVal(doc, 'TITULO')}</h3>
+                    </div>
                 </div>
+
+                <div style="font-size:15px; line-height:1.6; text-align:justify;">
+                    ${conteudo}
+                </div>
+
+                ${rodapeHTML}
+
             </div>
+        `;
 
-            <div style="font-size: 14px; line-height: 1.6;">
-                ${conteudo}
-            </div>
-
-            ${rodapeHTML}
-        </div>`;
-
+        // 8. RENDER TEMPORÁRIO
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlDoc;
-
-        // ✅ NÃO usar z-index negativo
         tempDiv.style.position = 'fixed';
-        tempDiv.style.top = '0';
-        tempDiv.style.left = '0';
-        tempDiv.style.opacity = '0';
-        tempDiv.style.pointerEvents = 'none';
+        tempDiv.style.zIndex = '-9999';
 
         document.body.appendChild(tempDiv);
 
-        // ✅ QRCode + ESPERA REAL
+        // 9. QR CODE
         if (status === 'ASSINADO') {
             const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
 
@@ -2135,31 +2158,29 @@ window.imprimirDocumentoInterno = async function(id) {
                 width: 80,
                 height: 80
             });
-
-            // ⏱️ esperar render do QR
-            await new Promise(r => setTimeout(r, 1200));
         }
 
-        // ⏱️ esperar DOM estabilizar
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
+        // 10. PDF
         const opt = {
-            margin: 10,
-            filename: `${safe(getVal(doc, 'TITULO')).replace(/ /g, '_')}.pdf`,
+            margin: [20, 10, 20, 10],
+            filename: `${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf`,
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4' }
         };
 
-        await html2pdf()
-            .set(opt)
-            .from(document.getElementById('pdf-doc-content'))
-            .save();
-
-        document.body.removeChild(tempDiv);
-        Swal.close();
+        setTimeout(() => {
+            html2pdf()
+                .set(opt)
+                .from(document.getElementById('pdf-doc-content'))
+                .save()
+                .then(() => {
+                    document.body.removeChild(tempDiv);
+                    Swal.close();
+                });
+        }, 800);
 
     } catch (e) {
         console.error(e);
-        Swal.fire('Erro', 'Falha ao gerar PDF.', 'error');
+        Swal.fire('Erro', 'Não foi possível obter os dados atualizados para impressão.', 'error');
     }
 };
