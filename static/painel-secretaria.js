@@ -2025,6 +2025,7 @@ function renderizarDocumentos() {
 }
 
 window.imprimirDocumentoInterno = async function(id) {
+    // 1. AVISO VISUAL DE CARREGAMENTO
     Swal.fire({
         title: 'A preparar documento...',
         text: 'A obter dados atualizados da assinatura...',
@@ -2033,63 +2034,62 @@ window.imprimirDocumentoInterno = async function(id) {
     });
 
     try {
-        // Refresh dos dados
+        // 2. REFRESH SILENCIOSO: Vamos buscar a lista atualizada à API para garantir que temos o Hash e o CPF
         const headers = { 'Content-Type': 'application/json', 'x-token': SISTEMA.token };
         const resDocs = await fetch(`${API_BASE}/documentos`, { headers });
-       
+        
         if (resDocs.ok) {
             SISTEMA.dados.documentos = await resDocs.json();
-            renderizarDocumentos();
+            renderizarDocumentos(); // Atualiza a lista visual por trás do modal
         }
 
-        const doc = SISTEMA.dados.documentos.find(d => 
-            getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id
-        );
+        // 3. AGORA SIM, PROCURAMOS O DOCUMENTO COM DADOS FRESCOS
+        const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
         if (!doc) return Swal.fire('Erro', 'Documento não encontrado na base de dados.', 'error');
 
         const status = getVal(doc, 'STATUS');
-        const dataAssinatura = getVal(doc, 'DATA_ASSINATURA') || '';
-        const pastor = getVal(doc, 'PASTOR_ASSINATURA') || '';
-        const hash = getVal(doc, 'HASH_VALIDACAO') || '';
+        const dataAssinatura = getVal(doc, 'DATA_ASSINATURA');
+        const pastor = getVal(doc, 'PASTOR_ASSINATURA');
+        const hash = getVal(doc, 'HASH_VALIDACAO');
         const cpfPastor = getVal(doc, 'CPF_PASTOR') || '***.***.***-**';
-
-        let conteudo = getVal(doc, 'CONTEUDO');
+        
+        let conteudo = getVal(doc, 'CONTEUDO'); 
         if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
             conteudo = conteudo.replace(/\n/g, '<br>');
         }
 
         let rodapeHTML = '';
-        if (status === 'ASSINADO' && hash) {
+
+        if (status === 'ASSINADO') {
             rodapeHTML = `
-            <div style="margin-top: 60px; padding-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
+            <div style="margin-top: 50px; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
                 <div style="flex: 1;">
-                    <div style="border: 2px solid #0ea5e9; border-radius: 6px; padding: 14px; background: #f0f9ff; display: inline-block; text-align: left; width: 95%;">
-                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 9px; display: flex; align-items: center; gap: 5px;">
-                            <span style="font-size: 17px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
+                    <div style="border: 2px solid #0ea5e9; border-radius: 6px; padding: 12px; background: #f0f9ff; display: inline-block; text-align: left; width: 95%;">
+                        <div style="font-weight: 900; font-size: 13px; color: #0284c7; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 16px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
-                        <div style="font-size: 12px; color: #334155; margin-bottom: 4px;"><strong>Signatário:</strong> ${pastor}</div>
-                        <div style="font-size: 12px; color: #334155; margin-bottom: 4px;"><strong>CPF:</strong> ${cpfPastor}</div>
-                        <div style="font-size: 12px; color: #334155; margin-bottom: 4px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
-                        <div style="font-size: 10.5px; color: #64748b; margin-top: 10px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
+                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Signatário:</strong> ${pastor}</div>
+                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>CPF:</strong> ${cpfPastor}</div>
+                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
+                        <div style="font-size: 10px; color: #64748b; margin-top: 8px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
                     </div>
                 </div>
-                <div style="text-align: center; width: 120px;">
-                    <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:8px; border: 2px solid #000; padding: 6px; background:#fff; border-radius: 4px;"></div>
-                    <p style="margin: 0; font-size: 9.5px; font-weight:bold;">VALIDAR DOCUMENTO</p>
+                <div style="text-align: center; width: 100px;">
+                    <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px; border: 2px solid #000; padding: 4px; border-radius: 4px;"></div>
+                    <p style="margin: 0; font-size: 9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
                 </div>
             </div>`;
         } else {
             rodapeHTML = `
-            <div style="margin-top: 90px; text-align: center; page-break-inside: avoid;">
+            <div style="margin-top: 80px; text-align: center; page-break-inside: avoid;">
                 <p style="margin: 0; font-weight: bold; color: #ef4444; font-size: 16px;">[ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]</p>
-                <p style="margin: 70px auto 0 auto; border-top: 1px solid #000; width: 60%;">Assinatura Manual do Responsável</p>
+                <p style="margin: 60px auto 0 auto; border-top: 1px solid #000; width: 60%;">Assinatura Manual do Responsável</p>
             </div>`;
         }
 
         const htmlDoc = `
-        <div id="pdf-doc-content" style="padding: 30px 45px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
-            <!-- Cabeçalho (mantido igual ao seu original) -->
-            <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+        <div id="pdf-doc-content" style="padding: 20px 40px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box; position: relative;">
+            <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px; page-break-inside: avoid;">
                 <img src="../static/logo.png" style="width: 90px; margin-right: 20px;" onerror="this.style.display='none'">
                 <div style="text-align: center; flex: 1;">
                     <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
@@ -2098,13 +2098,12 @@ window.imprimirDocumentoInterno = async function(id) {
                     <h3 style="margin: 20px 0 0 0; font-size: 16px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
                 </div>
             </div>
-
             <style>
-                .pdf-texto p { margin-bottom: 12px; }
-                .pdf-texto li { margin-bottom: 6px; }
+                .pdf-texto p { margin-bottom: 12px; page-break-inside: avoid; }
+                .pdf-texto li { margin-bottom: 6px; page-break-inside: avoid; }
                 .pdf-texto ul, .pdf-texto ol { margin-left: 20px; padding-left: 20px; }
             </style>
-            <div class="pdf-texto" style="font-size: 15px; line-height: 1.65; text-align: justify; min-height: 520px;">
+            <div class="pdf-texto" style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px;">
                 ${conteudo}
             </div>
             ${rodapeHTML}
@@ -2113,51 +2112,31 @@ window.imprimirDocumentoInterno = async function(id) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlDoc;
         tempDiv.style.position = 'fixed';
-        tempDiv.style.top = '-9999px';
-        tempDiv.style.left = '0';
-        tempDiv.style.zIndex = '-9999';
+        tempDiv.style.top = '0'; tempDiv.style.left = '0'; tempDiv.style.zIndex = '-9999'; 
         document.body.appendChild(tempDiv);
 
-        // Gera o QR Code (igual ao seu original)
-        if (status === 'ASSINADO' && hash) {
+        if (status === 'ASSINADO') {
             const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
             new QRCode(document.getElementById(`qr-doc-${id}`), {
-                text: urlValidacao,
-                width: 95,
-                height: 95,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.L
+                text: urlValidacao, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
             });
         }
 
         const opt = {
-            margin: [20, 12, 20, 12],
+            margin: [20, 10, 20, 10],
             filename: `${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2.3,           // qualidade boa sem ficar muito pesado
-                useCORS: true,
-                allowTaint: true,     // ← importante para capturar o canvas do QR Code
-                letterRendering: true,
-                scrollY: 0,
-                scrollX: 0
-            },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'] }
         };
 
-        // Tempo maior para o QR Code renderizar completamente
         setTimeout(() => {
-            html2pdf().set(opt).from(tempDiv.querySelector('#pdf-doc-content')).save().then(() => {
+            html2pdf().set(opt).from(document.getElementById('pdf-doc-content')).save().then(() => {
                 document.body.removeChild(tempDiv);
                 Swal.close();
-            }).catch(err => {
-                console.error(err);
-                document.body.removeChild(tempDiv);
-                Swal.fire('Erro', 'Falha ao gerar o PDF.', 'error');
             });
-        }, 1600);   // 1.6 segundos costuma ser suficiente
+        }, 800);
 
     } catch (e) {
         console.error(e);
