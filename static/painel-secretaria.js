@@ -2101,7 +2101,7 @@ window.imprimirDocumentoInterno = async function(id) {
                 <div style="text-align: center; flex: 1;">
                     <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
                     <p style="margin: 5px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                    <p style="margin: 5px 0; font-size: 13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>Presidente:</strong> Pr. Valdomiro Pereira da Silva</p>
                     <h3 style="margin: 20px 0 0 0; font-size: 16px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
                 </div>
             </div>
