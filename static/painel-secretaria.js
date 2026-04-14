@@ -1869,15 +1869,15 @@ window.abrirModalNovoDoc = function() {
     // 1. Definir e registrar formatos de espaçamento
     const Parchment = Quill.import('parchment');
     
-    // Formato para Espaçamento entre Linhas (Line Height)
+    // Formato para Espaçamento entre Linhas (Line Height) - MUDOU DE INLINE PARA BLOCK!
     class LineHeightStyle extends Parchment.Attributor.Style {
         constructor() {
-            super('lineheight', 'line-height', { scope: Parchment.Scope.INLINE });
+            super('lineheight', 'line-height', { scope: Parchment.Scope.BLOCK });
         }
     }
     const LineHeight = new LineHeightStyle();
     
-    // Formato para Espaçamento entre Letras (Letter Spacing)
+    // Formato para Espaçamento entre Letras (Letter Spacing) - CONTINUA INLINE
     class LetterSpacingStyle extends Parchment.Attributor.Style {
         constructor() {
             super('letterspacing', 'letter-spacing', { scope: Parchment.Scope.INLINE });
