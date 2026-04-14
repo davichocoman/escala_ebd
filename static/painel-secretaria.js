@@ -2052,6 +2052,11 @@ window.imprimirDocumentoInterno = async function(id) {
         const pastor = getVal(doc, 'PASTOR_ASSINATURA');
         const hash = getVal(doc, 'HASH_VALIDACAO');
         const cpfPastor = getVal(doc, 'CPF_PASTOR') || '***.***.***-**';
+
+        console.log(dataAssinatura)
+        console.log(pastor)
+        console.log(hash)
+        console.log(cpfPastor)
         
         let conteudo = getVal(doc, 'CONTEUDO'); 
         if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
