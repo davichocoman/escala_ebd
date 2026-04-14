@@ -1896,9 +1896,10 @@ window.abrirModalNovoDoc = function() {
                     ['bold', 'italic', 'underline'],
                     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                     [{ 'align': [] }],
-                    // Adicionando os novos seletores
-                    [{ 'lineheight': ['1.0', '1.2', '1.5', '2.0', '2.5'] }],
-                    [{ 'letterspacing': ['-1px', '0px', '1px', '2px', '4px'] }],
+                    // Adicionando valores menores no lineheight (0.3, 0.5, 0.8...)
+                    [{ 'lineheight': ['0.3', '0.5', '0.8', '1.0', '1.2', '1.5', '2.0'] }],
+                    // Também dá para colocar valores fracionados no letterspacing
+                    [{ 'letterspacing': ['-2px', '-1px', '-0.5px', '0px', '0.5px', '1px', '2px'] }],
                     ['clean']
                 ]
             }
