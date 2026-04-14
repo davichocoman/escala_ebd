@@ -2150,9 +2150,9 @@ window.imprimirDocumentoInterno = async function(id) {
         document.body.appendChild(tempDiv);
 
         // Gera QR Code (se assinado)
-        if (status === 'ASSINADO' && hash) {
-            const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
-            new QRCode(document.getElementById(qr-doc-${id}), {
+        if (status === 'ASSINADO') {
+            const urlValidacao = https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash};
+            new QRCode(document.getElementById(qr-doc-${id}), {
                 text: urlValidacao, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
             });
         }
