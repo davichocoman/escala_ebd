@@ -2066,7 +2066,7 @@ window.imprimirDocumentoInterno = async function(id) {
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
                     <!-- Bloco da assinatura -->
                     <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 15px 18px;">
-                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
                             <span style="font-size: 18px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
                         <div style="font-size: 12px; color: #1e2937; line-height: 1.5;">
