@@ -2068,7 +2068,7 @@ window.imprimirDocumentoInterno = async function(id) {
                         <div style="font-weight: 900; font-size: 13px; color: #0284c7; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
                             <span style="font-size: 16px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Signatário:</strong> ${pastor}</div>
+                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Signatário:</strong> Davi ${pastor}</div>
                         <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>CPF:</strong> ${cpfPastor}</div>
                         <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
                         <div style="font-size: 10px; color: #64748b; margin-top: 8px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
