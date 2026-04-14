@@ -2192,7 +2192,7 @@ window.imprimirDocumentoInterno = async function(id) {
                     document.body.removeChild(tempDiv);
                     Swal.fire('Erro', 'Falha ao gerar o PDF.', 'error');
                 });
-        }, 1200);   // ← aumentei para 1200ms (importante para QR Code)
+        }, 800);   // ← aumentei para 1200ms (importante para QR Code)
 
     } catch (e) {
         console.error(e);
