@@ -2062,7 +2062,7 @@ window.imprimirDocumentoInterno = async function(id) {
 
         if (status === 'ASSINADO') {
             rodapeHTML = `
-            <div style="margin-top: 60px; padding-top: 25px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
+            <div style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
                     <!-- Bloco da assinatura -->
                     <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 15px 18px;">
