@@ -2062,21 +2062,28 @@ window.imprimirDocumentoInterno = async function(id) {
 
         if (status === 'ASSINADO') {
             rodapeHTML = `
-            <div style="margin-top: 50px; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
-                <div style="flex: 1;">
-                    <div style="border: 2px solid #0ea5e9; border-radius: 6px; padding: 12px; background: #f0f9ff; display: inline-block; text-align: left; width: 95%;">
-                        <div style="font-weight: 900; font-size: 13px; color: #0284c7; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                            <span style="font-size: 16px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
+            <div style="margin-top: 60px; padding-top: 25px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
+                    <!-- Bloco da assinatura -->
+                    <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 15px 18px;">
+                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 18px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Signatário:</strong> ${pastor}</div>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>CPF:</strong> ${cpfPastor}</div>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 3px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
-                        <div style="font-size: 10px; color: #64748b; margin-top: 8px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
+                        <div style="font-size: 12px; color: #1e2937; line-height: 1.5;">
+                            <strong>Signatário:</strong> ${pastor}<br>
+                            <strong>CPF:</strong> ${cpfPastor}<br>
+                            <strong>Data e Hora:</strong> ${dataAssinatura}
+                        </div>
+                        <div style="margin-top: 12px; font-size: 10.5px; color: #475569; word-break: break-all;">
+                            <strong>Chave de Autenticidade:</strong><br>${hash}
+                        </div>
                     </div>
-                </div>
-                <div style="text-align: center; width: 100px;">
-                    <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px; border: 2px solid #000; padding: 4px; border-radius: 4px;"></div>
-                    <p style="margin: 0; font-size: 9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
+
+                    <!-- QR Code -->
+                    <div style="text-align: center; min-width: 110px;">
+                        <div id="qr-doc-${id}" style="display: inline-block; border: 3px solid #1e2937; padding: 6px; background: #fff;"></div>
+                        <p style="margin: 8px 0 0 0; font-size: 9.5px; font-weight: 700; color: #1e2937;">VALIDAR DOCUMENTO</p>
+                    </div>
                 </div>
             </div>`;
         } else {
