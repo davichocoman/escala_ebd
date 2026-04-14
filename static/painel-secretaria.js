@@ -1865,16 +1865,41 @@ let quillEditor; // Variável global do editor
 window.abrirModalNovoDoc = function() {
     document.getElementById('formNovoDoc').reset();
     document.getElementById('doc_id').value = ''; // Limpa o ID para garantir que é um documento novo
+
+    // 1. Definir e registrar formatos de espaçamento
+    const Parchment = Quill.import('parchment');
+    
+    // Formato para Espaçamento entre Linhas (Line Height)
+    class LineHeightStyle extends Parchment.Attributor.Style {
+        constructor() {
+            super('lineheight', 'line-height', { scope: Parchment.Scope.INLINE });
+        }
+    }
+    const LineHeight = new LineHeightStyle();
+    
+    // Formato para Espaçamento entre Letras (Letter Spacing)
+    class LetterSpacingStyle extends Parchment.Attributor.Style {
+        constructor() {
+            super('letterspacing', 'letter-spacing', { scope: Parchment.Scope.INLINE });
+        }
+    }
+    const LetterSpacing = new LetterSpacingStyle();
+    
+    Quill.register(LineHeight, true);
+    Quill.register(LetterSpacing, true);
     
     if (!quillEditor) {
         quillEditor = new Quill('#editor-container', {
             theme: 'snow',
             modules: {
                 toolbar: [
-                    ['bold', 'italic', 'underline'], 
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }], 
-                    [{ 'align': [] }], 
-                    ['clean'] 
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    // Adicionando os novos seletores
+                    [{ 'lineheight': ['1.0', '1.2', '1.5', '2.0', '2.5'] }],
+                    [{ 'letterspacing': ['-1px', '0px', '1px', '2px', '4px'] }],
+                    ['clean']
                 ]
             }
         });
