@@ -2029,13 +2029,14 @@ window.imprimirDocumentoInterno = async function(id) {
         title: 'A preparar documento...',
         text: 'A obter dados atualizados da assinatura...',
         allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
+        didOpen: () => { Swal.showLoading(); }
     });
 
     try {
         // Refresh dos dados
         const headers = { 'Content-Type': 'application/json', 'x-token': SISTEMA.token };
         const resDocs = await fetch(`${API_BASE}/documentos`, { headers });
+       
         if (resDocs.ok) {
             SISTEMA.dados.documentos = await resDocs.json();
             renderizarDocumentos();
@@ -2044,7 +2045,7 @@ window.imprimirDocumentoInterno = async function(id) {
         const doc = SISTEMA.dados.documentos.find(d => 
             getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id
         );
-        if (!doc) return Swal.fire('Erro', 'Documento não encontrado.', 'error');
+        if (!doc) return Swal.fire('Erro', 'Documento não encontrado na base de dados.', 'error');
 
         const status = getVal(doc, 'STATUS');
         const dataAssinatura = getVal(doc, 'DATA_ASSINATURA') || '';
@@ -2054,124 +2055,112 @@ window.imprimirDocumentoInterno = async function(id) {
 
         let conteudo = getVal(doc, 'CONTEUDO');
         if (!conteudo.includes('<p>') && !conteudo.includes('<br>')) {
-            conteudo = `<p>${conteudo.replace(/\n/g, '<br>')}</p>`;
+            conteudo = conteudo.replace(/\n/g, '<br>');
         }
 
-        // === RODAPÉ MELHORADO ===
         let rodapeHTML = '';
-        if (status === 'ASSINADO') {
+        if (status === 'ASSINADO' && hash) {
             rodapeHTML = `
-            <div style="margin-top: 60px; padding-top: 25px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
-                    <!-- Bloco da assinatura -->
-                    <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 15px 18px;">
-                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 18px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
+            <div style="margin-top: 60px; padding-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
+                <div style="flex: 1;">
+                    <div style="border: 2px solid #0ea5e9; border-radius: 6px; padding: 14px; background: #f0f9ff; display: inline-block; text-align: left; width: 95%;">
+                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 9px; display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 17px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
-                        <div style="font-size: 12px; color: #1e2937; line-height: 1.5;">
-                            <strong>Signatário:</strong> ${pastor}<br>
-                            <strong>CPF:</strong> ${cpfPastor}<br>
-                            <strong>Data e Hora:</strong> ${dataAssinatura}
-                        </div>
-                        <div style="margin-top: 12px; font-size: 10.5px; color: #475569; word-break: break-all;">
-                            <strong>Chave de Autenticidade:</strong><br>${hash}
-                        </div>
+                        <div style="font-size: 12px; color: #334155; margin-bottom: 4px;"><strong>Signatário:</strong> ${pastor}</div>
+                        <div style="font-size: 12px; color: #334155; margin-bottom: 4px;"><strong>CPF:</strong> ${cpfPastor}</div>
+                        <div style="font-size: 12px; color: #334155; margin-bottom: 4px;"><strong>Data e Hora:</strong> ${dataAssinatura}</div>
+                        <div style="font-size: 10.5px; color: #64748b; margin-top: 10px; word-break: break-all;"><strong>Chave de Autenticidade (Hash):</strong><br>${hash}</div>
                     </div>
-
-                    <!-- QR Code -->
-                    <div style="text-align: center; min-width: 110px;">
-                        <div id="qr-doc-${id}" style="display: inline-block; border: 3px solid #1e2937; padding: 6px; background: #fff;"></div>
-                        <p style="margin: 8px 0 0 0; font-size: 9.5px; font-weight: 700; color: #1e2937;">VALIDAR DOCUMENTO</p>
-                    </div>
+                </div>
+                <div style="text-align: center; width: 120px;">
+                    <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:8px; border: 2px solid #000; padding: 6px; background:#fff; border-radius: 4px;"></div>
+                    <p style="margin: 0; font-size: 9.5px; font-weight:bold;">VALIDAR DOCUMENTO</p>
                 </div>
             </div>`;
         } else {
             rodapeHTML = `
-            <div style="margin-top: 100px; text-align: center; page-break-inside: avoid;">
-                <p style="color: #ef4444; font-weight: bold; font-size: 15px; margin: 0 0 70px 0;">
-                    [ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]
-                </p>
-                <p style="margin: 0; border-top: 1px solid #000; width: 280px; margin: 0 auto; padding-top: 8px; font-weight: 600;">
-                    Assinatura Manual do Responsável
-                </p>
+            <div style="margin-top: 90px; text-align: center; page-break-inside: avoid;">
+                <p style="margin: 0; font-weight: bold; color: #ef4444; font-size: 16px;">[ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]</p>
+                <p style="margin: 70px auto 0 auto; border-top: 1px solid #000; width: 60%;">Assinatura Manual do Responsável</p>
             </div>`;
         }
 
         const htmlDoc = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body { margin: 0; padding: 0; }
-                .pdf-container {
-                    padding: 35px 45px;
-                    font-family: Arial, Helvetica, sans-serif;
-                    color: #000;
-                    line-height: 1.65;
-                    font-size: 15px;
-                    max-width: 740px;
-                    margin: 0 auto;
-                    background: #fff;
-                }
-                .pdf-texto { text-align: justify; }
-                .pdf-texto p { margin-bottom: 14px; }
-                .pdf-texto ul, .pdf-texto ol { margin-left: 25px; }
-            </style>
-        </head>
-        <body>
-            <div id="pdf-doc-content" class="pdf-container">
-                <!-- Cabeçalho -->
-                <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 3px solid #000; padding-bottom: 18px;">
-                    <img src="../static/logo.png" style="width: 85px; margin-right: 25px;" onerror="this.style.display='none'">
-                    <div style="text-align: center; flex: 1;">
-                        <h2 style="margin:0; font-size:19px; font-weight:900; text-transform:uppercase;">Igreja Evangélica Assembleia de Deus</h2>
-                        <p style="margin:6px 0; font-size:13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                        <p style="margin:4px 0; font-size:13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
-                        <h3 style="margin:25px 0 0 0; font-size:16.5px; text-decoration:underline;">${getVal(doc, 'TITULO')}</h3>
-                    </div>
+        <div id="pdf-doc-content" style="padding: 30px 45px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
+            <!-- Cabeçalho (mantido igual ao seu original) -->
+            <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                <img src="../static/logo.png" style="width: 90px; margin-right: 20px;" onerror="this.style.display='none'">
+                <div style="text-align: center; flex: 1;">
+                    <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                    <p style="margin: 5px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                    <p style="margin: 5px 0; font-size: 13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                    <h3 style="margin: 20px 0 0 0; font-size: 16px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
                 </div>
-
-                <div class="pdf-texto">
-                    ${conteudo}
-                </div>
-
-                ${rodapeHTML}
             </div>
-        </body>
-        </html>`;
 
-        // Cria elemento temporário
+            <style>
+                .pdf-texto p { margin-bottom: 12px; }
+                .pdf-texto li { margin-bottom: 6px; }
+                .pdf-texto ul, .pdf-texto ol { margin-left: 20px; padding-left: 20px; }
+            </style>
+            <div class="pdf-texto" style="font-size: 15px; line-height: 1.65; text-align: justify; min-height: 520px;">
+                ${conteudo}
+            </div>
+            ${rodapeHTML}
+        </div>`;
+
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlDoc;
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        tempDiv.style.top = '0';
+        tempDiv.style.position = 'fixed';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.left = '0';
+        tempDiv.style.zIndex = '-9999';
         document.body.appendChild(tempDiv);
 
-        // Gera QR Code (se assinado)
-        if (status === 'ASSINADO') {
-            const urlValidacao = https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash};
-            new QRCode(document.getElementById(qr-doc-${id}), {
-                text: urlValidacao, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
-            });
-        }
-        const opt = {
-            margin: [20, 10, 20, 10],
-            filename: ${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
-        };
-        setTimeout(() => {
-            html2pdf().set(opt).from(document.getElementById('pdf-doc-content')).save().then(() => {
-                document.body.removeChild(tempDiv);
-                Swal.close();
-            });
-        }, 800);
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Erro', 'Não foi possível obter os dados atualizados para impressão.', 'error');
-    }
+        // Gera o QR Code (igual ao seu original)
+        if (status === 'ASSINADO' && hash) {
+            const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
+            new QRCode(document.getElementById(`qr-doc-${id}`), {
+                text: urlValidacao,
+                width: 95,
+                height: 95,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.L
+            });
+        }
+
+        const opt = {
+            margin: [20, 12, 20, 12],
+            filename: `${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2.3,           // qualidade boa sem ficar muito pesado
+                useCORS: true,
+                allowTaint: true,     // ← importante para capturar o canvas do QR Code
+                letterRendering: true,
+                scrollY: 0,
+                scrollX: 0
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
+
+        // Tempo maior para o QR Code renderizar completamente
+        setTimeout(() => {
+            html2pdf().set(opt).from(tempDiv.querySelector('#pdf-doc-content')).save().then(() => {
+                document.body.removeChild(tempDiv);
+                Swal.close();
+            }).catch(err => {
+                console.error(err);
+                document.body.removeChild(tempDiv);
+                Swal.fire('Erro', 'Falha ao gerar o PDF.', 'error');
+            });
+        }, 1600);   // 1.6 segundos costuma ser suficiente
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire('Erro', 'Não foi possível obter os dados atualizados para impressão.', 'error');
+    }
 };
