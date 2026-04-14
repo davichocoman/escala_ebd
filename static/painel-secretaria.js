@@ -2080,9 +2080,9 @@ window.imprimirDocumentoInterno = async function(id) {
                     </div>
 
                     <!-- QR Code -->
-                    <div style="text-align: center; min-width: 110px;">
-                        <div id="qr-doc-${id}" style="display: inline-block; border: 3px solid #1e2937; padding: 6px; background: #fff;"></div>
-                        <p style="margin: 8px 0 0 0; font-size: 9.5px; font-weight: 700; color: #1e2937;">VALIDAR DOCUMENTO</p>
+                    <div style="text-align: center; width: 100px;">
+                        <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px; border: 2px solid #000; padding: 4px; border-radius: 4px;"></div>
+                        <p style="margin: 0; font-size: 9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
                     </div>
                 </div>
             </div>`;
