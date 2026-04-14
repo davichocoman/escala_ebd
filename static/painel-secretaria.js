@@ -2106,11 +2106,21 @@ window.imprimirDocumentoInterno = async function(id) {
                 </div>
             </div>
             <style>
-                .pdf-texto p { margin-bottom: 12px; page-break-inside: avoid; }
-                .pdf-texto li { margin-bottom: 6px; page-break-inside: avoid; }
+                /* Espaçamento entre parágrafos (margin-bottom) e entre as linhas (line-height) */
+                .pdf-texto p { margin-bottom: 18px; page-break-inside: avoid; line-height: 1.5; }
+                .pdf-texto li { margin-bottom: 8px; page-break-inside: avoid; line-height: 1.5; }
                 .pdf-texto ul, .pdf-texto ol { margin-left: 20px; padding-left: 20px; }
+                
+                /* ========================================================
+                   Isso faz os botões de alinhar/centralizar do editor 
+                   funcionarem dentro do PDF
+                   ======================================================== */
+                .pdf-texto .ql-align-center { text-align: center !important; }
+                .pdf-texto .ql-align-right { text-align: right !important; }
+                .pdf-texto .ql-align-justify { text-align: justify !important; }
             </style>
-            <div class="pdf-texto" style="font-size: 15px; line-height: 1.6; text-align: justify; min-height: 500px;">
+            
+            <div class="pdf-texto" style="font-size: 15px; text-align: justify; min-height: 500px;">
                 ${conteudo}
             </div>
             ${rodapeHTML}
