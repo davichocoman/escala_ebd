@@ -2033,7 +2033,7 @@ window.imprimirDocumentoInterno = async function(id) {
     });
 
     try {
-        // Refresh dos documentos
+        // Refresh dos dados
         const headers = { 'Content-Type': 'application/json', 'x-token': SISTEMA.token };
         const resDocs = await fetch(`${API_BASE}/documentos`, { headers });
         if (resDocs.ok) {
@@ -2057,112 +2057,121 @@ window.imprimirDocumentoInterno = async function(id) {
             conteudo = `<p>${conteudo.replace(/\n/g, '<br>')}</p>`;
         }
 
+        // === RODAPÉ MELHORADO ===
         let rodapeHTML = '';
-        if (status === 'ASSINADO' && hash) {
+        if (status === 'ASSINADO') {
             rodapeHTML = `
-            <div style="margin-top: 70px; padding-top: 30px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 30px;">
+            <div style="margin-top: 60px; padding-top: 25px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
                     <!-- Bloco da assinatura -->
-                    <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 16px 20px;">
-                        <div style="font-weight: 900; font-size: 14px; color: #0284c7; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 19px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
+                    <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 15px 18px;">
+                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 18px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
-                        <div style="font-size: 12.5px; color: #1e2937; line-height: 1.55;">
+                        <div style="font-size: 12px; color: #1e2937; line-height: 1.5;">
                             <strong>Signatário:</strong> ${pastor}<br>
                             <strong>CPF:</strong> ${cpfPastor}<br>
                             <strong>Data e Hora:</strong> ${dataAssinatura}
                         </div>
-                        <div style="margin-top: 14px; font-size: 10.8px; color: #475569; word-break: break-all;">
+                        <div style="margin-top: 12px; font-size: 10.5px; color: #475569; word-break: break-all;">
                             <strong>Chave de Autenticidade:</strong><br>${hash}
                         </div>
                     </div>
 
                     <!-- QR Code -->
-                    <div style="text-align: center; min-width: 120px;">
-                        <div id="qr-container-${id}" style="display: inline-block; border: 3px solid #1e2937; padding: 8px; background: #fff; margin-bottom: 8px;"></div>
-                        <p style="margin: 0; font-size: 10px; font-weight: 700; color: #1e2937;">VALIDAR DOCUMENTO</p>
+                    <div style="text-align: center; min-width: 110px;">
+                        <div id="qr-doc-${id}" style="display: inline-block; border: 3px solid #1e2937; padding: 6px; background: #fff;"></div>
+                        <p style="margin: 8px 0 0 0; font-size: 9.5px; font-weight: 700; color: #1e2937;">VALIDAR DOCUMENTO</p>
                     </div>
                 </div>
             </div>`;
         } else {
-            rodapeHTML = `... seu rodapé de rascunho aqui (mantido igual) ...`;
+            rodapeHTML = `
+            <div style="margin-top: 100px; text-align: center; page-break-inside: avoid;">
+                <p style="color: #ef4444; font-weight: bold; font-size: 15px; margin: 0 0 70px 0;">
+                    [ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]
+                </p>
+                <p style="margin: 0; border-top: 1px solid #000; width: 280px; margin: 0 auto; padding-top: 8px; font-weight: 600;">
+                    Assinatura Manual do Responsável
+                </p>
+            </div>`;
         }
 
         const htmlDoc = `
-        <div id="pdf-doc-content" style="padding: 40px 50px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
-            <!-- Seu cabeçalho aqui (mantido igual ao que você já tinha) -->
-            <div style="display: flex; align-items: center; margin-bottom: 45px; border-bottom: 3px solid #000; padding-bottom: 20px;">
-                <img src="../static/logo.png" style="width: 90px; margin-right: 25px;" onerror="this.style.display='none'">
-                <div style="text-align: center; flex: 1;">
-                    <h2 style="margin:0; font-size:19px; font-weight:900; text-transform:uppercase;">Igreja Evangélica Assembleia de Deus</h2>
-                    <p style="margin:6px 0; font-size:13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                    <p style="margin:4px 0; font-size:13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
-                    <h3 style="margin:28px 0 0 0; font-size:16.5px; text-decoration:underline;">${getVal(doc, 'TITULO')}</h3>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body { margin: 0; padding: 0; }
+                .pdf-container {
+                    padding: 35px 45px;
+                    font-family: Arial, Helvetica, sans-serif;
+                    color: #000;
+                    line-height: 1.65;
+                    font-size: 15px;
+                    max-width: 740px;
+                    margin: 0 auto;
+                    background: #fff;
+                }
+                .pdf-texto { text-align: justify; }
+                .pdf-texto p { margin-bottom: 14px; }
+                .pdf-texto ul, .pdf-texto ol { margin-left: 25px; }
+            </style>
+        </head>
+        <body>
+            <div id="pdf-doc-content" class="pdf-container">
+                <!-- Cabeçalho -->
+                <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 3px solid #000; padding-bottom: 18px;">
+                    <img src="../static/logo.png" style="width: 85px; margin-right: 25px;" onerror="this.style.display='none'">
+                    <div style="text-align: center; flex: 1;">
+                        <h2 style="margin:0; font-size:19px; font-weight:900; text-transform:uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                        <p style="margin:6px 0; font-size:13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                        <p style="margin:4px 0; font-size:13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                        <h3 style="margin:25px 0 0 0; font-size:16.5px; text-decoration:underline;">${getVal(doc, 'TITULO')}</h3>
+                    </div>
                 </div>
+
+                <div class="pdf-texto">
+                    ${conteudo}
+                </div>
+
+                ${rodapeHTML}
             </div>
+        </body>
+        </html>`;
 
-            <div class="pdf-texto" style="font-size: 15px; line-height: 1.65; text-align: justify; min-height: 520px;">
-                ${conteudo}
-            </div>
-
-            ${rodapeHTML}
-        </div>`;
-
+        // Cria elemento temporário
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlDoc;
         tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-99999px';
+        tempDiv.style.left = '-9999px';
         tempDiv.style.top = '0';
         document.body.appendChild(tempDiv);
 
-        // Gera o QR Code
+        // Gera QR Code (se assinado)
         if (status === 'ASSINADO' && hash) {
             const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
-            new QRCode(document.getElementById(`qr-container-${id}`), {
-                text: urlValidacao,
-                width: 110,
-                height: 110,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.L
-            });
-        }
-
-        const opt = {
-            margin: [15, 15, 15, 15],
-            filename: `${getVal(doc, 'TITULO').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2.5,           // ← aumentado para melhor qualidade
-                useCORS: true,
-                allowTaint: true,     // ← importante para canvas gerado por JS
-                letterRendering: true,
-                scrollY: 0,
-                scrollX: 0
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-
-        // Tempo maior para o QR Code ser desenhado no canvas
-        setTimeout(() => {
-            html2pdf()
-                .set(opt)
-                .from(tempDiv.querySelector('#pdf-doc-content'))
-                .save()
-                .then(() => {
-                    document.body.removeChild(tempDiv);
-                    Swal.close();
-                })
-                .catch(err => {
-                    console.error('Erro no html2pdf:', err);
-                    document.body.removeChild(tempDiv);
-                    Swal.fire('Erro', 'Falha ao gerar o PDF.', 'error');
-                });
-        }, 1500);   // ← 1.5 segundos (aumentado)
-
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Erro', 'Não foi possível gerar o documento.', 'error');
-    }
+            new QRCode(document.getElementById(qr-doc-${id}), {
+                text: urlValidacao, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+            });
+        }
+        const opt = {
+            margin: [20, 10, 20, 10],
+            filename: ${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
+        setTimeout(() => {
+            html2pdf().set(opt).from(document.getElementById('pdf-doc-content')).save().then(() => {
+                document.body.removeChild(tempDiv);
+                Swal.close();
+            });
+        }, 800);
+    } catch (e) {
+        console.error(e);
+        Swal.fire('Erro', 'Não foi possível obter os dados atualizados para impressão.', 'error');
+    }
 };
