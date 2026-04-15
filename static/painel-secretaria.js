@@ -599,10 +599,6 @@ function renderizarAgendaGeralCards() {
                     <div><strong>Data:</strong> ${formatarDataInteligente(getVal(ev, 'data'))}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
                 </div>
-                <div class="card-actions">
-                    <button class="btn-icon edit" onclick="prepararEdicaoGeral('${getVal(ev, 'ID') || getVal(ev, 'id')}')">✏️</button>
-                    <button class="btn-icon delete" onclick="deletarItem('${getVal(ev, 'id')}', 'agenda-geral')">🗑️</button>
-                </div>
             </div>`;
     });
     container.innerHTML = html;
