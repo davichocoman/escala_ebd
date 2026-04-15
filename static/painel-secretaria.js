@@ -598,6 +598,7 @@ function renderizarAgendaGeralCards() {
                 <div class="card-body">
                     <div><strong>Data:</strong> ${formatarDataInteligente(getVal(ev, 'data'))}</div>
                     <div><strong>Local:</strong> ${getVal(ev, 'local')}</div>
+                    <div><strong>Responsável:</strong> ${getVal(ev, 'responsavel')}</div>
                 </div>
             </div>`;
     });
