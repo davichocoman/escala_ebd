@@ -2051,7 +2051,6 @@ function renderizarDocumentos() {
 }
 
 window.imprimirDocumentoInterno = async function(id) {
-    // 1. AVISO VISUAL DE CARREGAMENTO
     Swal.fire({
         title: 'A preparar documento...',
         text: 'A obter dados atualizados da assinatura...',
@@ -2060,16 +2059,14 @@ window.imprimirDocumentoInterno = async function(id) {
     });
 
     try {
-        // 2. REFRESH SILENCIOSO: Vamos buscar a lista atualizada à API para garantir que temos o Hash e o CPF
         const headers = { 'Content-Type': 'application/json', 'x-token': SISTEMA.token };
         const resDocs = await fetch(`${API_BASE}/documentos`, { headers });
         
         if (resDocs.ok) {
             SISTEMA.dados.documentos = await resDocs.json();
-            renderizarDocumentos(); // Atualiza a lista visual por trás do modal
+            renderizarDocumentos(); 
         }
 
-        // 3. AGORA SIM, PROCURAMOS O DOCUMENTO COM DADOS FRESCOS
         const doc = SISTEMA.dados.documentos.find(d => getVal(d, 'ID_DOC') == id || getVal(d, 'ID') == id);
         if (!doc) return Swal.fire('Erro', 'Documento não encontrado na base de dados.', 'error');
 
@@ -2086,70 +2083,72 @@ window.imprimirDocumentoInterno = async function(id) {
 
         let rodapeHTML = '';
 
+        // OTIMIZAÇÃO DE ESPAÇO: Margens menores e QR Code levemente reduzido
         if (status === 'ASSINADO') {
             rodapeHTML = `
-            <div style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;">
-                    <!-- Bloco da assinatura -->
-                    <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 15px 18px;">
-                        <div style="font-weight: 900; font-size: 13.5px; color: #0284c7; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                            <span style="font-size: 18px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #0ea5e9; page-break-inside: avoid;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 15px;">
+                    <div style="flex: 1; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 10px 15px;">
+                        <div style="font-weight: 900; font-size: 13px; color: #0284c7; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 16px;">✓</span> ASSINATURA ELETRÔNICA VERIFICADA
                         </div>
-                        <div style="font-size: 12px; color: #1e2937; line-height: 1.5;">
+                        <div style="font-size: 11px; color: #1e2937; line-height: 1.4;">
                             <strong>Signatário:</strong> ${pastor}<br>
                             <strong>CPF:</strong> ${cpfPastor}<br>
                             <strong>Data e Hora:</strong> ${dataAssinatura}
                         </div>
-                        <div style="margin-top: 12px; font-size: 10.5px; color: #475569; word-break: break-all;">
+                        <div style="margin-top: 8px; font-size: 9.5px; color: #475569; word-break: break-all;">
                             <strong>Chave de Autenticidade:</strong><br>${hash}
                         </div>
                     </div>
 
-                    <!-- QR Code -->
-                    <div style="text-align: center; width: 100px;">
-                        <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:5px; border: 2px solid #000; padding: 4px; border-radius: 4px;"></div>
-                        <p style="margin: 0; font-size: 9px; font-weight:bold;">VALIDAR DOCUMENTO</p>
+                    <div style="text-align: center; width: 90px;">
+                        <div id="qr-doc-${id}" style="display:inline-block; margin-bottom:3px; border: 2px solid #000; padding: 3px; border-radius: 4px;"></div>
+                        <p style="margin: 0; font-size: 8px; font-weight:bold;">VALIDAR DOCUMENTO</p>
                     </div>
                 </div>
             </div>`;
         } else {
             rodapeHTML = `
-            <div style="margin-top: 80px; text-align: center; page-break-inside: avoid;">
-                <p style="margin: 0; font-weight: bold; color: #ef4444; font-size: 16px;">[ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]</p>
-                <p style="margin: 60px auto 0 auto; border-top: 1px solid #000; width: 60%;">Assinatura Manual do Responsável</p>
+            <div style="margin-top: 40px; text-align: center; page-break-inside: avoid;">
+                <p style="margin: 0; font-weight: bold; color: #ef4444; font-size: 15px;">[ RASCUNHO - DOCUMENTO SEM ASSINATURA DIGITAL ]</p>
+                <p style="margin: 40px auto 0 auto; border-top: 1px solid #000; width: 60%; padding-top: 5px; font-size: 14px;">Assinatura Manual do Responsável</p>
             </div>`;
         }
 
         const htmlDoc = `
         <div id="pdf-doc-content" style="padding: 20px 40px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box; position: relative;">
-            <div style="display: flex; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 15px; page-break-inside: avoid;">
-                <img src="../static/logo.png" style="width: 160px; margin-right: 20px;" onerror="this.style.display='none'">
+            
+            <div style="display: flex; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px; page-break-inside: avoid;">
+                <img src="../static/logo.png" style="width: 100px; margin-right: 20px;" onerror="this.style.display='none'">
                 <div style="text-align: center; flex: 1;">
                     <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
                     <p style="margin: 5px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
                     <p style="margin: 5px 0; font-size: 13px;"><strong>Presidente:</strong> Pr. Valdomiro Pereira da Silva</p>
-                    <h3 style="margin: 20px 0 0 0; font-size: 16px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
+                    <h3 style="margin: 15px 0 0 0; font-size: 16px; text-decoration: underline;">${getVal(doc, 'TITULO')}</h3>
                 </div>
             </div>
+            
             <style>
-                /* Espaçamento entre parágrafos (margin-bottom) e entre as linhas (line-height) */
-                .pdf-texto p { margin-bottom: 18px; page-break-inside: avoid; line-height: 1.5; }
+                .pdf-texto p { margin-bottom: 15px; page-break-inside: avoid; line-height: 1.5; }
                 .pdf-texto li { margin-bottom: 8px; page-break-inside: avoid; line-height: 1.5; }
                 .pdf-texto ul, .pdf-texto ol { margin-left: 20px; padding-left: 20px; }
-                
-                /* ========================================================
-                   Isso faz os botões de alinhar/centralizar do editor 
-                   funcionarem dentro do PDF
-                   ======================================================== */
                 .pdf-texto .ql-align-center { text-align: center !important; }
                 .pdf-texto .ql-align-right { text-align: right !important; }
                 .pdf-texto .ql-align-justify { text-align: justify !important; }
             </style>
             
-            <div class="pdf-texto" style="font-size: 15px; text-align: justify; min-height: 500px;">
+            <div class="pdf-texto" style="font-size: 15px; text-align: justify; min-height: 400px;">
                 ${conteudo}
             </div>
+            
             ${rodapeHTML}
+
+            <div style="margin-top: 30px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #0f172a; page-break-inside: avoid;">
+                <strong style="font-size: 13px;">IGREJA EVANGÉLICA ASSEMBLEIA DE DEUS RODOVIA A (SETOR DE CAPELINHA)</strong><br>
+                <span style="font-size: 12px; font-style: italic;">Rua Rodovia A, nº 2597 - Boa Vista de São Caetano, Salvador - BA</span>
+            </div>
+            
         </div>`;
 
         const tempDiv = document.createElement('div');
@@ -2160,13 +2159,14 @@ window.imprimirDocumentoInterno = async function(id) {
 
         if (status === 'ASSINADO') {
             const urlValidacao = `https://rodoviaa.davicampos.dev.br/validar-doc?hash=${hash}`;
+            // QR Code levemente reduzido para 70x70
             new QRCode(document.getElementById(`qr-doc-${id}`), {
-                text: urlValidacao, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+                text: urlValidacao, width: 70, height: 70, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
             });
         }
 
         const opt = {
-            margin: [20, 10, 20, 10],
+            margin: [15, 10, 15, 10], // Margens levemente reduzidas no topo e na base
             filename: `${getVal(doc, 'TITULO').replace(/ /g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
