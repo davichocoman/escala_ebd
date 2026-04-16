@@ -100,6 +100,18 @@
                             <div class="info-value">${data.DATA_ASSINATURA}</div>
                         </div>
 
+                        ${data.CONTEUDO ? `
+                        <div class="info-group" style="margin-top: 25px;">
+                            <div class="info-label" style="color: #0284c7;">Conteúdo Original do Documento</div>
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; font-size: 0.85rem; color: #1e293b; max-height: 250px; overflow-y: auto; border: 2px solid #e0f2fe; margin-top: 5px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                                ${data.CONTEUDO}
+                            </div>
+                            <div style="background: #fef2f2; color: #991b1b; padding: 10px; border-radius: 6px; font-size: 0.75rem; margin-top: 10px; border-left: 4px solid #ef4444;">
+                                <strong>⚠️ ATENÇÃO:</strong> Compare o texto acima com o documento físico ou digital que você recebeu. Se houver QUALQUER diferença, o documento que você tem em mãos é <strong>FALSO</strong> ou foi adulterado.
+                            </div>
+                        </div>
+                        ` : ''}
+
                         <div class="hash-code">
                             <strong>CÓDIGO DE AUTENTICIDADE:</strong><br>
                             ${data.HASH}
