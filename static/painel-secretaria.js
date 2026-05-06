@@ -2169,7 +2169,7 @@ window.imprimirFichaDireto = async function(id) {
         confirmButtonColor: '#0ea5e9'
     });
 
-    if (isDismissed) return; // Se clicou em cancelar, não faz nada.
+    if (isDismissed) return;
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
@@ -2189,55 +2189,70 @@ window.imprimirFichaDireto = async function(id) {
     const funcSel = getVal(m, 'FUNCAO_OFICIAL');
     const strFuncao = `( ${funcSel==='SUP'?'X':'&nbsp;&nbsp;'} ) Sup. &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='VICE'?'X':'&nbsp;&nbsp;'} ) Vice &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='PORT'?'X':'&nbsp;&nbsp;'} ) Porteiro &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='DIR'?'X':'&nbsp;&nbsp;'} ) Dir. de Circ. de Oração &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='OUTROS'?'X':'&nbsp;&nbsp;'} ) Outros`;
 
+    // FOTO INTEGRADA NA TABELA (contain = evita esticar a imagem)
     const foto = recuperarFoto(m);
-    const boxFoto = (foto && foto.length > 100) ? `<img src="${foto}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">FOTO 3x4</div>`;
+    const boxFoto = (foto && foto.length > 100) 
+        ? `<img src="${foto}" style="width: 100%; height: 100%; object-fit: contain; background: #f8fafc;">` 
+        : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background: #f1f5f9; color:#94a3b8; font-size:11px;">FOTO 3x4</div>`;
 
     const htmlFicha = `
     <div id="ficha-print-container" style="padding: 30px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <img src="../static/logo.png" style="width: 90px; height: auto;" onerror="this.style.display='none'">
-            <div style="text-align: center; flex: 1; padding: 0 15px;">
+        
+        <div style="display: flex; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+            <img src="../static/logo.png" style="width: 100px; height: auto; margin-right: 20px;" onerror="this.style.display='none'">
+            <div style="text-align: center; flex: 1;">
                 <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
-                <p style="margin: 4px 0; font-size: 12px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
-                <p style="margin: 4px 0; font-size: 12px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
-                <h3 style="margin: 12px 0 0 0; font-size: 16px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
+                <p style="margin: 4px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 4px 0; font-size: 13px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h3 style="margin: 15px 0 0 0; font-size: 17px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
             </div>
-            <div style="width: 3cm; height: 4cm; border: 1px solid #000; flex-shrink: 0; padding: 2px; box-sizing: border-box;">${boxFoto}</div>
         </div>
 
         <style>
-            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
-            .tbl-ficha td { border: 1px solid #000; padding: 5px 6px; vertical-align: middle; word-wrap: break-word; }
+            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; table-layout: fixed; }
+            .tbl-ficha td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; word-wrap: break-word; }
             .t-label { font-weight: bold; margin-right: 3px; }
         </style>
 
         <table class="tbl-ficha">
-            <tr><td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td><td><span class="t-label">Código:</span> </td></tr>
+            <colgroup>
+                <col style="width: 30%;">
+                <col style="width: 23%;">
+                <col style="width: 25%;">
+                <col style="width: 22%;">
+            </colgroup>
+
             <tr>
-                <td colspan="2">
-                    <span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )
-                </td>
-                <td>
-                    <span class="t-label">Idade:</span> ${idade} anos
-                </td>
-                <td colspan="2">
-                    <span class="t-label">Obreiro</span> ${isObreiro}
-                    &nbsp;&nbsp;&nbsp;
-                    <span class="t-label">Membro</span> ${isMembro}
+                <td colspan="2"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td>
+                <td><span class="t-label">Código:</span> ${id.substring(0,6).toUpperCase()}</td>
+                <td rowspan="4" style="padding: 4px; text-align: center; vertical-align: middle;">
+                    <div style="width: 3.2cm; height: 4.2cm; border: 1px solid #ccc; margin: 0 auto; overflow: hidden;">
+                        ${boxFoto}
+                    </div>
                 </td>
             </tr>
-            <tr><td colspan="2"><span class="t-label">Mãe:</span> ${getVal(m, 'MAE')}</td><td colspan="2"><span class="t-label">Pai:</span> ${getVal(m, 'PAI')}</td></tr>
+            <tr>
+                <td><span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp; )</td>
+                <td><span class="t-label">Idade:</span> ${idade} anos</td>
+                <td>Obreiro ${isObreiro} Membro ${isMembro}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Mãe:</span> ${getVal(m, 'MAE')}</td>
+                <td><span class="t-label">Pai:</span> ${getVal(m, 'PAI')}</td>
+            </tr>
             <tr>
                 <td><span class="t-label">Data Nasc:</span> ${getVal(m, 'NASCIMENTO')}</td>
                 <td><span class="t-label">Sexo:</span> M ${sexoM} F ${sexoF}</td>
-                <td colspan="2"><span class="t-label">Naturalidade:</span> ${getVal(m, 'NATURALIDADE')}</td>
+                <td><span class="t-label">Naturalidade:</span> ${getVal(m, 'NATURALIDADE')}</td>
             </tr>
             <tr>
                 <td><span class="t-label">CPF:</span> ${formatarCPF(getVal(m, 'CPF'))}</td>
                 <td><span class="t-label">Identidade:</span> ${getVal(m, 'RG')}</td>
                 <td colspan="2"><span class="t-label">Nacionalidade:</span> ${getVal(m, 'NACIONALIDADE')}</td>
             </tr>
-            <tr><td colspan="4"><span class="t-label">Email:</span> ${getVal(m, 'EMAIL')}</td></tr>
+            <tr>
+                <td colspan="4"><span class="t-label">Email:</span> ${getVal(m, 'EMAIL')}</td>
+            </tr>
             <tr>
                 <td><span class="t-label">Profissão:</span> ${getVal(m, 'PROFISSAO')}</td>
                 <td colspan="2"><span class="t-label">Escolaridade:</span> ${getVal(m, 'ESCOLARIDADE')}</td>
@@ -2262,10 +2277,11 @@ window.imprimirFichaDireto = async function(id) {
                 <td colspan="2"><span class="t-label">Local Batismo:</span> ${getVal(m, 'LOCAL_BATISMO')}</td>
             </tr>
             <tr>
-                <td colspan="2"><span class="t-label">Cursos Teológicos:</span> S ${teoS} &nbsp;&nbsp;&nbsp;&nbsp; N ${teoN}</td>
+                <td colspan="2"><span class="t-label">Cursos Teológicos:</span> S ${teoS} &nbsp;&nbsp;&nbsp; N ${teoN}</td>
                 <td colspan="2"><span class="t-label">Cônjuge:</span> ${getVal(m, 'CONJUGE')}</td>
             </tr>
         </table>
+        
         <table class="tbl-ficha">
             <tr>
                 <td style="width: 50%;"><span class="t-label">Regional/Setor:</span> CAPELINHA</td>
@@ -2274,13 +2290,13 @@ window.imprimirFichaDireto = async function(id) {
             <tr><td colspan="2"><span class="t-label">Cargo:</span> &nbsp;&nbsp; ${strCargo}</td></tr>
             <tr><td colspan="2"><span class="t-label">Função:</span> &nbsp;&nbsp; ${strFuncao}</td></tr>
             <tr>
-                <td colspan="2" style="height: 60px; vertical-align: top;">
+                <td colspan="2" style="min-height: 40px; vertical-align: top;">
                     <span class="t-label">OBS:</span> ${obsText || ''}
                 </td>
             </tr>
             <tr>
-                <td style="padding-top: 30px; text-align: center;"><span class="t-label">Superintendente:</span> ___________________________</td>
-                <td style="padding-top: 30px; text-align: center;"><span class="t-label">Pr. Setorial:</span> ___________________________</td>
+                <td style="padding-top: 20px; text-align: center;"><span class="t-label">Superintendente:</span> ___________________________</td>
+                <td style="padding-top: 20px; text-align: center;"><span class="t-label">Pr. Setorial:</span> ___________________________</td>
             </tr>
         </table>
     </div>
