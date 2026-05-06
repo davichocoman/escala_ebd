@@ -508,7 +508,7 @@ function renderizarMembros() {
                     <div><strong>CPF:</strong> ${getVal(m, 'CPF')}</div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-icon" style="background:#0ea5e9; color:white;" onclick="abrirModalFicha('${getVal(m, 'ID')}')" title="Imprimir Ficha">🖨️</button>
+                    <button class="btn-icon" style="background:#0ea5e9; color:white;" onclick="imprimirFichaDireto('${getVal(m, 'ID')}')" title="Imprimir Ficha">🖨️</button>
                     <button class="btn-icon edit" onclick="prepararEdicaoMembro('${getVal(m, 'ID')}')">✏️</button>
                     <button class="btn-icon delete" onclick="deletarItem('${getVal(m, 'ID')}', 'membros')">🗑️</button>
                 </div>
@@ -893,101 +893,69 @@ window.abrirModalMembro = function() {
 };
 window.prepararEdicaoMembro = function(id) {
     const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
-    if (!m) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Membro não encontrado',
-            text: 'O membro selecionado não está mais na lista.'
-        });
-        return;
-    }
-    const set = (eid, val) => {
-        const el = document.getElementById(eid);
-        if (el) el.value = val || '';
-    };
-    set('m_id', getVal(m, 'ID'));
-    set('m_nome', getVal(m, 'NOME'));
-    set('m_nasc', dataIso(getVal(m, 'NASCIMENTO')));
-    set('m_cpf', getVal(m, 'CPF'));
-    set('m_estado', getVal(m, 'ESTADO_CIVIL'));
-    set('m_data_casamento', dataIso(getVal(m, 'DATA_CASAMENTO')));
-    set('m_conjuge', getVal(m, 'CONJUGE'));
-    set('m_filhos', getVal(m, 'FILHOS'));
-    set('m_pai', getVal(m, 'PAI'));
-    set('m_endereco', getVal(m, 'ENDERECO'));
-    set('m_contato', getVal(m, 'CONTATO'));
-    set('m_mae', getVal(m, 'MAE'));
-    set('m_profissao', getVal(m, 'PROFISSAO'));
-    set('m_situacao', getVal(m, 'SITUACAO_TRABALHO'));
-    set('m_cargo', getVal(m, 'CARGO'));
-    set('m_departamento', getVal(m, 'DEPARTAMENTO'));
-    set('m_batismo', dataIso(getVal(m, 'BATISMO')));
-    set('m_perfil', getVal(m, 'PERFIL'));
-    // Lógica da Foto
+    if (!m) return Swal.fire('Erro', 'Membro não encontrado', 'error');
+
+    const set = (eid, val) => { const el = document.getElementById(eid); if (el) el.value = val || ''; };
+    
+    set('m_id', getVal(m, 'ID')); set('m_nome', getVal(m, 'NOME')); set('m_email', getVal(m, 'EMAIL'));
+    set('m_cpf', getVal(m, 'CPF')); set('m_rg', getVal(m, 'RG')); set('m_nasc', dataIso(getVal(m, 'NASCIMENTO')));
+    set('m_sexo', getVal(m, 'SEXO') || 'M'); set('m_nacionalidade', getVal(m, 'NACIONALIDADE') || 'Brasileiro(a)');
+    set('m_naturalidade', getVal(m, 'NATURALIDADE')); set('m_estado', getVal(m, 'ESTADO_CIVIL'));
+    set('m_conjuge', getVal(m, 'CONJUGE')); set('m_data_casamento', dataIso(getVal(m, 'DATA_CASAMENTO')));
+    set('m_filhos', getVal(m, 'FILHOS')); set('m_pai', getVal(m, 'PAI')); set('m_mae', getVal(m, 'MAE'));
+    set('m_cep', getVal(m, 'CEP')); set('m_endereco', getVal(m, 'ENDERECO')); set('m_bairro', getVal(m, 'BAIRRO'));
+    set('m_cidade', getVal(m, 'CIDADE') || 'Salvador'); set('m_estado_uf', getVal(m, 'ESTADO') || 'BA');
+    set('m_contato', getVal(m, 'CONTATO')); set('m_fone_res', getVal(m, 'FONE_RES'));
+    set('m_escolaridade', getVal(m, 'ESCOLARIDADE')); set('m_profissao', getVal(m, 'PROFISSAO'));
+    set('m_situacao', getVal(m, 'SITUACAO_TRABALHO')); set('m_batismo', dataIso(getVal(m, 'BATISMO')));
+    set('m_local_batismo', getVal(m, 'LOCAL_BATISMO')); set('m_teologia', getVal(m, 'TEOLOGIA') || 'N');
+    set('m_cargo_oficial', getVal(m, 'CARGO_OFICIAL')); set('m_funcao_oficial', getVal(m, 'FUNCAO_OFICIAL'));
+    set('m_departamento', getVal(m, 'DEPARTAMENTO')); set('m_cargo', getVal(m, 'CARGO')); set('m_perfil', getVal(m, 'PERFIL'));
+
     const fotoBase64 = getVal(m, 'FOTO');
     const imgPreview = document.getElementById('previewFoto');
     const icon = document.getElementById('iconFoto');
     const inputHidden = document.getElementById('m_foto_base64');
 
     if (fotoBase64 && fotoBase64.length > 20) {
-        imgPreview.src = fotoBase64;
-        imgPreview.style.display = 'block';
-        icon.style.display = 'none';
-        inputHidden.value = fotoBase64;
+        imgPreview.src = fotoBase64; imgPreview.style.display = 'block'; icon.style.display = 'none'; inputHidden.value = fotoBase64;
     } else {
-        imgPreview.src = '';
-        imgPreview.style.display = 'none';
-        icon.style.display = 'block';
-        inputHidden.value = '';
+        imgPreview.src = ''; imgPreview.style.display = 'none'; icon.style.display = 'block'; inputHidden.value = '';
     }
-    document.getElementById('modalMembro')?.classList.remove('hidden');
+    document.getElementById('modalMembro').classList.remove('hidden');
 };
+
 async function salvarMembro() {
     const id = document.getElementById('m_id')?.value;
-    
-    // Pega a string gigante da foto
     const fotoFull = document.getElementById('m_foto_base64')?.value || '';
-    
-    // Define o tamanho do pedaço
     const CHUNK_SIZE = 45000;
-    
-    // Inicializa as variáveis
     let foto1 = "", foto2 = "", foto3 = "";
 
-    // Só fatia se tiver conteúdo
     if (fotoFull.length > 0) {
-        if (fotoFull.length > (CHUNK_SIZE * 3)) {
-            Swal.fire({ icon: 'error', title: 'Foto muito grande', text: 'A foto escolhida é muito pesada mesmo após compressão. Tente outra.' });
-            return;
-        }
+        if (fotoFull.length > (CHUNK_SIZE * 3)) return Swal.fire('Erro', 'A foto é muito grande.', 'error');
         foto1 = fotoFull.substring(0, CHUNK_SIZE);
         foto2 = fotoFull.substring(CHUNK_SIZE, CHUNK_SIZE * 2);
         foto3 = fotoFull.substring(CHUNK_SIZE * 2, CHUNK_SIZE * 3);
     }
 
     const dados = {
-        NOME: document.getElementById('m_nome')?.value.trim() || '',
-        NASCIMENTO: dataBr(document.getElementById('m_nasc')?.value),
-        CPF: document.getElementById('m_cpf')?.value.trim() || '',
-        ESTADO_CIVIL: document.getElementById('m_estado')?.value || '',
-        DATA_CASAMENTO: dataBr(document.getElementById('m_data_casamento')?.value),
-        CONJUGE: document.getElementById('m_conjuge')?.value.trim() || '',
-        FILHOS: document.getElementById('m_filhos')?.value.trim() || '',
-        PAI: document.getElementById('m_pai')?.value.trim() || '',
-        MAE: document.getElementById('m_mae')?.value.trim() || '',
-        ENDERECO: document.getElementById('m_endereco')?.value.trim() || '',
-        CONTATO: document.getElementById('m_contato')?.value.trim() || '',
-        PROFISSAO: document.getElementById('m_profissao')?.value.trim() || '',
-        SITUACAO_TRABALHO: document.getElementById('m_situacao')?.value || '',
-        CARGO: document.getElementById('m_cargo')?.value.trim() || '',
-        BATISMO: dataBr(document.getElementById('m_batismo')?.value.trim() || ''),
-        DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim() || '',
-        PERFIL: document.getElementById('m_perfil')?.value || '',
-        
-        // Envia as fatias (vazias ou com dados)
-        FOTO_1: foto1,
-        FOTO_2: foto2,
-        FOTO_3: foto3
+        NOME: document.getElementById('m_nome')?.value.trim(), EMAIL: document.getElementById('m_email')?.value.trim(),
+        CPF: document.getElementById('m_cpf')?.value.trim(), RG: document.getElementById('m_rg')?.value.trim(),
+        NASCIMENTO: dataBr(document.getElementById('m_nasc')?.value), SEXO: document.getElementById('m_sexo')?.value,
+        NACIONALIDADE: document.getElementById('m_nacionalidade')?.value.trim(), NATURALIDADE: document.getElementById('m_naturalidade')?.value.trim(),
+        ESTADO_CIVIL: document.getElementById('m_estado')?.value, CONJUGE: document.getElementById('m_conjuge')?.value.trim(),
+        DATA_CASAMENTO: dataBr(document.getElementById('m_data_casamento')?.value), FILHOS: document.getElementById('m_filhos')?.value.trim(),
+        PAI: document.getElementById('m_pai')?.value.trim(), MAE: document.getElementById('m_mae')?.value.trim(),
+        CEP: document.getElementById('m_cep')?.value.trim(), ENDERECO: document.getElementById('m_endereco')?.value.trim(),
+        BAIRRO: document.getElementById('m_bairro')?.value.trim(), CIDADE: document.getElementById('m_cidade')?.value.trim(),
+        ESTADO: document.getElementById('m_estado_uf')?.value.trim(), CONTATO: document.getElementById('m_contato')?.value.trim(),
+        FONE_RES: document.getElementById('m_fone_res')?.value.trim(), ESCOLARIDADE: document.getElementById('m_escolaridade')?.value.trim(),
+        PROFISSAO: document.getElementById('m_profissao')?.value.trim(), SITUACAO_TRABALHO: document.getElementById('m_situacao')?.value,
+        BATISMO: dataBr(document.getElementById('m_batismo')?.value), LOCAL_BATISMO: document.getElementById('m_local_batismo')?.value.trim(),
+        TEOLOGIA: document.getElementById('m_teologia')?.value, CARGO_OFICIAL: document.getElementById('m_cargo_oficial')?.value,
+        FUNCAO_OFICIAL: document.getElementById('m_funcao_oficial')?.value, DEPARTAMENTO: document.getElementById('m_departamento')?.value.trim(),
+        CARGO: document.getElementById('m_cargo')?.value.trim(), PERFIL: document.getElementById('m_perfil')?.value,
+        FOTO_1: foto1, FOTO_2: foto2, FOTO_3: foto3
     };
     // Validação básica no front
     if (!dados.NOME || !dados.CPF || !dados.NASCIMENTO || !dados.ENDERECO || !dados.CONTATO || !dados.ESTADO_CIVIL || !dados.PROFISSAO || !dados.SITUACAO_TRABALHO || !dados.DEPARTAMENTO || !dados.PERFIL ) {
@@ -2182,4 +2150,150 @@ window.imprimirDocumentoInterno = async function(id) {
         console.error(e);
         Swal.fire('Erro', 'Não foi possível obter os dados atualizados para impressão.', 'error');
     }
+};
+
+// === A MÁGICA: IMPRIME DIRETO COM CAIXA DE OBSERVAÇÃO ===
+window.imprimirFichaDireto = async function(id) {
+    const m = SISTEMA.dados.membros.find(x => getVal(x, 'ID') == id);
+    if (!m) return Swal.fire('Erro', 'Membro não encontrado', 'error');
+
+    // A Caixinha Rápida perguntando se quer adicionar Observações
+    const { value: obsText, isDismissed } = await Swal.fire({
+        title: 'Observações na Ficha',
+        input: 'textarea',
+        inputLabel: 'Deseja adicionar alguma observação para imprimir na ficha? (Deixe em branco se não quiser)',
+        inputValue: getVal(m, 'CARGO') ? `O membro atua no(s) cargo(s) de: ${getVal(m, 'CARGO')}` : '',
+        showCancelButton: true,
+        confirmButtonText: '<span class="material-icons" style="vertical-align:middle;">print</span> Gerar PDF',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#0ea5e9'
+    });
+
+    if (isDismissed) return; // Se clicou em cancelar, não faz nada.
+
+    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+    const idade = calcularIdade(getVal(m, 'NASCIMENTO'));
+    const sexo = getVal(m, 'SEXO');
+    const sexoM = sexo === 'M' ? '( X )' : '( &nbsp;&nbsp; )';
+    const sexoF = sexo === 'F' ? '( X )' : '( &nbsp;&nbsp; )';
+    const teo = getVal(m, 'TEOLOGIA');
+    const teoS = teo === 'S' ? '( X )' : '( &nbsp;&nbsp; )';
+    const teoN = teo === 'N' ? '( X )' : '( &nbsp;&nbsp; )';
+
+    const cargoSel = getVal(m, 'CARGO_OFICIAL');
+    const isObreiro = cargoSel !== '' ? '( X )' : '( &nbsp;&nbsp; )';
+    const isMembro = cargoSel === '' ? '( X )' : '( &nbsp;&nbsp; )';
+    const strCargo = `( ${cargoSel==='AUX'?'X':'&nbsp;&nbsp;'} ) Aux. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='DC'?'X':'&nbsp;&nbsp;'} ) Dc. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='PB'?'X':'&nbsp;&nbsp;'} ) Pb. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='EV'?'X':'&nbsp;&nbsp;'} ) Ev. &nbsp;&nbsp;&nbsp;&nbsp; ( ${cargoSel==='PR'?'X':'&nbsp;&nbsp;'} ) Pr.`;
+
+    const funcSel = getVal(m, 'FUNCAO_OFICIAL');
+    const strFuncao = `( ${funcSel==='SUP'?'X':'&nbsp;&nbsp;'} ) Sup. &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='VICE'?'X':'&nbsp;&nbsp;'} ) Vice &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='PORT'?'X':'&nbsp;&nbsp;'} ) Porteiro &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='DIR'?'X':'&nbsp;&nbsp;'} ) Dir. de Circ. de Oração &nbsp;&nbsp;&nbsp;&nbsp; ( ${funcSel==='OUTROS'?'X':'&nbsp;&nbsp;'} ) Outros`;
+
+    const foto = recuperarFoto(m);
+    const boxFoto = (foto && foto.length > 100) ? `<img src="${foto}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px;">FOTO 3x4</div>`;
+
+    const htmlFicha = `
+    <div id="ficha-print-container" style="padding: 30px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <img src="../static/logo.png" style="width: 90px; height: auto;" onerror="this.style.display='none'">
+            <div style="text-align: center; flex: 1; padding: 0 15px;">
+                <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
+                <p style="margin: 4px 0; font-size: 12px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
+                <p style="margin: 4px 0; font-size: 12px;">Presidente: Pr. Valdomiro Pereira da Silva</p>
+                <h3 style="margin: 12px 0 0 0; font-size: 16px; text-decoration: underline;">Ficha Cadastral de Obreiros e Membros</h3>
+            </div>
+            <div style="width: 3cm; height: 4cm; border: 1px solid #000; flex-shrink: 0; padding: 2px; box-sizing: border-box;">${boxFoto}</div>
+        </div>
+
+        <style>
+            .tbl-ficha { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; table-layout: fixed; }
+            .tbl-ficha td { border: 1px solid #000; padding: 5px 6px; vertical-align: middle; word-wrap: break-word; }
+            .t-label { font-weight: bold; margin-right: 3px; }
+        </style>
+
+        <table class="tbl-ficha">
+            <tr><td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td><td><span class="t-label">Código:</span> ${id.substring(0,6).toUpperCase()}</td></tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )</td>
+                <td><span class="t-label">Idade:</span> ${idade} anos</td>
+                <td><span class="t-label">Obreiro</span> ${isObreiro} &nbsp;&nbsp; <span class="t-label">Membro</span> ${isMembro}</td>
+            </tr>
+            <tr><td colspan="2"><span class="t-label">Mãe:</span> ${getVal(m, 'MAE')}</td><td colspan="2"><span class="t-label">Pai:</span> ${getVal(m, 'PAI')}</td></tr>
+            <tr>
+                <td><span class="t-label">Data Nasc:</span> ${getVal(m, 'NASCIMENTO')}</td>
+                <td><span class="t-label">Sexo:</span> M ${sexoM} F ${sexoF}</td>
+                <td colspan="2"><span class="t-label">Naturalidade:</span> ${getVal(m, 'NATURALIDADE')}</td>
+            </tr>
+            <tr>
+                <td><span class="t-label">CPF:</span> ${formatarCPF(getVal(m, 'CPF'))}</td>
+                <td><span class="t-label">Identidade:</span> ${getVal(m, 'RG')}</td>
+                <td colspan="2"><span class="t-label">Nacionalidade:</span> ${getVal(m, 'NACIONALIDADE')}</td>
+            </tr>
+            <tr><td colspan="4"><span class="t-label">Email:</span> ${getVal(m, 'EMAIL')}</td></tr>
+            <tr>
+                <td><span class="t-label">Profissão:</span> ${getVal(m, 'PROFISSAO')}</td>
+                <td colspan="2"><span class="t-label">Escolaridade:</span> ${getVal(m, 'ESCOLARIDADE')}</td>
+                <td><span class="t-label">Estado Civil:</span> ${getVal(m, 'ESTADO_CIVIL')}</td>
+            </tr>
+            <tr>
+                <td colspan="3"><span class="t-label">Endereço:</span> ${getVal(m, 'ENDERECO')}</td>
+                <td><span class="t-label">CEP:</span> ${getVal(m, 'CEP')}</td>
+            </tr>
+            <tr>
+                <td><span class="t-label">Bairro:</span> ${getVal(m, 'BAIRRO')}</td>
+                <td colspan="2"><span class="t-label">Cidade:</span> ${getVal(m, 'CIDADE')}</td>
+                <td><span class="t-label">Estado:</span> ${getVal(m, 'ESTADO')}</td>
+            </tr>
+            <tr>
+                <td><span class="t-label">Fone Residencial:</span> ${getVal(m, 'FONE_RES')}</td>
+                <td colspan="2"><span class="t-label">Fone Trabalho:</span> __________________</td>
+                <td><span class="t-label">Celular / Zap:</span> ${getVal(m, 'CONTATO')}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Data Batismo:</span> ${getVal(m, 'BATISMO')}</td>
+                <td colspan="2"><span class="t-label">Local Batismo:</span> ${getVal(m, 'LOCAL_BATISMO')}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><span class="t-label">Cursos Teológicos:</span> S ${teoS} &nbsp;&nbsp;&nbsp;&nbsp; N ${teoN}</td>
+                <td colspan="2"><span class="t-label">Cônjuge:</span> ${getVal(m, 'CONJUGE')}</td>
+            </tr>
+        </table>
+        <table class="tbl-ficha">
+            <tr>
+                <td style="width: 50%;"><span class="t-label">Regional/Setor:</span> CAPELINHA</td>
+                <td style="width: 50%;"><span class="t-label">Congregação:</span> RODOVIA A</td>
+            </tr>
+            <tr><td colspan="2"><span class="t-label">Cargo:</span> &nbsp;&nbsp; ${strCargo}</td></tr>
+            <tr><td colspan="2"><span class="t-label">Função:</span> &nbsp;&nbsp; ${strFuncao}</td></tr>
+            <tr>
+                <td colspan="2" style="height: 60px; vertical-align: top;">
+                    <span class="t-label">OBS:</span> ${obsText || ''}
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 30px; text-align: center;"><span class="t-label">Superintendente:</span> ___________________________</td>
+                <td style="padding-top: 30px; text-align: center;"><span class="t-label">Pr. Setorial:</span> ___________________________</td>
+            </tr>
+        </table>
+    </div>
+    `;
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlFicha;
+    tempDiv.style.position = 'fixed'; tempDiv.style.top = '0'; tempDiv.style.left = '0'; tempDiv.style.zIndex = '-9999'; 
+    document.body.appendChild(tempDiv);
+
+    const opt = {
+        margin: 10, filename: `Ficha_${getVal(m, 'NOME').replace(/ /g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    setTimeout(() => {
+        html2pdf().set(opt).from(document.getElementById('ficha-print-container')).save().then(() => {
+            document.body.removeChild(tempDiv);
+            Swal.close();
+        });
+    }, 500);
 };
