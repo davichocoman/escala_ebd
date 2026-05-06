@@ -2341,67 +2341,103 @@ window.abrirModalSantaCeia = function() {
 
     // 3. Monta a Folha (Cabeçalho da Igreja)
     let html = `
-    <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; padding: 10px; box-sizing: border-box;">
-        
-        <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; page-break-inside: avoid;">
-            <h2 style="margin: 0; font-size: 19px; text-transform: uppercase; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
-            <p style="margin: 5px 0; font-size: 14px;">Congregação em Rodovia A</p>
-            <h3 style="margin: 15px 0 5px 0; font-size: 17px; text-decoration: underline;">Lista de Presença - Santa Ceia</h3>
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 13px; font-weight: bold;">
-                <div>Data: ____/____/________</div>
-                <div>Total de Membros Aptos: <span style="color: #b91c1c; font-size: 15px;">${membrosOficiais.length}</span></div>
-            </div>
-        </div>
-        
-        <style>
-            /* A MÁGICA: Classes Flexbox que imitam uma tabela, mas não quebram! */
-            .linha-membro { 
-                display: flex; 
-                border-bottom: 1px solid #000; 
-                align-items: stretch; /* Estica as bordas até o fundo da linha mais alta */
-                page-break-inside: avoid !important; 
-                break-inside: avoid !important; 
-            }
-            .col-n { width: 5%; border-right: 1px solid #000; padding: 6px 4px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-size: 11px; }
-            .col-nome { width: 35%; border-right: 1px solid #000; padding: 6px 4px; display: flex; align-items: center; justify-content: flex-start; box-sizing: border-box; font-size: 11px; }
-            .col-cargo { width: 40%; border-right: 1px solid #000; padding: 6px 4px; display: flex; align-items: center; justify-content: center; font-size: 8.5px; line-height: 1.1; box-sizing: border-box; word-break: break-word; text-align: center; }
-            .col-ass { width: 20%; padding: 6px 4px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-        </style>
-
-        <div style="border: 2px solid #000; border-bottom: none;">
-            <div class="linha-membro" style="background-color: #f1f5f9; border-bottom: 2px solid #000; font-weight: bold;">
-                <div class="col-n">Nº</div>
-                <div class="col-nome">Nome do Membro / Obreiro</div>
-                <div class="col-cargo" style="font-size: 11px;">Cargo(s)</div>
-                <div class="col-ass">Assinatura / Presença</div>
-            </div>
-    `;
-
-    // 4. Preenche as linhas com os membros
-    membrosOficiais.forEach((m, index) => {
-        let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
-        
-        html += `
-            <div class="linha-membro">
-                <div class="col-n">${index + 1}</div>
-                <div class="col-nome"><strong>${getVal(m, 'NOME')}</strong></div>
-                <div class="col-cargo">${cargoStr}</div>
-                <div class="col-ass"></div>
-            </div>
-        `;
-    });
-
-    html += `
-            <div style="border-bottom: 1px solid #000;"></div> </div>
-
-        <div class="linha-membro" style="margin-top: 40px; text-align: center; font-size: 12px; border: none; flex-direction: column;">
-            <p style="margin: 0;">___________________________________________________</p>
-            <p style="font-weight: bold; margin-top: 5px;">Assinatura do Pastor / Dirigente</p>
+    <div id="conteudo-pdf-santaceia" style="font-family: Arial; color:#000;">
+    
+    <style>
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+    
+    body {
+        font-family: Arial;
+    }
+    
+    /* Tabela principal */
+    .tabela {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+    }
+    
+    .tabela th, .tabela td {
+        border: 1px solid #000;
+        padding: 6px;
+    }
+    
+    /* Cabeçalho fixo */
+    thead {
+        display: table-header-group;
+    }
+    
+    /* Evita quebra no meio */
+    tr {
+        page-break-inside: avoid !important;
+    }
+    
+    /* Rodapé */
+    .footer {
+        margin-top: 40px;
+        text-align: center;
+        font-size: 12px;
+    }
+    </style>
+    
+    <!-- CABEÇALHO -->
+    <div style="text-align:center; margin-bottom:10px;">
+        <h2 style="margin:0; font-size:18px; font-weight:bold;">
+            Igreja Evangélica Assembleia de Deus
+        </h2>
+        <p style="margin:3px 0;">Congregação em Rodovia A</p>
+        <h3 style="margin:10px 0; text-decoration: underline;">
+            Lista de Presença - Santa Ceia
+        </h3>
+    
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
+            <div>Data: ____/____/________</div>
+            <div>Total: ${membrosOficiais.length}</div>
         </div>
     </div>
+    
+    <!-- TABELA -->
+    <table class="tabela">
+        <thead>
+            <tr style="background:#eee;">
+                <th style="width:5%;">Nº</th>
+                <th style="width:35%;">Nome</th>
+                <th style="width:40%;">Cargo</th>
+                <th style="width:20%;">Assinatura</th>
+            </tr>
+        </thead>
+    
+        <tbody>
     `;
-
+    
+    membrosOficiais.forEach((m, index) => {
+        let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
+    
+        html += `
+            <tr>
+                <td style="text-align:center;">${index + 1}</td>
+                <td><strong>${getVal(m, 'NOME')}</strong></td>
+                <td style="text-align:center;">${cargoStr}</td>
+                <td></td>
+            </tr>
+        `;
+    });
+    
+    html += `
+        </tbody>
+    </table>
+    
+    <!-- RODAPÉ -->
+    <div class="footer">
+        <p>____________________________________________</p>
+        <p><strong>Assinatura do Pastor / Dirigente</strong></p>
+    </div>
+    
+    </div>
+    `;
     container.innerHTML = html;
     document.getElementById('modalSantaCeia').classList.remove('hidden');
 };
@@ -2413,13 +2449,12 @@ window.imprimirListaSantaCeia = function() {
     window.scrollTo(0, 0);
 
     const opt = {
-        margin:       [10, 10, 10, 10], 
-        filename:     `Lista_Santa_Ceia.pdf`,
-        image:        { type: 'jpeg', quality: 1.0 },
-        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        // Comando absoluto para não cortar nossas Divs Blindadas
-        pagebreak:    { mode: ['css', 'legacy'], avoid: '.linha-membro' } 
+        margin: 10,
+        filename: 'Lista_Santa_Ceia.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css'] }
     };
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
