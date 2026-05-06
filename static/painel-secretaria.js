@@ -2332,7 +2332,7 @@ window.abrirModalSantaCeia = function() {
     // 1. Filtra: Remove Congregados e quem não tem nome
     const membrosOficiais = SISTEMA.dados.membros.filter(m => {
         const perfil = getVal(m, 'PERFIL').toUpperCase();
-        const situacao = getVal(m, 'SITUACAO'); // Se você tiver um campo de "Inativo" no futuro
+        const situacao = getVal(m, 'SITUACAO'); 
         return perfil !== 'CONGREGADO' && situacao !== 'INATIVO' && getVal(m, 'NOME').trim() !== '';
     });
 
@@ -2366,7 +2366,6 @@ window.abrirModalSantaCeia = function() {
 
     // 4. Preenche as linhas com os membros
     membrosOficiais.forEach((m, index) => {
-        // Tenta pegar o cargo oficial, se não tiver pega o cargo comum, se não tiver é Membro
         let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
         
         html += `
@@ -2396,12 +2395,12 @@ window.abrirModalSantaCeia = function() {
 window.imprimirListaSantaCeia = function() {
     const element = document.getElementById('conteudo-pdf-santaceia');
     const opt = {
-        margin:       [10, 10, 10, 10], // Margem básica
+        margin:       [10, 10, 10, 10], 
         filename:     `Lista_Santa_Ceia.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: ['css', 'legacy'] } // Para evitar cortar linha no meio
+        pagebreak:    { mode: ['css', 'legacy'] } 
     };
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
