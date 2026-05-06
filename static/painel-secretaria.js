@@ -2214,9 +2214,17 @@ window.imprimirFichaDireto = async function(id) {
         <table class="tbl-ficha">
             <tr><td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td><td><span class="t-label">Código:</span> </td></tr>
             <tr>
-                <td colspan="2"><span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )</td>
-                <td><span class="t-label">Idade:</span> ${idade} anos</td>
-                <td colspan="2"><span class="t-label">Obreiro</span> ${isObreiro} &nbsp;&nbsp; <span class="t-label">Membro</span> ${isMembro}</td>
+                <td>
+                    <span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )
+                </td>
+                <td>
+                    <span class="t-label">Idade:</span> ${idade} anos
+                </td>
+                <td colspan="2">
+                    <span class="t-label">Obreiro</span> ${isObreiro}
+                    &nbsp;&nbsp;&nbsp;
+                    <span class="t-label">Membro</span> ${isMembro}
+                </td>
             </tr>
             <tr><td colspan="2"><span class="t-label">Mãe:</span> ${getVal(m, 'MAE')}</td><td colspan="2"><span class="t-label">Pai:</span> ${getVal(m, 'PAI')}</td></tr>
             <tr>
