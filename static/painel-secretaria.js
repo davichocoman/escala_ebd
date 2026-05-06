@@ -2342,15 +2342,15 @@ window.abrirModalSantaCeia = function() {
     // 3. Monta a Folha (Cabeçalho da Igreja)
     let html = `
     <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; padding: 10px;">
-        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; page-break-inside: avoid;">
             <h2 style="margin: 0; font-size: 19px; text-transform: uppercase; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
             <p style="margin: 5px 0; font-size: 14px;">Congregação em Rodovia A</p>
             <h3 style="margin: 15px 0 5px 0; font-size: 17px; text-decoration: underline;">Lista de Presença - Santa Ceia</h3>
             
             <table style="width: 100%; margin-top: 15px; font-size: 13px; font-weight: bold; border: none;">
                 <tr>
-                    <td style="text-align: left; border: none;">Data: ____/____/________</td>
-                    <td style="text-align: right; border: none;">
+                    <td style="text-align: left; border: none; padding: 0;">Data: ____/____/________</td>
+                    <td style="text-align: right; border: none; padding: 0;">
                         Total de Membros Aptos: <span style="color: #b91c1c; font-size: 15px;">${membrosOficiais.length}</span>
                     </td>
                 </tr>
@@ -2358,20 +2358,26 @@ window.abrirModalSantaCeia = function() {
         </div>
         
         <style>
-            .tabela-ceia { width: 100%; border-collapse: collapse; font-size: 11px; }
+            /* table-layout: fixed garante que as porcentagens das colunas sejam respeitadas à força */
+            .tabela-ceia { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
             .tabela-ceia th { border: 1px solid #000; padding: 8px 4px; background-color: #f1f5f9; text-align: center; font-weight: bold; }
-            .tabela-ceia td { border: 1px solid #000; padding: 6px 4px; vertical-align: middle; }
-            /* Garante que o CSS não quebre as linhas da tabela */
-            .tabela-ceia tr { page-break-inside: avoid !important; }
+            /* word-wrap: break-word força o texto a quebrar sem estourar a tabela */
+            .tabela-ceia td { border: 1px solid #000; padding: 6px 4px; vertical-align: middle; word-wrap: break-word; }
+            .linha-membro { page-break-inside: avoid !important; }
         </style>
 
         <table class="tabela-ceia">
+            <colgroup>
+                <col style="width: 5%;">
+                <col style="width: 32%;">
+                <col style="width: 43%;"> <col style="width: 20%;">
+            </colgroup>
             <thead>
-                <tr>
-                    <th style="width: 5%;">Nº</th>
-                    <th style="text-align: left; width: 45%;">Nome do Membro / Obreiro</th>
-                    <th style="width: 30%;">Cargo</th>
-                    <th style="width: 20%;">Assinatura / Presença</th>
+                <tr class="linha-membro">
+                    <th>Nº</th>
+                    <th style="text-align: left;">Nome do Membro / Obreiro</th>
+                    <th>Cargo(s)</th>
+                    <th>Assinatura / Presença</th>
                 </tr>
             </thead>
             <tbody>
@@ -2382,10 +2388,10 @@ window.abrirModalSantaCeia = function() {
         let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
         
         html += `
-                <tr>
+                <tr class="linha-membro">
                     <td style="text-align: center;">${index + 1}</td>
                     <td><strong>${getVal(m, 'NOME')}</strong></td>
-                    <td style="text-align: center; font-size: 9px;">${cargoStr}</td>
+                    <td style="text-align: center; font-size: 9.5px; line-height: 1.2;">${cargoStr}</td>
                     <td></td>
                 </tr>
         `;
@@ -2408,8 +2414,7 @@ window.abrirModalSantaCeia = function() {
 window.imprimirListaSantaCeia = function() {
     const element = document.getElementById('conteudo-pdf-santaceia');
     
-    // TRUQUE NINJA: Rola a página para o topo absoluto antes de gerar a imagem. 
-    // Isso evita o erro bizarro de cortar a página no meio se você estiver com o scroll para baixo!
+    // Rola a página para o topo absoluto antes de gerar a imagem
     window.scrollTo(0, 0);
 
     const opt = {
@@ -2418,13 +2423,12 @@ window.imprimirListaSantaCeia = function() {
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        // A MÁGICA 2: Avisa pro motor de PDF evitar quebrar as tags "tr" (Linhas da tabela)
-        pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' } 
+        // A MÁGICA ESTÁ AQUI: Mandamos o PDF evitar cortar a classe .linha-membro
+        pagebreak:    { mode: 'css', avoid: '.linha-membro' } 
     };
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    // Dá um tempinho de meio segundo para a tela renderizar a posição 0 do Scroll
     setTimeout(() => {
         html2pdf().set(opt).from(element).save().then(() => {
             Swal.close();
