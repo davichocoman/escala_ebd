@@ -2323,7 +2323,7 @@ window.imprimirFichaDireto = async function(id) {
 };
 
 // ============================================================
-// LISTA DE PRESENÇA - SANTA CEIA
+// LISTA DE PRESENÇA - SANTA CEIA (Tabela Blindada com Flexbox)
 // ============================================================
 
 window.abrirModalSantaCeia = function() {
@@ -2341,46 +2341,41 @@ window.abrirModalSantaCeia = function() {
 
     // 3. Monta a Folha (Cabeçalho da Igreja)
     let html = `
-    <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; padding: 10px;">
-        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; page-break-inside: avoid;">
+    <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; padding: 10px; box-sizing: border-box;">
+        
+        <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; page-break-inside: avoid;">
             <h2 style="margin: 0; font-size: 19px; text-transform: uppercase; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
             <p style="margin: 5px 0; font-size: 14px;">Congregação em Rodovia A</p>
             <h3 style="margin: 15px 0 5px 0; font-size: 17px; text-decoration: underline;">Lista de Presença - Santa Ceia</h3>
             
-            <table style="width: 100%; margin-top: 15px; font-size: 13px; font-weight: bold; border: none;">
-                <tr>
-                    <td style="text-align: left; border: none; padding: 0;">Data: ____/____/________</td>
-                    <td style="text-align: right; border: none; padding: 0;">
-                        Total de Membros Aptos: <span style="color: #b91c1c; font-size: 15px;">${membrosOficiais.length}</span>
-                    </td>
-                </tr>
-            </table>
+            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 13px; font-weight: bold;">
+                <div>Data: ____/____/________</div>
+                <div>Total de Membros Aptos: <span style="color: #b91c1c; font-size: 15px;">${membrosOficiais.length}</span></div>
+            </div>
         </div>
         
         <style>
-            .tabela-ceia { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-            .tabela-ceia th { border: 1px solid #000; padding: 8px 4px; background-color: #f1f5f9; text-align: center; font-weight: bold; }
-            .tabela-ceia td { border: 1px solid #000; padding: 6px 4px; vertical-align: middle; word-wrap: break-word; }
-            /* Garante proteção absoluta da linha */
-            .tabela-ceia tr { page-break-inside: avoid !important; }
+            /* A MÁGICA: Classes Flexbox que imitam uma tabela, mas não quebram! */
+            .linha-membro { 
+                display: flex; 
+                border-bottom: 1px solid #000; 
+                align-items: stretch; /* Estica as bordas até o fundo da linha mais alta */
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important; 
+            }
+            .col-n { width: 5%; border-right: 1px solid #000; padding: 6px 4px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-size: 11px; }
+            .col-nome { width: 35%; border-right: 1px solid #000; padding: 6px 4px; display: flex; align-items: center; justify-content: flex-start; box-sizing: border-box; font-size: 11px; }
+            .col-cargo { width: 40%; border-right: 1px solid #000; padding: 6px 4px; display: flex; align-items: center; justify-content: center; font-size: 8.5px; line-height: 1.1; box-sizing: border-box; word-break: break-word; text-align: center; }
+            .col-ass { width: 20%; padding: 6px 4px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
         </style>
 
-        <table class="tabela-ceia">
-            <colgroup>
-                <col style="width: 5%;">
-                <col style="width: 35%;">
-                <col style="width: 40%;"> 
-                <col style="width: 20%;">
-            </colgroup>
-            <thead>
-                <tr class="linha-membro">
-                    <th>Nº</th>
-                    <th style="text-align: left;">Nome do Membro / Obreiro</th>
-                    <th>Cargo(s)</th>
-                    <th>Assinatura / Presença</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div style="border: 2px solid #000; border-bottom: none;">
+            <div class="linha-membro" style="background-color: #f1f5f9; border-bottom: 2px solid #000; font-weight: bold;">
+                <div class="col-n">Nº</div>
+                <div class="col-nome">Nome do Membro / Obreiro</div>
+                <div class="col-cargo" style="font-size: 11px;">Cargo(s)</div>
+                <div class="col-ass">Assinatura / Presença</div>
+            </div>
     `;
 
     // 4. Preenche as linhas com os membros
@@ -2388,20 +2383,20 @@ window.abrirModalSantaCeia = function() {
         let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
         
         html += `
-                <tr class="linha-membro">
-                    <td style="text-align: center;">${index + 1}</td>
-                    <td><strong>${getVal(m, 'NOME')}</strong></td>
-                    <td style="text-align: center; font-size: 8.5px; line-height: 1.1;">${cargoStr}</td>
-                    <td></td>
-                </tr>
+            <div class="linha-membro">
+                <div class="col-n">${index + 1}</div>
+                <div class="col-nome"><strong>${getVal(m, 'NOME')}</strong></div>
+                <div class="col-cargo">${cargoStr}</div>
+                <div class="col-ass"></div>
+            </div>
         `;
     });
 
     html += `
-            </tbody>
-        </table>
-        <div style="margin-top: 40px; text-align: center; font-size: 12px; page-break-inside: avoid;">
-            <p>___________________________________________________</p>
+            <div style="border-bottom: 1px solid #000;"></div> </div>
+
+        <div class="linha-membro" style="margin-top: 40px; text-align: center; font-size: 12px; border: none; flex-direction: column;">
+            <p style="margin: 0;">___________________________________________________</p>
             <p style="font-weight: bold; margin-top: 5px;">Assinatura do Pastor / Dirigente</p>
         </div>
     </div>
@@ -2414,17 +2409,17 @@ window.abrirModalSantaCeia = function() {
 window.imprimirListaSantaCeia = function() {
     const element = document.getElementById('conteudo-pdf-santaceia');
     
-    // Rola a página para o topo absoluto
+    // Rola a página para o topo absoluto (Evita o bug visual da câmera)
     window.scrollTo(0, 0);
 
     const opt = {
-        margin:       [15, 10, 15, 10], 
+        margin:       [10, 10, 10, 10], 
         filename:     `Lista_Santa_Ceia.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        image:        { type: 'jpeg', quality: 1.0 },
         html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        // A MÁGICA FINAL: Informamos à biblioteca para não cortar as TR (linhas) nem os itens com a classe
-        pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr', '.linha-membro'] } 
+        // Comando absoluto para não cortar nossas Divs Blindadas
+        pagebreak:    { mode: ['css', 'legacy'], avoid: '.linha-membro' } 
     };
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
