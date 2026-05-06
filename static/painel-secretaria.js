@@ -2199,7 +2199,7 @@ window.imprimirFichaDireto = async function(id) {
     <div id="ficha-print-container" style="padding: 30px; font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; box-sizing: border-box;">
         
         <div style="display: flex; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 15px;">
-            <img src="../static/logo.png" style="width: 100px; height: auto; margin-right: 20px;" onerror="this.style.display='none'">
+            <img src="../static/logo.png" style="width: 150px; height: auto; margin-right: 20px;" onerror="this.style.display='none'">
             <div style="text-align: center; flex: 1;">
                 <h2 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">Igreja Evangélica Assembleia de Deus</h2>
                 <p style="margin: 4px 0; font-size: 13px;">Sede - Paralela - Av. Tancredo Neves, 166 - Pernambués - Salvador - BA</p>
