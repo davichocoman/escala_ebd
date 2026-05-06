@@ -2369,8 +2369,9 @@ window.abrirModalSantaCeia = function() {
         <table class="tabela-ceia">
             <colgroup>
                 <col style="width: 5%;">
-                <col style="width: 32%;">
-                <col style="width: 30%;"> <col style="width: 20%;">
+                <col style="width: 30%;">
+                <col style="width: 25%;"> 
+                <col style="width: 20%;">
             </colgroup>
             <thead>
                 <tr class="linha-membro">
