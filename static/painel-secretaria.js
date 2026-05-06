@@ -2212,9 +2212,9 @@ window.imprimirFichaDireto = async function(id) {
         </style>
 
         <table class="tbl-ficha">
-            <tr><td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td><td><span class="t-label">Código:</span> ${id.substring(0,6).toUpperCase()}</td></tr>
+            <tr><td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td><td><span class="t-label">Código:</span> </td></tr>
             <tr>
-                <td colspan="2"><span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )</td>
+                <td><span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )</td>
                 <td><span class="t-label">Idade:</span> ${idade} anos</td>
                 <td><span class="t-label">Obreiro</span> ${isObreiro} &nbsp;&nbsp; <span class="t-label">Membro</span> ${isMembro}</td>
             </tr>
