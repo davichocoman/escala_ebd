@@ -2370,7 +2370,7 @@ window.abrirModalSantaCeia = function() {
             <colgroup>
                 <col style="width: 5%;">
                 <col style="width: 30%;">
-                <col style="width: 25%;"> 
+                <col style="width: 15%;"> 
                 <col style="width: 20%;">
             </colgroup>
             <thead>
