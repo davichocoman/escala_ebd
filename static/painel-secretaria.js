@@ -2358,20 +2358,19 @@ window.abrirModalSantaCeia = function() {
         </div>
         
         <style>
-            /* table-layout: fixed garante que as porcentagens das colunas sejam respeitadas à força */
             .tabela-ceia { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
             .tabela-ceia th { border: 1px solid #000; padding: 8px 4px; background-color: #f1f5f9; text-align: center; font-weight: bold; }
-            /* word-wrap: break-word força o texto a quebrar sem estourar a tabela */
             .tabela-ceia td { border: 1px solid #000; padding: 6px 4px; vertical-align: middle; word-wrap: break-word; }
-            .linha-membro { page-break-inside: avoid !important; }
+            /* Garante proteção absoluta da linha */
+            .tabela-ceia tr { page-break-inside: avoid !important; }
         </style>
 
         <table class="tabela-ceia">
             <colgroup>
-                <col style="width: 4%;">
+                <col style="width: 5%;">
+                <col style="width: 35%;">
+                <col style="width: 40%;"> 
                 <col style="width: 20%;">
-                <col style="width: 15%;"> 
-                <col style="width: 15%;">
             </colgroup>
             <thead>
                 <tr class="linha-membro">
@@ -2392,7 +2391,7 @@ window.abrirModalSantaCeia = function() {
                 <tr class="linha-membro">
                     <td style="text-align: center;">${index + 1}</td>
                     <td><strong>${getVal(m, 'NOME')}</strong></td>
-                    <td style="text-align: center; font-size: 9.5px; line-height: 1.2;">${cargoStr}</td>
+                    <td style="text-align: center; font-size: 8.5px; line-height: 1.1;">${cargoStr}</td>
                     <td></td>
                 </tr>
         `;
@@ -2415,17 +2414,17 @@ window.abrirModalSantaCeia = function() {
 window.imprimirListaSantaCeia = function() {
     const element = document.getElementById('conteudo-pdf-santaceia');
     
-    // Rola a página para o topo absoluto antes de gerar a imagem
+    // Rola a página para o topo absoluto
     window.scrollTo(0, 0);
 
     const opt = {
-        margin:       [15, 10, 15, 10], // Margem: Top, Left, Bottom, Right
+        margin:       [15, 10, 15, 10], 
         filename:     `Lista_Santa_Ceia.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        // A MÁGICA ESTÁ AQUI: Mandamos o PDF evitar cortar a classe .linha-membro
-        pagebreak:    { mode: 'css', avoid: '.linha-membro' } 
+        // A MÁGICA FINAL: Informamos à biblioteca para não cortar as TR (linhas) nem os itens com a classe
+        pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr', '.linha-membro'] } 
     };
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
