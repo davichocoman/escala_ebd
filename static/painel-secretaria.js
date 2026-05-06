@@ -2341,24 +2341,37 @@ window.abrirModalSantaCeia = function() {
 
     // 3. Monta a Folha (Cabeçalho da Igreja)
     let html = `
-    <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto;">
+    <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto; background: #fff; padding: 10px;">
         <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
-            <h2 style="margin: 0; font-size: 18px; text-transform: uppercase; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
-            <p style="margin: 5px 0; font-size: 13px;">Congregação em Rodovia A</p>
-            <h3 style="margin: 15px 0 5px 0; font-size: 16px; text-decoration: underline;">Lista de Presença - Santa Ceia</h3>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-top: 15px;">
-                <span>Data: ____/____/________</span>
-                <span>Total de Membros Aptos: ${membrosOficiais.length}</span>
-            </div>
+            <h2 style="margin: 0; font-size: 19px; text-transform: uppercase; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
+            <p style="margin: 5px 0; font-size: 14px;">Congregação em Rodovia A</p>
+            <h3 style="margin: 15px 0 5px 0; font-size: 17px; text-decoration: underline;">Lista de Presença - Santa Ceia</h3>
+            
+            <table style="width: 100%; margin-top: 15px; font-size: 13px; font-weight: bold; border: none;">
+                <tr>
+                    <td style="text-align: left; border: none;">Data: ____/____/________</td>
+                    <td style="text-align: right; border: none;">
+                        Total de Membros Aptos: <span style="color: #b91c1c; font-size: 15px;">${membrosOficiais.length}</span>
+                    </td>
+                </tr>
+            </table>
         </div>
         
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <style>
+            .tabela-ceia { width: 100%; border-collapse: collapse; font-size: 11px; }
+            .tabela-ceia th { border: 1px solid #000; padding: 8px 4px; background-color: #f1f5f9; text-align: center; font-weight: bold; }
+            .tabela-ceia td { border: 1px solid #000; padding: 6px 4px; vertical-align: middle; }
+            /* Garante que o CSS não quebre as linhas da tabela */
+            .tabela-ceia tr { page-break-inside: avoid !important; }
+        </style>
+
+        <table class="tabela-ceia">
             <thead>
-                <tr style="background-color: #f1f5f9; border: 2px solid #000;">
-                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: center; width: 5%;">Nº</th>
-                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: left; width: 50%;">Nome do Membro / Obreiro</th>
-                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: center; width: 25%;">Cargo</th>
-                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: center; width: 20%;">Presença</th>
+                <tr>
+                    <th style="width: 5%;">Nº</th>
+                    <th style="text-align: left; width: 45%;">Nome do Membro / Obreiro</th>
+                    <th style="width: 30%;">Cargo</th>
+                    <th style="width: 20%;">Assinatura / Presença</th>
                 </tr>
             </thead>
             <tbody>
@@ -2369,19 +2382,19 @@ window.abrirModalSantaCeia = function() {
         let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
         
         html += `
-            <tr style="border-bottom: 1px solid #ccc; page-break-inside: avoid;">
-                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
-                <td style="border: 1px solid #000; padding: 6px;"><strong>${getVal(m, 'NOME')}</strong></td>
-                <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${cargoStr}</td>
-                <td style="border: 1px solid #000; padding: 6px;"></td>
-            </tr>
+                <tr>
+                    <td style="text-align: center;">${index + 1}</td>
+                    <td><strong>${getVal(m, 'NOME')}</strong></td>
+                    <td style="text-align: center; font-size: 9px;">${cargoStr}</td>
+                    <td></td>
+                </tr>
         `;
     });
 
     html += `
             </tbody>
         </table>
-        <div style="margin-top: 30px; text-align: center; font-size: 12px; page-break-inside: avoid;">
+        <div style="margin-top: 40px; text-align: center; font-size: 12px; page-break-inside: avoid;">
             <p>___________________________________________________</p>
             <p style="font-weight: bold; margin-top: 5px;">Assinatura do Pastor / Dirigente</p>
         </div>
@@ -2394,18 +2407,27 @@ window.abrirModalSantaCeia = function() {
 
 window.imprimirListaSantaCeia = function() {
     const element = document.getElementById('conteudo-pdf-santaceia');
+    
+    // TRUQUE NINJA: Rola a página para o topo absoluto antes de gerar a imagem. 
+    // Isso evita o erro bizarro de cortar a página no meio se você estiver com o scroll para baixo!
+    window.scrollTo(0, 0);
+
     const opt = {
-        margin:       [10, 10, 10, 10], 
+        margin:       [15, 10, 15, 10], // Margem: Top, Left, Bottom, Right
         filename:     `Lista_Santa_Ceia.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: ['css', 'legacy'] } 
+        // A MÁGICA 2: Avisa pro motor de PDF evitar quebrar as tags "tr" (Linhas da tabela)
+        pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' } 
     };
 
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    html2pdf().set(opt).from(element).save().then(() => {
-        Swal.close();
-    });
+    // Dá um tempinho de meio segundo para a tela renderizar a posição 0 do Scroll
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+            Swal.close();
+        });
+    }, 500);
 };
