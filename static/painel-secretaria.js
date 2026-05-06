@@ -2214,7 +2214,7 @@ window.imprimirFichaDireto = async function(id) {
         <table class="tbl-ficha">
             <tr><td colspan="3"><span class="t-label">Nome:</span> ${getVal(m, 'NOME')}</td><td><span class="t-label">Código:</span> </td></tr>
             <tr>
-                <td>
+                <td colspan="2">
                     <span class="t-label">Situação:</span> Ativo ( X ) Inativo ( &nbsp;&nbsp; )
                 </td>
                 <td>
