@@ -2371,7 +2371,7 @@ window.abrirModalSantaCeia = function() {
                 <col style="width: 4%;">
                 <col style="width: 20%;">
                 <col style="width: 15%;"> 
-                <col style="width: 20%;">
+                <col style="width: 15%;">
             </colgroup>
             <thead>
                 <tr class="linha-membro">
