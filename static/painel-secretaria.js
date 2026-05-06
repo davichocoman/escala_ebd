@@ -2321,3 +2321,92 @@ window.imprimirFichaDireto = async function(id) {
         });
     }, 500);
 };
+
+// ============================================================
+// LISTA DE PRESENÇA - SANTA CEIA
+// ============================================================
+
+window.abrirModalSantaCeia = function() {
+    const container = document.getElementById('area-print-santaceia');
+    
+    // 1. Filtra: Remove Congregados e quem não tem nome
+    const membrosOficiais = SISTEMA.dados.membros.filter(m => {
+        const perfil = getVal(m, 'PERFIL').toUpperCase();
+        const situacao = getVal(m, 'SITUACAO'); // Se você tiver um campo de "Inativo" no futuro
+        return perfil !== 'CONGREGADO' && situacao !== 'INATIVO' && getVal(m, 'NOME').trim() !== '';
+    });
+
+    // 2. Ordena em Ordem Alfabética
+    membrosOficiais.sort((a, b) => getVal(a, 'NOME').localeCompare(getVal(b, 'NOME')));
+
+    // 3. Monta a Folha (Cabeçalho da Igreja)
+    let html = `
+    <div id="conteudo-pdf-santaceia" style="font-family: Arial, sans-serif; color: #000; width: 740px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 18px; text-transform: uppercase; font-weight: 900;">Igreja Evangélica Assembleia de Deus</h2>
+            <p style="margin: 5px 0; font-size: 13px;">Congregação em Rodovia A</p>
+            <h3 style="margin: 15px 0 5px 0; font-size: 16px; text-decoration: underline;">Lista de Presença - Santa Ceia</h3>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-top: 15px;">
+                <span>Data: ____/____/________</span>
+                <span>Total de Membros Aptos: ${membrosOficiais.length}</span>
+            </div>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+                <tr style="background-color: #f1f5f9; border: 2px solid #000;">
+                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: center; width: 5%;">Nº</th>
+                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: left; width: 50%;">Nome do Membro / Obreiro</th>
+                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: center; width: 25%;">Cargo</th>
+                    <th style="border: 1px solid #000; padding: 8px 5px; text-align: center; width: 20%;">Presença</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // 4. Preenche as linhas com os membros
+    membrosOficiais.forEach((m, index) => {
+        // Tenta pegar o cargo oficial, se não tiver pega o cargo comum, se não tiver é Membro
+        let cargoStr = getVal(m, 'CARGO_OFICIAL') || getVal(m, 'CARGO') || 'Membro';
+        
+        html += `
+            <tr style="border-bottom: 1px solid #ccc; page-break-inside: avoid;">
+                <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
+                <td style="border: 1px solid #000; padding: 6px;"><strong>${getVal(m, 'NOME')}</strong></td>
+                <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${cargoStr}</td>
+                <td style="border: 1px solid #000; padding: 6px;"></td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+        <div style="margin-top: 30px; text-align: center; font-size: 12px; page-break-inside: avoid;">
+            <p>___________________________________________________</p>
+            <p style="font-weight: bold; margin-top: 5px;">Assinatura do Pastor / Dirigente</p>
+        </div>
+    </div>
+    `;
+
+    container.innerHTML = html;
+    document.getElementById('modalSantaCeia').classList.remove('hidden');
+};
+
+window.imprimirListaSantaCeia = function() {
+    const element = document.getElementById('conteudo-pdf-santaceia');
+    const opt = {
+        margin:       [10, 10, 10, 10], // Margem básica
+        filename:     `Lista_Santa_Ceia.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] } // Para evitar cortar linha no meio
+    };
+
+    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        Swal.close();
+    });
+};
