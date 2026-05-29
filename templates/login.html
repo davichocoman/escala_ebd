@@ -10,7 +10,7 @@
     <meta property="og:description" content="Acesse o painel para acompanhar a agenda, escalas e departamentos da nossa igreja.">
     <meta property="og:image" content="https://rodoviaa.davicampos.dev.br/static/icons/android/android-launchericon-512-512.png">
     <meta property="og:url" content="https://rodoviaa.davicampos.dev.br/login">
-    
+
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="AD Rodovia A - Sistema de Gestão">
     <meta name="twitter:description" content="Acesse o painel para acompanhar a agenda, escalas e departamentos da nossa igreja.">
@@ -82,30 +82,41 @@
 </head>
 
 <body>
-    
+
 <div id="pwa-install-banner" class="install-banner hidden">
     <div class="install-content">
         <span class="material-icons">install_mobile</span>
+
         <div class="install-text">
             <strong>App AD Rodovia A</strong>
             <span>Instale para acesso rápido</span>
         </div>
     </div>
+
     <div class="install-actions">
-        <button id="btn-pwa-install" class="btn-install-now">Instalar</button>
-        <button onclick="dismissInstall()" class="btn-dismiss">&times;</button>
+        <button id="btn-pwa-install" class="btn-install-now">
+            Instalar
+        </button>
+
+        <button onclick="dismissInstall()" class="btn-dismiss">
+            &times;
+        </button>
     </div>
 </div>
 
 <div class="login-box">
-    <img src="../static/logo.png" alt="Logo AD Rodovia A" class="login-logo">
+
+    <img src="../static/logo.png"
+         alt="Logo AD Rodovia A"
+         class="login-logo">
 
     <p style="color:#64748b; margin-bottom:20px; font-size:0.9rem;">
         Gestão Rodovia A
     </p>
 
     <div style="margin-top:20px; border-top:1px solid #e2e8f0; padding-top:15px;">
-        <a href="/ebd" style="text-decoration:none; color:#3b82f6; font-size:0.85rem;">
+        <a href="/ebd"
+           style="text-decoration:none; color:#3b82f6; font-size:0.85rem;">
             Acessar Site da EBD (Público)
         </a>
     </div>
@@ -115,6 +126,7 @@
         <!-- CPF -->
         <div class="form-group">
             <label>CPF</label>
+
             <input
                 type="text"
                 id="login"
@@ -124,10 +136,17 @@
                 required
             >
         </div>
-        <div id="perfilDetectado" style="font-size:0.75rem; color:#475569; margin-bottom:8px;"></div>
-        <!-- SENHA / NASCIMENTO -->
+
+        <div id="perfilDetectado"
+             style="font-size:0.75rem; color:#475569; margin-bottom:8px;">
+        </div>
+
+        <!-- SENHA -->
         <div class="form-group">
-            <label id="labelPass">Senha ou Nascimento</label>
+
+            <label id="labelPass">
+                Senha ou Nascimento
+            </label>
 
             <input
                 type="password"
@@ -138,7 +157,10 @@
                 required
             >
 
-            <span class="toggle-pass" id="togglePass">👁️</span>
+            <span class="toggle-pass" id="togglePass">
+                👁️
+            </span>
+
             <div class="hint" id="passHint">
                 Membros: data de nascimento
             </div>
@@ -151,355 +173,316 @@
         >
             Entrar no Sistema
         </button>
-        <button
-            type="button"
-            id="btnBiometria"
-            class="btn"
-            style="width:100%; margin-top:10px; display:none;"
-        >
-            🔐 Entrar com biometria
-        </button>
 
     </form>
-
-    <div style="margin-top: 15px; text-align: center;">
-        <button type="button" onclick="resetarBiometria()" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
-            [DEV] Limpar Biometria Salva
-        </button>
-    </div>
 </div>
 
 <script>
-/* ===============================
-   UTILITÁRIOS: CONVERSÃO DE DADOS (CRUCIAL)
-================================ */
-// Converte ArrayBuffer para String Base64 para salvar no LocalStorage
-function bufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-// Converte String Base64 de volta para ArrayBuffer para enviar ao navegador
-function base64ToBuffer(base64) {
-    const binary_string = window.atob(base64);
-    const len = binary_string.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
-    }
-    return bytes.buffer;
-}
-
-// Cria um ID de usuário fixo a partir do CPF (para o Android não achar que é outra pessoa)
-function strToBuffer(str) {
-    const encoder = new TextEncoder();
-    return encoder.encode(str);
-}
 
 /* ===============================
-   INTERFACE E MÁSCARAS
+   MOSTRAR / OCULTAR SENHA
 ================================ */
+
 document.getElementById("togglePass").addEventListener("click", () => {
+
     const pass = document.getElementById("pass");
-    pass.type = pass.type === "password" ? "text" : "password";
+
+    pass.type =
+        pass.type === "password"
+            ? "text"
+            : "password";
 });
 
+/* ===============================
+   CPF SOMENTE NÚMEROS
+================================ */
+
 document.getElementById("login").addEventListener("input", (e) => {
-    e.target.value = e.target.value.replace(/\D/g, "");
+
+    e.target.value =
+        e.target.value.replace(/\D/g, "");
 });
 
 const passInput = document.getElementById("pass");
 const hint = document.getElementById("passHint");
-const loginInput = document.getElementById("login");
 const perfilLabel = document.getElementById("perfilDetectado");
 
+/* ===============================
+   DETECTA PERFIL
+================================ */
+
 passInput.addEventListener("input", (e) => {
+
     let v = e.target.value;
-    
-    // --- LÓGICA DE VISIBILIDADE AUTOMÁTICA ---
+
     if (v.length > 0) {
-        // Verifica se o primeiro caractere é um número
+
         if (/^\d/.test(v)) {
-            // É número (Data de Nascimento), então exibe o texto
+
             passInput.type = "text";
-            perfilLabel.innerText = "Perfil detectado: Membro";
+
+            perfilLabel.innerText =
+                "Perfil detectado: Membro";
+
         } else {
-            // É letra (Senha Admin), então oculta
+
             passInput.type = "password";
-            perfilLabel.innerText = "Perfil detectado: Administração da Igreja";
+
+            perfilLabel.innerText =
+                "Perfil detectado: Administração da Igreja";
         }
+
     } else {
+
         perfilLabel.innerText = "";
     }
 
-    // --- LÓGICA DE MÁSCARA E HINT ---
     if (/[a-zA-Z]/.test(v)) {
-        hint.innerText = "Senha alfanumérica detectada";
-        return; 
+
+        hint.innerText =
+            "Senha alfanumérica detectada";
+
+        return;
     }
-    
-    hint.innerText = "Membros: data de nascimento";
+
+    hint.innerText =
+        "Membros: data de nascimento";
+
     v = v.replace(/\D/g, "");
 
     // Máscara DD/MM/AAAA
-    if (v.length >= 3 && v.length <= 4) v = v.replace(/^(\d{2})(\d+)/, "$1/$2");
-    else if (v.length >= 5) v = v.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
-    
-    if (v.length <= 10) e.target.value = v;
+    if (v.length >= 3 && v.length <= 4) {
+
+        v = v.replace(
+            /^(\d{2})(\d+)/,
+            "$1/$2"
+        );
+
+    } else if (v.length >= 5) {
+
+        v = v.replace(
+            /^(\d{2})(\d{2})(\d+)/,
+            "$1/$2/$3"
+        );
+    }
+
+    if (v.length <= 10) {
+
+        e.target.value = v;
+    }
 });
 
 /* ===============================
-   LOGIN COM SENHA + REGISTRO
+   PREENCHIMENTO AUTOMÁTICO
 ================================ */
+
+window.addEventListener("load", () => {
+
+    const dados =
+        localStorage.getItem("login_salvo");
+
+    if (dados) {
+
+        const usuario = JSON.parse(dados);
+
+        document.getElementById("login").value =
+            usuario.login || "";
+
+        document.getElementById("pass").value =
+            usuario.password || "";
+    }
+});
+
+/* ===============================
+   LOGIN
+================================ */
+
 async function fazerLogin(e) {
+
     e.preventDefault();
-    const btn = document.querySelector("button[type='submit']");
+
+    const btn =
+        document.querySelector("button[type='submit']");
+
     btn.disabled = true;
     btn.innerText = "Autenticando...";
 
     try {
-        const login = document.getElementById("login").value.trim();
-        const password = document.getElementById("pass").value.trim();
 
-        const res = await fetch("https://api-escala.onrender.com/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ login, password })
-        });
+        const login =
+            document.getElementById("login")
+                .value
+                .trim();
+
+        const password =
+            document.getElementById("pass")
+                .value
+                .trim();
+
+        const res = await fetch(
+            "https://api-escala.onrender.com/api/auth/login",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    login,
+                    password
+                })
+            }
+        );
 
         const data = await res.json();
 
         if (res.ok) {
-            // 1. Salva Sessão
-            sessionStorage.setItem("usuario_sistema", JSON.stringify(data.user));
-            sessionStorage.setItem("token_sistema", data.token);
 
-            // 2. Tenta Registrar Biometria
-            if (window.PublicKeyCredential) {
-                const bioSalva = localStorage.getItem("biometria_usuario");
-                const bioObj = bioSalva ? JSON.parse(bioSalva) : null;
+            // SALVA LOGIN AUTOMATICAMENTE
+            localStorage.setItem(
+                "login_salvo",
+                JSON.stringify({
+                    login,
+                    password
+                })
+            );
 
-                // Se não tem biometria para este login, ou se a biometria salva é de outro CPF
-                if (!bioObj || bioObj.login !== login) {
-                    // MUDANÇA: Passamos a 'password' em vez do token velho!
-                    await registrarBiometria(login, data.user, password);
-                }
-            }
+            // SESSÃO
+            sessionStorage.setItem(
+                "usuario_sistema",
+                JSON.stringify(data.user)
+            );
 
-            // 3. Redireciona
+            sessionStorage.setItem(
+                "token_sistema",
+                data.token
+            );
+
             irParaHome(data.user.PERFIL);
 
         } else {
-            Swal.fire("Erro", data.detail || "Credenciais inválidas", "error");
+
+            Swal.fire(
+                "Erro",
+                data.detail || "Credenciais inválidas",
+                "error"
+            );
+
             btn.disabled = false;
-            btn.innerText = "Entrar no Sistema";
+
+            btn.innerText =
+                "Entrar no Sistema";
         }
+
     } catch (err) {
+
         console.error(err);
-        Swal.fire("Erro", "Falha na conexão com o servidor", "error");
+
+        Swal.fire(
+            "Erro",
+            "Falha na conexão com o servidor",
+            "error"
+        );
+
         btn.disabled = false;
-        btn.innerText = "Entrar no Sistema";
-    }
-}
 
-// MUDANÇA: Recebendo 'password' no lugar de 'token'
-async function registrarBiometria(login, user, password) {
-    const result = await Swal.fire({
-        title: 'Facilitar acesso?',
-        text: "Deseja entrar com Digital/Face ID na próxima vez?",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3b82f6',
-        confirmButtonText: 'Sim, cadastrar',
-        cancelButtonText: 'Agora não'
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-        // Opções de Criação
-        const publicKeyCredentialCreationOptions = {
-            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-            rp: {
-                name: "Gestão Rodovia A",
-                id: window.location.hostname // Importante para o Android vincular ao domínio
-            },
-            user: {
-                id: strToBuffer(login), // ID fixo baseado no CPF
-                name: login,
-                displayName: user.NOME || login
-            },
-            pubKeyCredParams: [{alg: -7, type: "public-key"}, {alg: -257, type: "public-key"}],
-            authenticatorSelection: {
-                authenticatorAttachment: "platform", // Força usar o leitor do celular
-                userVerification: "required",
-                requireResidentKey: false // Não exige chave residente (mais compatível)
-            },
-            timeout: 60000,
-            attestation: "none"
-        };
-
-        const credential = await navigator.credentials.create({
-            publicKey: publicKeyCredentialCreationOptions
-        });
-
-        // Converte o ID da credencial (buffer) para Base64 para salvar no texto
-        const rawIdBase64 = bufferToBase64(credential.rawId);
-
-        // Salva tudo no LocalStorage
-        localStorage.setItem("biometria_usuario", JSON.stringify({
-            login: login,
-            senhaBase64: btoa(password), // <--- O SEGREDO ESTÁ AQUI: Esconde a senha em base64
-            perfil: user.PERFIL,
-            nome: user.NOME,
-            credentialId: rawIdBase64
-        }));
-
-        await Swal.fire({
-            icon: 'success',
-            title: 'Biometria Salva!',
-            text: 'Da próxima vez, clique no botão "Entrar com biometria".',
-            timer: 2000,
-            showConfirmButton: false
-        });
-
-    } catch (err) {
-        console.error("Erro ao registrar:", err);
+        btn.innerText =
+            "Entrar no Sistema";
     }
 }
 
 /* ===============================
-   LOGIN VIA BIOMETRIA (BOTÃO)
+   REDIRECIONAMENTO
 ================================ */
-const btnBio = document.getElementById("btnBiometria");
-
-// Só mostra o botão se tivermos dados E o ID da credencial salvos
-const dadosLocais = localStorage.getItem("biometria_usuario");
-if (window.PublicKeyCredential && dadosLocais) {
-    btnBio.style.display = "block";
-}
-
-btnBio.addEventListener("click", async () => {
-    try {
-        const dados = JSON.parse(dadosLocais);
-        if (!dados || !dados.credentialId) {
-            Swal.fire("Atenção", "Dados biométricos inválidos. Faça login com senha novamente para recadastrar.", "warning");
-            return;
-        }
-
-        // Converte o ID salvo de volta para Buffer
-        const credentialIdBuffer = base64ToBuffer(dados.credentialId);
-
-        // Solicita autenticação ESPECÍFICA para esta credencial
-        const assertion = await navigator.credentials.get({
-            publicKey: {
-                challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                timeout: 60000,
-                rpId: window.location.hostname,
-                userVerification: "required",
-                allowCredentials: [{
-                    id: credentialIdBuffer, // <--- MANDAMOS O ID EXATO QUE O CELULAR QUER
-                    type: 'public-key',
-                    transports: ['internal']
-                }]
-            }
-        });
-
-        if (assertion) {
-            // A biometria passou! Agora vamos pegar um TOKEN NOVO silenciosamente
-            const btnOriginalText = btnBio.innerHTML;
-            btnBio.innerHTML = '🔄 Autenticando...';
-            btnBio.disabled = true;
-
-            const res = await fetch("https://api-escala.onrender.com/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                // Envia o login e "descriptografa" a senha salva
-                body: JSON.stringify({ login: dados.login, password: atob(dados.senhaBase64) })
-            });
-
-            const newData = await res.json();
-
-            if (res.ok) {
-                // Sucesso Absoluto! Temos um Token JWT zerinho de 6 horas!
-                sessionStorage.setItem("token_sistema", newData.token);
-                sessionStorage.setItem("usuario_sistema", JSON.stringify(newData.user));
-                irParaHome(newData.user.PERFIL);
-            } else {
-                Swal.fire("Erro na Sessão", "A senha foi alterada ou ocorreu um erro. Faça login manualmente.", "warning");
-                btnBio.innerHTML = btnOriginalText;
-                btnBio.disabled = false;
-            }
-        }
-    } catch (e) {
-        console.error(e);
-        let msg = "Falha na leitura biométrica.";
-        if (e.name === "NotAllowedError") msg = "Leitura cancelada ou não autorizada.";
-        
-        Swal.fire({
-            title: "Erro no Acesso",
-            text: msg + " Tente novamente ou use a senha.",
-            icon: "error"
-        });
-    }
-});
 
 function irParaHome(perfil) {
-    const p = perfil.toUpperCase();
-    if (p === "ADMIN" || p === "SECRETARIA") window.location.href = "/secretaria";
-    else if (p === "PASTOR") window.location.href = "/pastor";
-    else window.location.href = "/membro";
-}
-let deferredPrompt;
-const installBanner = document.getElementById('pwa-install-banner');
-const btnInstall = document.getElementById('btn-pwa-install');
 
-window.addEventListener('beforeinstallprompt', (e) => {
-    // Impede o Chrome de mostrar o prompt automático
-    e.preventDefault();
-    // Salva o evento para ser disparado depois
-    deferredPrompt = e;
-    // Mostra o nosso banner personalizado
-    installBanner.classList.remove('hidden');
-});
+    const p = perfil.toUpperCase();
+
+    if (
+        p === "ADMIN" ||
+        p === "SECRETARIA"
+    ) {
+
+        window.location.href =
+            "/secretaria";
+
+    } else if (p === "PASTOR") {
+
+        window.location.href =
+            "/pastor";
+
+    } else {
+
+        window.location.href =
+            "/membro";
+    }
+}
+
+/* ===============================
+   PWA INSTALL
+================================ */
+
+let deferredPrompt;
+
+const installBanner =
+    document.getElementById('pwa-install-banner');
+
+const btnInstall =
+    document.getElementById('btn-pwa-install');
+
+window.addEventListener(
+    'beforeinstallprompt',
+    (e) => {
+
+        e.preventDefault();
+
+        deferredPrompt = e;
+
+        installBanner.classList.remove('hidden');
+    }
+);
 
 if (btnInstall) {
-    btnInstall.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            // Mostra o prompt de instalação nativo
-            deferredPrompt.prompt();
-            // Espera pela resposta do usuário
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Usuário escolheu: ${outcome}`);
-            // Limpa o prompt
-            deferredPrompt = null;
-            // Esconde o banner
-            installBanner.classList.add('hidden');
+
+    btnInstall.addEventListener(
+        'click',
+        async () => {
+
+            if (deferredPrompt) {
+
+                deferredPrompt.prompt();
+
+                await deferredPrompt.userChoice;
+
+                deferredPrompt = null;
+
+                installBanner.classList.add('hidden');
+            }
         }
-    });
+    );
 }
 
 function dismissInstall() {
+
     installBanner.classList.add('hidden');
 }
 
-// Oculta o banner se o app já estiver instalado
-window.addEventListener('appinstalled', () => {
-    installBanner.classList.add('hidden');
-    console.log('PWA: Aplicativo instalado com sucesso!');
-});
-function resetarBiometria() {
-    if (confirm("Isso vai apagar a configuração biométrica deste dispositivo. Continuar?")) {
-        localStorage.removeItem("biometria_usuario");
-        alert("Limpeza concluída! Faça login novamente para ver o prompt.");
-        window.location.reload();
+window.addEventListener(
+    'appinstalled',
+    () => {
+
+        installBanner.classList.add('hidden');
+
+        console.log(
+            'PWA instalado com sucesso!'
+        );
     }
-}
+);
+
 </script>
+
 </body>
 </html>
+
