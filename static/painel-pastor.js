@@ -1086,8 +1086,13 @@ function renderizarDocumentosPastor() {
 
     const docs = SISTEMA.dados.documentos || [];
     
-    // A mesa do pastor SÓ mostra o que ele precisa assinar!
-    const pendentes = docs.filter(d => getVal(d, 'STATUS') === 'PENDENTE');
+    const meuNome = getVal(SISTEMA.usuario, 'NOME');
+    
+    // A mesa do pastor SÓ mostra o que ele precisa assinar E que foi direcionado pra ELE
+    const pendentes = docs.filter(d => 
+        getVal(d, 'STATUS') === 'PENDENTE' && 
+        (getVal(d, 'PASTOR_DESTINO') === meuNome || getVal(d, 'PASTOR_DESTINO') === '')
+    );
 
     if (pendentes.length === 0) {
         container.innerHTML = `
