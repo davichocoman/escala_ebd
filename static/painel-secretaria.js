@@ -1882,6 +1882,17 @@ window.abrirModalNovoDoc = function() {
         if (nome) selectMembro.innerHTML += `<option value="${cpf}|${nome}">${nome}</option>`;
     });
 
+    // Preenche a lista de Pastores
+    const selectPastor = document.getElementById('doc_pastor_resp');
+    if (selectPastor) {
+        selectPastor.innerHTML = '<option value="">Selecione o Pastor...</option>';
+        const pastores = SISTEMA.dados.membros.filter(m => getVal(m, 'PERFIL').toUpperCase() === 'PASTOR' || getVal(m, 'CARGO').toUpperCase().includes('PASTOR'));
+        pastores.forEach(p => {
+            const nome = getVal(p, 'NOME');
+            selectPastor.innerHTML += `<option value="${nome}">${nome}</option>`;
+        });
+    }
+
     document.getElementById('modalNovoDoc').classList.remove('hidden');
 };
 
@@ -1901,6 +1912,7 @@ window.prepararEdicaoDocumento = function(id) {
     document.getElementById('doc_id').value = getVal(doc, 'ID_DOC') || getVal(doc, 'ID');
     document.getElementById('doc_tipo').value = getVal(doc, 'TIPO');
     document.getElementById('doc_titulo').value = getVal(doc, 'TITULO');
+    document.getElementById('doc_pastor_resp').value = getVal(doc, 'PASTOR_DESTINO') || '';
 
     // Seleciona o membro correto no dropdown
     const cpfDoc = getVal(doc, 'CPF_MEMBRO');
@@ -1945,7 +1957,8 @@ window.salvarDocumento = async function(e) {
         TITULO: document.getElementById('doc_titulo').value.toUpperCase(),
         CONTEUDO: conteudoHTML,
         CPF_MEMBRO: cpfMembro,
-        NOME_MEMBRO: nomeMembro
+        NOME_MEMBRO: nomeMembro,
+        PASTOR_DESTINO: document.getElementById('doc_pastor_resp').value // CAPTURA O PASTOR
     };
 
     // A função enviarDados é inteligente: se tiver 'id', faz PUT (atualiza), senão faz POST (cria)
