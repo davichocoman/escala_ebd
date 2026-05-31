@@ -451,8 +451,15 @@ window.salvarProgramacao = async function(e) {
     const dataAlvo = document.getElementById('prog_data').value;
     const diffDias = Math.ceil((new Date(dataAlvo + 'T00:00:00') - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
     
+    // Seu aviso visual para o líder continua funcionando perfeito
     if (diffDias < 15) {
-        const confirm = await Swal.fire({ title: 'Prazo Curto', text: 'Mínimo de 15 dias exigido. Se for correção, prossiga.', icon: 'warning', showCancelButton: true, confirmButtonText: 'É correção' });
+        const confirm = await Swal.fire({ 
+            title: 'Prazo Curto', 
+            text: 'Mínimo de 15 dias exigido. Se for correção, prossiga.', 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonText: 'É correção' 
+        });
         if (!confirm.isConfirmed) return;
     }
 
@@ -460,11 +467,15 @@ window.salvarProgramacao = async function(e) {
     const payload = {
         DEPT_ID: selectDept.value, NOME_DEPT: selectDept.options[selectDept.selectedIndex].text,
         DATA: dataBr(dataAlvo), TIPO: document.getElementById('prog_tipo').value,
-        CONSAGRACAO: document.getElementById('prog_consag_sn').value, DIRIGENTE_CONSAG: document.getElementById('prog_consag_dir').value,
-        PREGADOR_CONSAG: document.getElementById('prog_consag_pre').value, TEMA_NOITE: document.getElementById('prog_tema').value,
-        DIRIGENTE_NOITE: document.getElementById('prog_noite_dir').value, PREGADOR_NOITE: document.getElementById('prog_noite_pre').value,
-        CANTOR_NOITE: document.getElementById('prog_noite_can').value, INSTA_PREGADOR: document.getElementById('prog_insta_pre').value,
-        INSTA_CANTOR: document.getElementById('prog_insta_can').value
+        CONSAGRACAO: document.getElementById('prog_consag_sn').value, 
+        DIRIGENTE_CONSAG: document.getElementById('prog_consag_dir')?.value || '',
+        PREGADOR_CONSAG: document.getElementById('prog_consag_pre')?.value || '', 
+        TEMA_NOITE: document.getElementById('prog_tema')?.value || '',
+        DIRIGENTE_NOITE: document.getElementById('prog_noite_dir')?.value || '', 
+        PREGADOR_NOITE: document.getElementById('prog_noite_pre')?.value || '',
+        CANTOR_NOITE: document.getElementById('prog_noite_can')?.value || '', 
+        INSTA_PREGADOR: document.getElementById('prog_insta_pre')?.value || '',
+        INSTA_CANTOR: document.getElementById('prog_insta_can')?.value || ''
     };
 
     const token = SISTEMA.token || sessionStorage.getItem('token_sistema');
@@ -472,14 +483,34 @@ window.salvarProgramacao = async function(e) {
     if(btnSubmit) btnSubmit.innerText = "Enviando...";
 
     try {
-        const res = await fetch(`${API_BASE}/cooperador/programacoes`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-token': token }, body: JSON.stringify(payload) });
-        if (res.ok) {
-            Swal.fire('Sucesso', 'Enviada para análise.', 'success');
-            fecharModal('modalProg');
-            carregarProgramacoes(); 
+        const res = await fetch(`${API_BASE}/cooperador/programacoes`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json', 'x-token': token }, 
+            body: JSON.stringify(payload) 
+        });
+        
+        // === A MÁGICA ENTRA AQUI ===
+        // Se o Python devolver 400, a gente lê a mensagem exata do erro e "explode" pra cair no catch
+        if (!res.ok) {
+            const erroData = await res.json();
+            throw new Error(erroData.detail || "Erro desconhecido ao processar a programação.");
         }
-    } catch(e) { console.error(e); }
-    if(btnSubmit) btnSubmit.innerText = "Enviar para Análise";
+        
+        // Se deu tudo certo
+        Swal.fire('Sucesso', 'Enviada para análise.', 'success');
+        fecharModal('modalProg');
+        
+        // Atualiza a lista na tela (verifica se as funções existem pra não dar erro)
+        if (typeof carregarProgramacoes === 'function') carregarProgramacoes(); 
+        if (typeof carregarTudoDoBanco === 'function') carregarTudoDoBanco(); 
+        
+    } catch(e) { 
+        console.error(e); 
+        // Agora sim, a mensagem que o Python enviou vai aparecer lindona na tela!
+        Swal.fire('Atenção!', e.message, 'error');
+    } finally {
+        if(btnSubmit) btnSubmit.innerText = "Enviar para Análise";
+    }
 };
 
 window.aprovarComoLider = async function(idProg) {
