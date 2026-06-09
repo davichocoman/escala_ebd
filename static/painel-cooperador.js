@@ -452,7 +452,7 @@ window.salvarProgramacao = async function(e) {
     const diffDias = Math.ceil((new Date(dataAlvo + 'T00:00:00') - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
     
     // Seu aviso visual para o líder continua funcionando perfeito
-    if (diffDias < 15) {
+    if (diffDias < 13) {
         const confirm = await Swal.fire({ 
             title: 'Prazo Curto', 
             text: 'Mínimo de 15 dias exigido. Se for correção, prossiga.', 
