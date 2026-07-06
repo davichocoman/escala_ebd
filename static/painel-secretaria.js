@@ -2517,7 +2517,7 @@ window.verificarStatusZap = async function() {
         if (data.aguardando_qr) {
             txt.innerHTML = "<strong style='color: #d97706;'>Aguardando Leitura do QR Code!</strong>";
             
-            img.src = `${API_BASE.replace('/api','')}:3000/qr?t=${Date.now()}`;
+            img.src = `${API_BASE}/admin/whatsapp/qr?t=${Date.now()}`;
             
             container.classList.remove('hidden');
         } else {
