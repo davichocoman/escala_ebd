@@ -421,8 +421,16 @@ function gerarBotoesAcao(prog, perfil, souLider) {
 
     if (status === 'PENDENTE_LIDER' && souLider) {
         const aprovados = (getVal(prog, 'APROVACOES_LIDERES') || "").split(", ");
+        
+        // Se eu ainda não dei meu visto, mostra o botão de aprovar
         if (!aprovados.includes(SISTEMA.usuario.NOME)) {
             html += `<button class="btn-small btn-success" onclick="aprovarComoLider('${id}')">✅ Dar meu Visto</button>`;
+        }
+        
+        // A MÁGICA: O primeiro nome na lista de aprovados é SEMPRE quem criou o evento.
+        // Se o nome logado for igual ao primeiro da lista, ele é o Dono e pode apagar!
+        if (aprovados.length > 0 && aprovados[0] === SISTEMA.usuario.NOME) {
+            html += `<button class="btn-small btn-danger" onclick="excluirProgramacao('${id}')">🗑️ Cancelar Sugestão</button>`;
         }
     }
     if (status === 'PENDENTE_SEC' && ['SECRETARIA', 'ADMIN'].includes(perfil)) {
@@ -436,6 +444,40 @@ function gerarBotoesAcao(prog, perfil, souLider) {
     }
     return html;
 }
+
+// NOVA FUNÇÃO: Dispara a exclusão
+window.excluirProgramacao = async function(id) {
+    const conf = await Swal.fire({
+        title: 'Cancelar Programação?',
+        text: 'Tem certeza que deseja apagar esta sugestão de evento? Esta ação não pode ser desfeita.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        confirmButtonText: 'Sim, excluir'
+    });
+
+    if (conf.isConfirmed) {
+        Swal.fire({ title: 'Excluindo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        
+        try {
+            const res = await fetch(`${API_BASE}/cooperador/programacoes/${id}`, {
+                method: 'DELETE',
+                headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
+            });
+            
+            if (res.ok) {
+                Swal.fire('Excluído!', 'A programação foi cancelada.', 'success');
+                if (typeof carregarProgramacoes === 'function') carregarProgramacoes();
+            } else {
+                const data = await res.json();
+                Swal.fire('Erro', data.detail || 'Não foi possível excluir.', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Erro', 'Falha de comunicação com o servidor.', 'error');
+        }
+    }
+};
 
 // Funções de Ação e Modais foram mantidas exatamente iguais...
 window.abrirModalProg = function() {
@@ -655,6 +697,72 @@ window.excluirDepto = async function(id) {
     }
 };
 
+// ============================================================
+// FUNÇÕES AUXILIARES DE SUPORTE (Garante funcionamento autônomo)
+// ============================================================
+
+// Transforma data YYYY-MM-DD para DD/MM/YYYY
+window.dataBr = function(str) {
+    if (!str) return '';
+    const p = str.split('-');
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '';
+};
+
+// Transforma data DD/MM/YYYY para YYYY-MM-DD (Para o modal de edição)
+window.dataIso = function(str) {
+    if (!str) return '';
+    const p = str.split('/');
+    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : '';
+};
+
+// Fallback: Se a tela do Membro não tiver a função enviarDados, o cooperador usa essa:
+if (typeof window.enviarDados !== 'function') {
+    window.enviarDados = async function(urlBase, id, payload, formId = null) {
+        const url = id ? `${urlBase}/${id}` : urlBase;
+        const method = id ? 'PUT' : 'POST';
+        let btnSubmit = null;
+        let textoOriginal = 'Salvar';
+
+        if (formId) {
+            const form = document.getElementById(formId);
+            if (form) btnSubmit = form.querySelector('button[type="submit"]');
+        }
+
+        if (btnSubmit) {
+            textoOriginal = btnSubmit.innerHTML;
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = 'Processando...';
+        }
+
+        try {
+            // A API_BASE e o SISTEMA.token já existem no topo dos arquivos
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema')
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const erroData = await res.json();
+                throw new Error(erroData.detail || "Erro ao processar a requisição.");
+            }
+
+            return true; // Se deu certo, retorna verdadeiro para fechar o modal
+        } catch (e) {
+            console.error(e);
+            Swal.fire({ icon: 'error', title: 'Atenção', text: e.message });
+            return false;
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = textoOriginal;
+            }
+        }
+    };
+}
 
 
 
