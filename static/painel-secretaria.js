@@ -2503,12 +2503,14 @@ window.verificarStatusZap = async function() {
 
         if (data.aguardando_qr) {
             txt.innerHTML = "<strong style='color: #d97706;'>Aguardando Leitura do QR Code!</strong>";
-            // O Truque: colocar o getTime() no final da URL engana o Cache do navegador
-            // e garante que a imagem que aparece seja sempre a mais recente gerada!
-            img.src = `${API_BASE.replace('/api', '')}/static/qr.png?v=${new Date().getTime()}`;
+            
+            // CORREÇÃO: Usamos window.location.origin para pegar a URL base (https://api-escala.onrender.com)
+            // e garantimos que o caminho seja sempre /static/qr.png
+            img.src = `${window.location.origin}/static/qr.png?v=${new Date().getTime()}`;
+            
             container.classList.remove('hidden');
         } else {
-            txt.innerHTML = "<strong style='color: #16a34a;'>✅ WhatsApp Conectado e Operante!</strong><br><span style='font-size:0.85rem; color:#64748b; margin-top: 5px; display:inline-block;'>As notificações automáticas estão funcionando normalmente.</span>";
+            txt.innerHTML = "<strong style='color: #16a34a;'>✅ WhatsApp Conectado e Operante!</strong>";
         }
     } catch (e) {
         txt.innerHTML = "<strong style='color: red;'>Erro de conexão com a API.</strong>";
