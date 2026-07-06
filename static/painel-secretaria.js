@@ -2478,3 +2478,78 @@ window.imprimirListaSantaCeia = function() {
         });
     }, 500);
 };
+
+// ============================================================
+// PAINEL DE CONTROLE DO WHATSAPP
+// ============================================================
+window.abrirModalZap = function() {
+    document.getElementById('modalZap').classList.remove('hidden');
+    verificarStatusZap();
+};
+
+window.verificarStatusZap = async function() {
+    const txt = document.getElementById('zap-status-text');
+    const container = document.getElementById('zap-qr-container');
+    const img = document.getElementById('zap-qr-img');
+    
+    txt.innerHTML = "Verificando status...";
+    container.classList.add('hidden');
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/whatsapp/status`, {
+            headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
+        });
+        const data = await res.json();
+
+        if (data.aguardando_qr) {
+            txt.innerHTML = "<strong style='color: #d97706;'>Aguardando Leitura do QR Code!</strong>";
+            // O Truque: colocar o getTime() no final da URL engana o Cache do navegador
+            // e garante que a imagem que aparece seja sempre a mais recente gerada!
+            img.src = `${API_BASE.replace('/api', '')}/static/qr.png?v=${new Date().getTime()}`;
+            container.classList.remove('hidden');
+        } else {
+            txt.innerHTML = "<strong style='color: #16a34a;'>✅ WhatsApp Conectado e Operante!</strong><br><span style='font-size:0.85rem; color:#64748b; margin-top: 5px; display:inline-block;'>As notificações automáticas estão funcionando normalmente.</span>";
+        }
+    } catch (e) {
+        txt.innerHTML = "<strong style='color: red;'>Erro de conexão com a API.</strong>";
+    }
+};
+
+window.forcarResetZap = async function() {
+    const conf = await Swal.fire({
+        title: 'Desconectar WhatsApp?',
+        text: 'Isso vai derrubar a conexão atual, apagar a sessão na nuvem e gerar um novo QR Code.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        confirmButtonText: 'Sim, Desconectar'
+    });
+
+    if (conf.isConfirmed) {
+        // Bloqueia a tela enquanto o servidor reinicia
+        Swal.fire({ title: 'Reiniciando Motor...', text: 'Isso leva uns 5 a 10 segundos.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        
+        try {
+            await fetch(`${API_BASE}/admin/whatsapp/reset`, {
+                method: 'POST',
+                headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
+            });
+            
+            // Loop Inteligente: Fica verificando a cada 3 segundos se o arquivo novo da imagem já apareceu
+            let tentativas = 0;
+            const interval = setInterval(async () => {
+                tentativas++;
+                await verificarStatusZap();
+                
+                // Se a imagem brotou na tela ou já tentou demais, para de rodar
+                if (!document.getElementById('zap-qr-container').classList.contains('hidden') || tentativas > 6) {
+                    clearInterval(interval);
+                    Swal.close();
+                }
+            }, 3000);
+
+        } catch (e) {
+            Swal.fire('Erro', 'Falha ao enviar comando para o servidor.', 'error');
+        }
+    }
+};
