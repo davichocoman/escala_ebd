@@ -2506,7 +2506,7 @@ window.verificarStatusZap = async function() {
             
             // CORREÇÃO: Usamos window.location.origin para pegar a URL base (https://api-escala.onrender.com)
             // e garantimos que o caminho seja sempre /static/qr.png
-            img.src = `${window.location.origin}/static/qr.png?v=${new Date().getTime()}`;
+            img.src = `${API_BASE }/static/qr.png?v=${new Date().getTime()}`;
             
             container.classList.remove('hidden');
         } else {
