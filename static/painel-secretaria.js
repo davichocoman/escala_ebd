@@ -2511,21 +2511,21 @@ window.verificarStatusZap = async function() {
         const res = await fetch(`${API_BASE}/admin/whatsapp/status`, {
             headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
         });
+
         const data = await res.json();
 
         if (data.aguardando_qr) {
             txt.innerHTML = "<strong style='color: #d97706;'>Aguardando Leitura do QR Code!</strong>";
             
-            // CORREÇÃO: Usamos window.location.origin para pegar a URL base (https://api-escala.onrender.com)
-            // e garantimos que o caminho seja sempre /static/qr.png
-            img.src = `${API_BASE}/static/qr.png?t=${Date.now()}`;
+            img.src = `${API_BASE}${data.qr_url}?t=${Date.now()}`;
             
             container.classList.remove('hidden');
         } else {
-            txt.innerHTML = "<strong style='color: #16a34a;'>✅ WhatsApp Conectado e Operante!</strong>";
+            txt.innerHTML = "<strong style='color: #16a34a;'>✅ WhatsApp Conectado!</strong>";
         }
+
     } catch (e) {
-        txt.innerHTML = "<strong style='color: red;'>Erro de conexão com a API.</strong>";
+        txt.innerHTML = "<strong style='color: red;'>Erro de conexão.</strong>";
     }
 };
 
