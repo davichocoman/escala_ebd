@@ -2484,7 +2484,19 @@ window.imprimirListaSantaCeia = function() {
 // ============================================================
 window.abrirModalZap = function() {
     document.getElementById('modalZap').classList.remove('hidden');
+
     verificarStatusZap();
+
+    // Atualiza a cada 3 segundos
+    window.zapInterval = setInterval(verificarStatusZap, 3000);
+};
+
+window.fecharModalZap = function() {
+    document.getElementById('modalZap').classList.add('hidden');
+
+    if (window.zapInterval) {
+        clearInterval(window.zapInterval);
+    }
 };
 
 window.verificarStatusZap = async function() {
@@ -2506,7 +2518,7 @@ window.verificarStatusZap = async function() {
             
             // CORREÇÃO: Usamos window.location.origin para pegar a URL base (https://api-escala.onrender.com)
             // e garantimos que o caminho seja sempre /static/qr.png
-            img.src = `${API_BASE }/static/qr.png)}`;
+            img.src = `${API_BASE}/static/qr.png?t=${Date.now()}`;
             
             container.classList.remove('hidden');
         } else {
