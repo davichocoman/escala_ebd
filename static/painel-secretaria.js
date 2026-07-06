@@ -2553,3 +2553,30 @@ window.forcarResetZap = async function() {
         }
     }
 };
+
+window.enviarTesteZap = async function() {
+    const btn = document.getElementById('btn-teste-zap');
+    const textoOriginal = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons">hourglass_empty</span> Enviando...';
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/whatsapp/testar`, {
+            method: 'POST',
+            headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            Swal.fire('Disparado!', data.status + ' Verifique o celular da secretaria.', 'success');
+        } else {
+            Swal.fire('Aviso', data.detail || 'Não foi possível concluir o teste.', 'warning');
+        }
+    } catch(e) {
+        Swal.fire('Erro', 'Falha de comunicação com o servidor.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+    }
+};
