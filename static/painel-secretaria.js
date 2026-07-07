@@ -2504,9 +2504,6 @@ window.verificarStatusZap = async function() {
     const container = document.getElementById('zap-qr-container');
     const img = document.getElementById('zap-qr-img');
     
-    txt.innerHTML = "Verificando status...";
-    container.classList.add('hidden');
-
     try {
         const res = await fetch(`${API_BASE}/admin/whatsapp/status`, {
             headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
@@ -2515,17 +2512,23 @@ window.verificarStatusZap = async function() {
         const data = await res.json();
 
         if (data.aguardando_qr) {
+            // Existe um QR Code para ser lido
             txt.innerHTML = "<strong style='color: #d97706;'>Aguardando Leitura do QR Code!</strong>";
-            
             img.src = `${API_BASE}/admin/whatsapp/qr?t=${Date.now()}`;
-            
             container.classList.remove('hidden');
-        } else {
+        } else if (data.conectado) {
+            // O Node confirmou que está 100% online
             txt.innerHTML = "<strong style='color: #16a34a;'>✅ WhatsApp Conectado!</strong>";
+            container.classList.add('hidden');
+        } else {
+            // Nem QR Code, nem conectado = O Motor está a reiniciar
+            txt.innerHTML = "<strong style='color: #f59e0b;'>⏳ Iniciando Motor... Aguarde.</strong>";
+            container.classList.add('hidden');
         }
 
     } catch (e) {
-        txt.innerHTML = "<strong style='color: red;'>Erro de conexão.</strong>";
+        txt.innerHTML = "<strong style='color: red;'>Erro de comunicação com a API.</strong>";
+        container.classList.add('hidden');
     }
 };
 
