@@ -2543,7 +2543,6 @@ window.forcarResetZap = async function() {
     });
 
     if (conf.isConfirmed) {
-        // Bloqueia a tela enquanto o servidor reinicia
         Swal.fire({ title: 'Reiniciando Motor...', text: 'Isso leva uns 5 a 10 segundos.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         
         try {
@@ -2552,14 +2551,16 @@ window.forcarResetZap = async function() {
                 headers: { 'x-token': SISTEMA.token || sessionStorage.getItem('token_sistema') }
             });
             
-            // Loop Inteligente: Fica verificando a cada 3 segundos se o arquivo novo da imagem já apareceu
             let tentativas = 0;
             const interval = setInterval(async () => {
                 tentativas++;
                 await verificarStatusZap();
                 
-                // Se a imagem brotou na tela ou já tentou demais, para de rodar
-                if (!document.getElementById('zap-qr-container').classList.contains('hidden') || tentativas > 6) {
+                const elQr = document.getElementById('zap-qr-container');
+                const textoStatus = document.getElementById('zap-status-text').innerText;
+                
+                // Se a imagem do QR apareceu, OU conectou direto (raro), OU demorou demais (30s): Libera a tela!
+                if (!elQr.classList.contains('hidden') || textoStatus.includes('Conectado') || tentativas > 10) {
                     clearInterval(interval);
                     Swal.close();
                 }
